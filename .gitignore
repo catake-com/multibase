@@ -1,0 +1,5 @@
+.idea
+scratch
+.DS_Store
+
+build/bin
