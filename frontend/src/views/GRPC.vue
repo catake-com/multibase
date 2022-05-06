@@ -2,14 +2,14 @@
 import { defineComponent } from "vue";
 import { mapState, mapWritableState } from "pinia";
 
-import { OpenProtoFile, OpenImportPath } from "../wailsjs/go/main/App";
+import { OpenProtoFile, OpenImportPath, SelectMethod, SendRequest } from "../wailsjs/go/main/App";
 import { useGRPCStore } from "../stores/grpc";
 
 export default defineComponent({
   data() {
     return {
       val: 30,
-      selected: null,
+      selectedMethod: null,
       tab: "protos",
     };
   },
@@ -20,17 +20,44 @@ export default defineComponent({
     ...mapState(useGRPCStore, ["importPathList", "nodes"]),
     ...mapWritableState(useGRPCStore, ["address", "request", "response"]),
   },
+  watch: {
+    selectedMethod(newMethod, oldMethod) {
+      if (newMethod === oldMethod) {
+        return;
+      }
+
+      const currentMethod = newMethod || oldMethod;
+
+      SelectMethod(currentMethod)
+        .then((payload) => {
+          this.request = payload;
+        })
+        .catch((reason) => {
+          this.response = reason;
+        });
+    },
+  },
   methods: {
-    onSubmit() {
-      console.log("submit");
+    sendRequest() {
+      useGRPCStore().saveState();
+
+      SendRequest(this.address, this.selectedMethod, this.request)
+        .then((response) => {
+          this.response = response;
+        })
+        .catch((reason) => {
+          this.response = reason;
+        });
     },
 
     openProtoFile() {
       const store = useGRPCStore();
 
       OpenProtoFile()
-        .then((path) => {
-          store.addProtoFile(path);
+        .then((result) => {
+          if (result.protoFilePath !== "") {
+            store.addProtoFile(result.protoFilePath, result.currentDir);
+          }
         })
         .catch((reason) => {
           this.response = reason;
@@ -73,7 +100,14 @@ export default defineComponent({
           <q-tab-panel name="protos">
             <q-btn size="sm" label="Open .proto file" @click="openProtoFile" />
 
-            <q-tree :nodes="nodes" default-expand-all v-model:selected="selected" node-key="label" />
+            <q-tree
+              v-if="(nodes || []).length > 0"
+              :nodes="nodes"
+              default-expand-all
+              no-selection-unset
+              v-model:selected="selectedMethod"
+              node-key="id"
+            />
           </q-tab-panel>
 
           <q-tab-panel name="import_paths">
@@ -99,7 +133,7 @@ export default defineComponent({
       </template>
 
       <template v-slot:after>
-        <q-form @submit="onSubmit" class="q-gutter-md">
+        <q-form @submit="sendRequest" class="q-gutter-md">
           <q-input v-model="address" label="Address" />
 
           <q-input type="textarea" v-model="request" label="Request" />

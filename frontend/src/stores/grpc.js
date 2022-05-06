@@ -5,7 +5,7 @@ import { RefreshProtoDescriptors } from "../wailsjs/go/main/App";
 export const useGRPCStore = defineStore({
   id: "grpc",
   state: () => ({
-    address: "",
+    address: "0.0.0.0:50051",
     request: "",
     response: "",
     importPathList: [],
@@ -33,13 +33,27 @@ export const useGRPCStore = defineStore({
       this.saveState();
     },
 
-    addProtoFile(protoFile) {
+    addProtoFile(protoFile, currentDir) {
       if (this.protoFileList.includes(protoFile)) {
         return;
       }
 
-      this.protoFileList.push(protoFile);
-      this.saveState();
+      const importPathList = [...this.importPathList];
+      if (importPathList.length === 0) {
+        importPathList.push(currentDir);
+      }
+
+      RefreshProtoDescriptors(importPathList, [protoFile, ...this.protoFileList])
+        .then((nodes) => {
+          this.nodes = nodes;
+
+          this.importPathList = importPathList;
+          this.protoFileList.push(protoFile);
+          this.saveState();
+        })
+        .catch((reason) => {
+          this.response = reason;
+        });
     },
 
     removeProtoFile(protoFile) {
@@ -52,8 +66,6 @@ export const useGRPCStore = defineStore({
       const state = { address: this.address, importPathList: this.importPathList, protoFileList: this.protoFileList };
 
       localStorage.setItem("grpcState", JSON.stringify(state));
-
-      this.refreshProtoDescriptors();
     },
 
     loadState() {
@@ -70,6 +82,12 @@ export const useGRPCStore = defineStore({
       if ("protoFileList" in state) {
         this.protoFileList = state.protoFileList;
       }
+
+      this.refreshProtoDescriptors();
+    },
+
+    clearState() {
+      localStorage.removeItem("grpcState");
 
       this.refreshProtoDescriptors();
     },

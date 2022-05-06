@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -61,14 +62,14 @@ func (c *Client) ProtoDescriptorSourceCreatedAt() time.Time {
 	return c.protoDescriptorSourceCreatedAt
 }
 
-func (c *Client) SendRequest(methodFQN, payload string) (string, error) {
+func (c *Client) SendRequest(methodID, payload string) (string, error) {
 	responseHandler := &responseHandler{}
 
 	err := grpcurl.InvokeRPC(
 		context.Background(),
 		c.protoDescriptorSource,
 		c.connection,
-		methodFQN,
+		methodID,
 		nil,
 		responseHandler,
 		func(message proto.Message) error {
@@ -118,9 +119,9 @@ func (h *responseHandler) OnReceiveHeaders(md metadata.MD) {
 func (h *responseHandler) OnReceiveResponse(msg proto.Message) {
 	spew.Dump("OnReceiveResponse", msg)
 
-	// dmsg := msg.(*dynamic.Message)
-	// v, _ := dmsg.MarshalJSONPB(&jsonpb.Marshaler{EmitDefaults: true, OrigName: true})
-	// sv := string(v)
-	//
-	// h.response = sv
+	dmsg := msg.(*dynamic.Message)
+	v, _ := dmsg.MarshalJSONPB(&jsonpb.Marshaler{EmitDefaults: true, OrigName: true})
+	sv := string(v)
+
+	h.response = sv
 }

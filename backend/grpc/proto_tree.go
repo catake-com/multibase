@@ -8,12 +8,10 @@ import (
 type ProtoTree struct {
 	files        []*ProtoTreeFile
 	methodsByIDs map[string]*ProtoTreeMethod
-	namesByIDs   map[string]string
 }
 
 func NewProtoTree(protoDescriptorSource grpcurl.DescriptorSource) (*ProtoTree, error) {
 	protoTree := &ProtoTree{
-		namesByIDs:   map[string]string{},
 		methodsByIDs: map[string]*ProtoTreeMethod{},
 	}
 
@@ -54,25 +52,14 @@ func NewProtoTree(protoDescriptorSource grpcurl.DescriptorSource) (*ProtoTree, e
 		protoTreeFile.services = append(protoTreeFile.services, protoTreeService)
 	}
 
-	for _, file := range protoTree.files {
-		protoTree.namesByIDs[file.id] = file.name
-
-		for _, service := range file.services {
-			protoTree.namesByIDs[service.id] = service.name
-
-			for _, method := range service.methods {
-				protoTree.namesByIDs[method.id] = method.name
-			}
-		}
-	}
-
 	return protoTree, nil
 }
 
 type ProtoTreeNode struct {
-	ID       string           `json:"id"`
-	Label    string           `json:"label"`
-	Children []*ProtoTreeNode `json:"children"`
+	ID         string           `json:"id"`
+	Label      string           `json:"label"`
+	Selectable bool             `json:"selectable"`
+	Children   []*ProtoTreeNode `json:"children"`
 }
 
 func (t *ProtoTree) Nodes() []*ProtoTreeNode {
@@ -80,24 +67,27 @@ func (t *ProtoTree) Nodes() []*ProtoTreeNode {
 
 	for _, file := range t.files {
 		fileNode := &ProtoTreeNode{
-			ID:    file.id,
-			Label: file.name,
+			ID:         file.id,
+			Label:      file.name,
+			Selectable: false,
 		}
 
 		nodes = append(nodes, fileNode)
 
 		for _, service := range file.services {
 			serviceNode := &ProtoTreeNode{
-				ID:    service.id,
-				Label: service.name,
+				ID:         service.id,
+				Label:      service.name,
+				Selectable: false,
 			}
 
 			fileNode.Children = append(fileNode.Children, serviceNode)
 
 			for _, method := range service.methods {
 				methodNode := &ProtoTreeNode{
-					ID:    method.id,
-					Label: method.name,
+					ID:         method.id,
+					Label:      method.name,
+					Selectable: true,
 				}
 
 				serviceNode.Children = append(serviceNode.Children, methodNode)
@@ -108,14 +98,8 @@ func (t *ProtoTree) Nodes() []*ProtoTreeNode {
 	return nodes
 }
 
-func (t *ProtoTree) Name(id string) string {
-	return t.namesByIDs[id]
-}
-
-func (t *ProtoTree) Method(id string) (*ProtoTreeMethod, bool) {
-	method, ok := t.methodsByIDs[id]
-
-	return method, ok
+func (t *ProtoTree) Method(id string) *ProtoTreeMethod {
+	return t.methodsByIDs[id]
 }
 
 func (t *ProtoTree) AddFile(id, name string) *ProtoTreeFile {
@@ -148,10 +132,6 @@ type ProtoTreeMethod struct {
 	id         string
 	name       string
 	descriptor *desc.MethodDescriptor
-}
-
-func (m *ProtoTreeMethod) Name() string {
-	return m.name
 }
 
 func (m *ProtoTreeMethod) Descriptor() *desc.MethodDescriptor {

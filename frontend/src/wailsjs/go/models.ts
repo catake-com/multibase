@@ -1,8 +1,28 @@
+export namespace main {
+	
+	export class OpenProtoFileResult {
+	    protoFilePath: string;
+	    currentDir: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenProtoFileResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.protoFilePath = source["protoFilePath"];
+	        this.currentDir = source["currentDir"];
+	    }
+	}
+
+}
+
 export namespace grpc {
 	
 	export class ProtoTreeNode {
 	    id: string;
 	    label: string;
+	    selectable: boolean;
 	    children: ProtoTreeNode[];
 	
 	    static createFrom(source: any = {}) {
@@ -13,6 +33,7 @@ export namespace grpc {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.label = source["label"];
+	        this.selectable = source["selectable"];
 	        this.children = this.convertValues(source["children"], ProtoTreeNode);
 	    }
 	

@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"path"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/multibase-io/multibase/backend/grpc"
 )
+
+type OpenProtoFileResult struct {
+	ProtoFilePath string `json:"protoFilePath"`
+	CurrentDir    string `json:"currentDir"`
+}
 
 // App struct
 type App struct {
@@ -43,22 +48,20 @@ func (a *App) shutdown(ctx context.Context) {
 	// Perform your teardown here
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
-func (a *App) OpenProtoFile() (string, error) {
-	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+func (a *App) OpenProtoFile() (*OpenProtoFileResult, error) {
+	protoFilePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Filters: []runtime.FileFilter{
 			{DisplayName: "Proto Files (*.proto)", Pattern: "*.proto;"},
 		},
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return path, nil
+	return &OpenProtoFileResult{
+		ProtoFilePath: protoFilePath,
+		CurrentDir:    path.Dir(protoFilePath),
+	}, nil
 }
 
 func (a *App) OpenImportPath() (string, error) {
@@ -77,4 +80,12 @@ func (a *App) RefreshProtoDescriptors(importPathList, protoFileList []string) ([
 	}
 
 	return nodes, nil
+}
+
+func (a *App) SelectMethod(methodID string) (string, error) {
+	return a.grpcModule.SelectMethod(methodID)
+}
+
+func (a *App) SendRequest(address, methodID, payload string) (string, error) {
+	return a.grpcModule.SendRequest(address, methodID, payload)
 }
