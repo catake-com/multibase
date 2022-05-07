@@ -5,19 +5,32 @@ import { RefreshProtoDescriptors } from "../wailsjs/go/main/App";
 export const useGRPCStore = defineStore({
   id: "grpc",
   state: () => ({
-    address: "0.0.0.0:50051",
-    request: "",
-    response: "",
+    forms: {
+      1: {
+        address: "0.0.0.0:50051",
+        request: "",
+        response: "",
+      },
+    },
+    currentFormID: 1,
     importPathList: [],
     protoFileList: [],
     nodes: [],
   }),
-  actions: {
-    setAddress(address) {
-      this.address = address;
-      this.saveState();
+  getters: {
+    addressByFormID: (state) => {
+      return (formID) => state.forms[formID].address;
     },
 
+    requestByFormID: (state) => {
+      return (formID) => state.forms[formID].request;
+    },
+
+    responseByFormID: (state) => {
+      return (formID) => state.forms[formID].response;
+    },
+  },
+  actions: {
     addImportPath(importPath) {
       if (this.importPathList.includes(importPath)) {
         return;
@@ -52,7 +65,7 @@ export const useGRPCStore = defineStore({
           this.saveState();
         })
         .catch((reason) => {
-          this.response = reason;
+          this.forms[this.currentFormID].response = reason;
         });
     },
 
@@ -63,7 +76,12 @@ export const useGRPCStore = defineStore({
     },
 
     saveState() {
-      const state = { address: this.address, importPathList: this.importPathList, protoFileList: this.protoFileList };
+      const state = {
+        forms: this.forms,
+        currentFormID: this.currentFormID,
+        importPathList: this.importPathList,
+        protoFileList: this.protoFileList,
+      };
 
       localStorage.setItem("grpcState", JSON.stringify(state));
     },
@@ -71,8 +89,12 @@ export const useGRPCStore = defineStore({
     loadState() {
       const state = JSON.parse(localStorage.getItem("grpcState")) || {};
 
-      if ("address" in state) {
-        this.address = state.address;
+      if ("forms" in state) {
+        this.forms = state.forms;
+      }
+
+      if ("currentFormID" in state) {
+        this.currentFormID = state.currentFormID;
       }
 
       if ("importPathList" in state) {
@@ -98,7 +120,7 @@ export const useGRPCStore = defineStore({
           this.nodes = nodes;
         })
         .catch((reason) => {
-          this.response = reason;
+          this.forms[this.currentFormID].response = reason;
         });
     },
   },

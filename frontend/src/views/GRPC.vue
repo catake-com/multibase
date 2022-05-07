@@ -1,6 +1,6 @@
 <script>
 import { defineComponent } from "vue";
-import { mapState, mapWritableState } from "pinia";
+import { mapState } from "pinia";
 
 import { OpenProtoFile, OpenImportPath, SelectMethod, SendRequest } from "../wailsjs/go/main/App";
 import { useGRPCStore } from "../stores/grpc";
@@ -18,7 +18,30 @@ export default defineComponent({
   },
   computed: {
     ...mapState(useGRPCStore, ["importPathList", "nodes"]),
-    ...mapWritableState(useGRPCStore, ["address", "request", "response"]),
+    address: {
+      get() {
+        return useGRPCStore().forms[useGRPCStore().currentFormID].address;
+      },
+      set(value) {
+        return (useGRPCStore().forms[useGRPCStore().currentFormID].address = value);
+      },
+    },
+    request: {
+      get() {
+        return useGRPCStore().forms[useGRPCStore().currentFormID].request;
+      },
+      set(value) {
+        return (useGRPCStore().forms[useGRPCStore().currentFormID].request = value);
+      },
+    },
+    response: {
+      get() {
+        return useGRPCStore().forms[useGRPCStore().currentFormID].response;
+      },
+      set(value) {
+        return (useGRPCStore().forms[useGRPCStore().currentFormID].response = value);
+      },
+    },
   },
   watch: {
     selectedMethod(newMethod, oldMethod) {
@@ -39,8 +62,6 @@ export default defineComponent({
   },
   methods: {
     sendRequest() {
-      useGRPCStore().saveState();
-
       SendRequest(this.address, this.selectedMethod, this.request)
         .then((response) => {
           this.response = response;
@@ -48,6 +69,8 @@ export default defineComponent({
         .catch((reason) => {
           this.response = reason;
         });
+
+      useGRPCStore().saveState();
     },
 
     openProtoFile() {
