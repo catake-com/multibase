@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-import { RefreshProtoDescriptors } from "../wailsjs/go/main/App";
+import { RefreshProtoDescriptors, SelectMethod, SendRequest } from "../wailsjs/go/main/App";
 
 export const useGRPCStore = defineStore({
   id: "grpc",
@@ -8,6 +8,7 @@ export const useGRPCStore = defineStore({
     forms: {
       1: {
         address: "0.0.0.0:50051",
+        selectedMethodID: "",
         request: "",
         response: "",
       },
@@ -17,20 +18,45 @@ export const useGRPCStore = defineStore({
     protoFileList: [],
     nodes: [],
   }),
-  getters: {
-    addressByFormID: (state) => {
-      return (formID) => state.forms[formID].address;
-    },
-
-    requestByFormID: (state) => {
-      return (formID) => state.forms[formID].request;
-    },
-
-    responseByFormID: (state) => {
-      return (formID) => state.forms[formID].response;
-    },
-  },
   actions: {
+    createNewForm() {
+      const formID = Math.floor(Date.now() * Math.random());
+      this.forms[formID] = {
+        address: "0.0.0.0:50051",
+        selectedMethodID: "",
+        request: "",
+        response: "",
+      };
+      this.currentFormID = formID;
+
+      this.saveState();
+    },
+
+    selectMethod(formID, methodID) {
+      SelectMethod(methodID)
+        .then((payload) => {
+          this.forms[formID].request = payload;
+          this.forms[formID].selectedMethodID = methodID;
+        })
+        .catch((reason) => {
+          this.forms[formID].response = reason;
+        });
+
+      this.saveState();
+    },
+
+    sendRequest(formID) {
+      SendRequest(this.forms[formID].address, this.forms[formID].selectedMethodID, this.forms[formID].request)
+        .then((response) => {
+          this.forms[formID].response = response;
+        })
+        .catch((reason) => {
+          this.forms[formID].response = reason;
+        });
+
+      this.saveState();
+    },
+
     addImportPath(importPath) {
       if (this.importPathList.includes(importPath)) {
         return;
@@ -105,16 +131,16 @@ export const useGRPCStore = defineStore({
         this.protoFileList = state.protoFileList;
       }
 
-      this.refreshProtoDescriptors();
+      this.loadNodes();
     },
 
     clearState() {
       localStorage.removeItem("grpcState");
 
-      this.refreshProtoDescriptors();
+      this.loadNodes();
     },
 
-    refreshProtoDescriptors() {
+    loadNodes() {
       RefreshProtoDescriptors(this.importPathList, this.protoFileList)
         .then((nodes) => {
           this.nodes = nodes;

@@ -3,12 +3,12 @@
 import {main} from '../models';
 import {grpc} from '../models';
 
+export function OpenProtoFile():Promise<main.OpenProtoFileResult|Error>;
+
+export function RefreshProtoDescriptors(arg1:Array<string>,arg2:Array<string>):Promise<Array<grpc.ProtoTreeNode>|Error>;
+
 export function SelectMethod(arg1:string):Promise<string|Error>;
 
 export function SendRequest(arg1:string,arg2:string,arg3:string):Promise<string|Error>;
 
 export function OpenImportPath():Promise<string|Error>;
-
-export function OpenProtoFile():Promise<main.OpenProtoFileResult|Error>;
-
-export function RefreshProtoDescriptors(arg1:Array<string>,arg2:Array<string>):Promise<Array<grpc.ProtoTreeNode>|Error>;
