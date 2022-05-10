@@ -72,6 +72,14 @@ export default defineComponent({
 
       store.createNewForm();
     },
+
+    closeFormTab(event, formID) {
+      event.preventDefault();
+
+      const store = useGRPCStore();
+
+      store.removeForm(formID);
+    },
   },
 });
 </script>
@@ -125,14 +133,40 @@ export default defineComponent({
 
       <template v-slot:after>
         <q-tabs v-model="currentFormID" align="left" outside-arrows mobile-arrows dense no-caps>
-          <q-tab
-            :name="parseInt(formID)"
-            :label="form.selectedMethodID || 'New Form'"
-            v-for="(form, formID) in forms"
-            :key="`tab-${formID}`"
-          />
+          <q-tab class="grpc-form-tab" :name="parseInt(formID)" v-for="(form, formID) in forms" :key="`tab-${formID}`">
+            <div class="row justify-between">
+              <div class="col q-tab__label">
+                <div v-if="form.selectedMethodID.length < 15">{{ form.selectedMethodID || "New Form" }}</div>
 
-          <q-btn @click="createNewForm" label="+" color="secondary" />
+                <div v-else class="grpc-form-tab-name">
+                  <div class="start">{{ form.selectedMethodID.substring(0, 20) }}</div>
+                  <div class="end">
+                    {{
+                      form.selectedMethodID.substring(
+                        form.selectedMethodID.length - 20 > 20 ? form.selectedMethodID.length - 20 : 20
+                      )
+                    }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-1">
+                <q-btn
+                  class="inline"
+                  icon="close"
+                  size="10px"
+                  style="width: 20px"
+                  flat
+                  rounded
+                  dense
+                  :disable="Object.keys(this.forms).length === 1"
+                  @click="closeFormTab($event, formID)"
+                />
+              </div>
+            </div>
+          </q-tab>
+
+          <q-btn @click="createNewForm" icon="add" color="secondary" />
         </q-tabs>
 
         <q-separator />
@@ -147,4 +181,23 @@ export default defineComponent({
   </div>
 </template>
 
-<style></style>
+<style>
+.grpc-form-tab-name {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+.grpc-form-tab-name > .start {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+}
+.grpc-form-tab-name > .end {
+  white-space: nowrap;
+  flex-basis: content;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+</style>

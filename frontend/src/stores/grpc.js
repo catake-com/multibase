@@ -32,6 +32,17 @@ export const useGRPCStore = defineStore({
       this.saveState();
     },
 
+    removeForm(formID) {
+      if (Object.keys(this.forms).length <= 1) {
+        return;
+      }
+
+      this.currentFormID = parseInt(Object.keys(this.forms)[0]);
+      delete this.forms[formID];
+
+      this.saveState();
+    },
+
     selectMethod(formID, methodID) {
       SelectMethod(methodID)
         .then((payload) => {
