@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-import { RefreshProtoDescriptors, SelectMethod, SendRequest } from "../wailsjs/go/main/App";
+import { RefreshProtoDescriptors, SelectMethod, SendRequest, StopRequest } from "../wailsjs/go/main/App";
 
 export const useGRPCStore = defineStore({
   id: "grpc",
@@ -11,6 +11,7 @@ export const useGRPCStore = defineStore({
         selectedMethodID: "",
         request: "",
         response: "",
+        requestInProgress: false,
       },
     },
     currentFormID: 1,
@@ -37,8 +38,8 @@ export const useGRPCStore = defineStore({
         return;
       }
 
-      this.currentFormID = parseInt(Object.keys(this.forms)[0]);
       delete this.forms[formID];
+      this.currentFormID = parseInt(Object.keys(this.forms)[0]);
 
       this.saveState();
     },
@@ -57,11 +58,42 @@ export const useGRPCStore = defineStore({
     },
 
     sendRequest(formID) {
-      SendRequest(this.forms[formID].address, this.forms[formID].selectedMethodID, this.forms[formID].request)
+      if (this.forms[formID].requestInProgress) {
+        return;
+      }
+
+      this.forms[formID].requestInProgress = true;
+
+      SendRequest(
+        parseInt(formID),
+        this.forms[formID].address,
+        this.forms[formID].selectedMethodID,
+        this.forms[formID].request
+      )
         .then((response) => {
+          this.forms[formID].requestInProgress = false;
           this.forms[formID].response = response;
         })
         .catch((reason) => {
+          this.forms[formID].requestInProgress = false;
+          this.forms[formID].response = reason;
+        });
+
+      this.saveState();
+    },
+
+    stopRequest(formID) {
+      if (!this.forms[formID].requestInProgress) {
+        return;
+      }
+
+      StopRequest(parseInt(formID))
+        .then((response) => {
+          this.forms[formID].requestInProgress = false;
+          this.forms[formID].response = response;
+        })
+        .catch((reason) => {
+          this.forms[formID].requestInProgress = false;
           this.forms[formID].response = reason;
         });
 
@@ -127,6 +159,8 @@ export const useGRPCStore = defineStore({
       const state = JSON.parse(localStorage.getItem("grpcState")) || {};
 
       if ("forms" in state) {
+        Object.entries(state.forms).forEach(([_, form]) => (form.requestInProgress = false));
+
         this.forms = state.forms;
       }
 

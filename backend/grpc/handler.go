@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/fullstorydev/grpcurl"
@@ -10,24 +11,45 @@ import (
 )
 
 type Handler struct {
-	grpcClient                     *Client
+	grpcClients                    map[int]*Client
+	grpcClientsMutex               *sync.RWMutex
 	protoTree                      *ProtoTree
 	protoDescriptorSource          grpcurl.DescriptorSource
 	protoDescriptorSourceCreatedAt time.Time
 }
 
 func NewHandler() *Handler {
-
-	return &Handler{}
+	return &Handler{
+		grpcClients:      make(map[int]*Client),
+		grpcClientsMutex: &sync.RWMutex{},
+	}
 }
 
-func (h *Handler) SendRequest(address, methodID, payload string) (string, error) {
-	err := h.initGRPCConnection(address)
+func (h *Handler) SendRequest(id int, address, methodID, payload string) (string, error) {
+	err := h.initGRPCConnection(id, address)
 	if err != nil {
 		return "", err
 	}
 
-	return h.grpcClient.SendRequest(methodID, payload)
+	h.grpcClientsMutex.RLock()
+	defer h.grpcClientsMutex.RUnlock()
+	grpcClient := h.grpcClients[id]
+
+	return grpcClient.SendRequest(methodID, payload)
+}
+
+func (h *Handler) StopRequest(id int) error {
+	h.grpcClientsMutex.RLock()
+	defer h.grpcClientsMutex.RUnlock()
+	grpcClient := h.grpcClients[id]
+
+	if grpcClient == nil {
+		errors.New("no grpc client exist")
+	}
+
+	grpcClient.StopCurrentRequest()
+
+	return nil
 }
 
 func (h *Handler) RefreshProtoDescriptors(importPathList, protoFileList []string) ([]*ProtoTreeNode, error) {
@@ -63,32 +85,49 @@ func (h *Handler) SelectMethod(methodID string) (string, error) {
 	return string(methodPayloadJSON), nil
 }
 
-func (h *Handler) initGRPCConnection(address string) error {
+func (h *Handler) initGRPCConnection(id int, address string) error {
 	if address == "" {
 		return errors.New("specify address")
 	}
 
-	if h.grpcClient != nil {
-		if address == h.grpcClient.Address() {
-			return nil
-		}
+	h.grpcClientsMutex.Lock()
+	defer h.grpcClientsMutex.Unlock()
 
-		if h.protoDescriptorSourceCreatedAt.Equal(h.grpcClient.ProtoDescriptorSourceCreatedAt()) {
-			return nil
-		}
-
-		err := h.grpcClient.Close()
-		if err != nil {
-			return err
-		}
-	}
-
-	grpcClient, err := NewClient(address, h.protoDescriptorSource, h.protoDescriptorSourceCreatedAt)
+	isConnectionActive, err := h.isExistingConnectionActive(id, address)
 	if err != nil {
 		return err
 	}
 
-	h.grpcClient = grpcClient
+	if isConnectionActive {
+		return nil
+	}
+
+	grpcClient, err := NewClient(id, address, h.protoDescriptorSource, h.protoDescriptorSourceCreatedAt)
+	if err != nil {
+		return err
+	}
+
+	h.grpcClients[id] = grpcClient
 
 	return nil
+}
+
+func (h *Handler) isExistingConnectionActive(id int, address string) (bool, error) {
+	grpcClient := h.grpcClients[id]
+
+	if grpcClient == nil {
+		return false, nil
+	}
+
+	if address == grpcClient.Address() &&
+		h.protoDescriptorSourceCreatedAt.Equal(grpcClient.ProtoDescriptorSourceCreatedAt()) {
+		return true, nil
+	}
+
+	err := grpcClient.Close()
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
 }

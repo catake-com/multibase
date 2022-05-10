@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -19,13 +20,17 @@ import (
 )
 
 type Client struct {
+	id                             int
 	address                        string
 	connection                     *grpc.ClientConn
 	protoDescriptorSource          grpcurl.DescriptorSource
 	protoDescriptorSourceCreatedAt time.Time
+	requestCancelFunc              context.CancelFunc
+	requestCancelMutex             *sync.Mutex
 }
 
 func NewClient(
+	id int,
 	address string,
 	protoDescriptorSource grpcurl.DescriptorSource,
 	protoDescriptorSourceCreatedAt time.Time,
@@ -36,19 +41,18 @@ func NewClient(
 		ctx,
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-		grpc.WithDisableRetry(),
-		grpc.WithReturnConnectionError(),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	client := &Client{
+		id:                             id,
 		address:                        address,
 		connection:                     connection,
 		protoDescriptorSource:          protoDescriptorSource,
 		protoDescriptorSourceCreatedAt: protoDescriptorSourceCreatedAt,
+		requestCancelMutex:             &sync.Mutex{},
 	}
 
 	return client, nil
@@ -65,8 +69,11 @@ func (c *Client) ProtoDescriptorSourceCreatedAt() time.Time {
 func (c *Client) SendRequest(methodID, payload string) (string, error) {
 	responseHandler := &responseHandler{}
 
+	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
+	c.requestCancelFunc = cancelFunc
+
 	err := grpcurl.InvokeRPC(
-		context.Background(),
+		ctx,
 		c.protoDescriptorSource,
 		c.connection,
 		methodID,
@@ -86,6 +93,17 @@ func (c *Client) SendRequest(methodID, payload string) (string, error) {
 	}
 
 	return responseHandler.response, nil
+}
+
+func (c *Client) StopCurrentRequest() {
+	if c.requestCancelFunc == nil {
+		return
+	}
+	c.requestCancelMutex.Lock()
+	defer c.requestCancelMutex.Unlock()
+
+	c.requestCancelFunc()
+	c.requestCancelFunc = nil
 }
 
 func (c *Client) Close() error {

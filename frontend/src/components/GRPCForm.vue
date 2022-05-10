@@ -2,6 +2,7 @@
 import { defineComponent } from "vue";
 
 import { useGRPCStore } from "../stores/grpc";
+import { mapState } from "pinia/dist/pinia";
 
 export default defineComponent({
   name: "GRPCForm",
@@ -9,6 +10,7 @@ export default defineComponent({
     formID: Number,
   },
   computed: {
+    ...mapState(useGRPCStore, ["forms"]),
     address: {
       get() {
         return useGRPCStore().forms[this.formID].address;
@@ -38,13 +40,17 @@ export default defineComponent({
     sendRequest() {
       useGRPCStore().sendRequest(this.formID);
     },
+
+    stopRequest() {
+      useGRPCStore().stopRequest(this.formID);
+    },
   },
 });
 </script>
 
 <template>
   <div>
-    <q-form @submit="sendRequest" class="q-gutter-md">
+    <q-form class="q-gutter-md">
       <q-input v-model="address" label="Address" />
 
       <q-input type="textarea" v-model="request" label="Request" />
@@ -52,7 +58,8 @@ export default defineComponent({
       <q-input type="textarea" v-model="response" label="Response" />
 
       <div>
-        <q-btn label="Send" type="submit" color="primary" />
+        <q-btn v-if="!this.forms[this.formID].requestInProgress" label="Send" color="primary" @click="sendRequest" />
+        <q-btn v-else label="Stop" color="negative" @click="stopRequest" />
       </div>
     </q-form>
   </div>

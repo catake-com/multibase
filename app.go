@@ -86,6 +86,10 @@ func (a *App) SelectMethod(methodID string) (string, error) {
 	return a.grpcModule.SelectMethod(methodID)
 }
 
-func (a *App) SendRequest(address, methodID, payload string) (string, error) {
-	return a.grpcModule.SendRequest(address, methodID, payload)
+func (a *App) SendRequest(id int, address, methodID, payload string) (string, error) {
+	return a.grpcModule.SendRequest(id, address, methodID, payload)
+}
+
+func (a *App) StopRequest(id int) error {
+	return a.grpcModule.StopRequest(id)
 }
