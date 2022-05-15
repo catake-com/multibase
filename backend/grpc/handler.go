@@ -11,6 +11,7 @@ import (
 )
 
 type Handler struct {
+	projectID                      int
 	grpcClients                    map[int]*Client
 	grpcClientsMutex               *sync.RWMutex
 	protoTree                      *ProtoTree
@@ -18,8 +19,9 @@ type Handler struct {
 	protoDescriptorSourceCreatedAt time.Time
 }
 
-func NewHandler() *Handler {
+func NewHandler(projectID int) *Handler {
 	return &Handler{
+		projectID:        projectID,
 		grpcClients:      make(map[int]*Client),
 		grpcClientsMutex: &sync.RWMutex{},
 	}

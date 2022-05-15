@@ -2,47 +2,49 @@
 import { defineComponent } from "vue";
 
 import { useGRPCStore } from "../stores/grpc";
-import { mapState } from "pinia/dist/pinia";
 
 export default defineComponent({
   name: "GRPCForm",
   props: {
+    projectID: Number,
     formID: Number,
   },
   computed: {
-    ...mapState(useGRPCStore, ["forms"]),
+    forms() {
+      return useGRPCStore().projects[this.projectID].forms;
+    },
     address: {
       get() {
-        return useGRPCStore().forms[this.formID].address;
+        return useGRPCStore().projects[this.projectID].forms[this.formID].address;
       },
       set(value) {
-        return (useGRPCStore().forms[this.formID].address = value);
+        return (useGRPCStore().projects[this.projectID].forms[this.formID].address = value);
       },
     },
     request: {
       get() {
-        return useGRPCStore().forms[this.formID].request;
+        return useGRPCStore().projects[this.projectID].forms[this.formID].request;
       },
       set(value) {
-        return (useGRPCStore().forms[this.formID].request = value);
+        return (useGRPCStore().projects[this.projectID].forms[this.formID].request = value);
       },
     },
     response: {
       get() {
-        return useGRPCStore().forms[this.formID].response;
+        return useGRPCStore().projects[this.projectID].forms[this.formID].response;
       },
       set(value) {
-        return (useGRPCStore().forms[this.formID].response = value);
+        return (useGRPCStore().projects[this.projectID].forms[this.formID].response = value);
       },
     },
   },
   methods: {
     sendRequest() {
-      useGRPCStore().sendRequest(this.formID);
+      useGRPCStore().sendRequest(this.projectID, this.formID);
     },
 
     stopRequest() {
-      useGRPCStore().stopRequest(this.formID);
+      useGRPCStore().stopRequest(this.projectID, this.formID);
     },
   },
 });

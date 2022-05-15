@@ -16,13 +16,15 @@ type OpenProtoFileResult struct {
 
 // App struct
 type App struct {
-	ctx        context.Context
-	grpcModule *grpc.Handler
+	ctx          context.Context
+	grpcProjects map[int]*grpc.Handler // TODO: concurrent-safe, also move to grpc.Module
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{grpcModule: grpc.NewHandler()}
+	return &App{
+		grpcProjects: map[int]*grpc.Handler{},
+	}
 }
 
 // startup is called at application startup
@@ -73,8 +75,14 @@ func (a *App) OpenImportPath() (string, error) {
 	return path, nil
 }
 
-func (a *App) RefreshProtoDescriptors(importPathList, protoFileList []string) ([]*grpc.ProtoTreeNode, error) {
-	nodes, err := a.grpcModule.RefreshProtoDescriptors(importPathList, protoFileList)
+func (a *App) RefreshProtoDescriptors(projectID int, importPathList, protoFileList []string) ([]*grpc.ProtoTreeNode, error) {
+	project, ok := a.grpcProjects[projectID]
+	if !ok {
+		project = grpc.NewHandler(projectID)
+		a.grpcProjects[projectID] = project
+	}
+
+	nodes, err := a.grpcProjects[projectID].RefreshProtoDescriptors(importPathList, protoFileList)
 	if err != nil {
 		return nil, err
 	}
@@ -82,14 +90,32 @@ func (a *App) RefreshProtoDescriptors(importPathList, protoFileList []string) ([
 	return nodes, nil
 }
 
-func (a *App) SelectMethod(methodID string) (string, error) {
-	return a.grpcModule.SelectMethod(methodID)
+func (a *App) SelectMethod(projectID int, methodID string) (string, error) {
+	project, ok := a.grpcProjects[projectID]
+	if !ok {
+		project = grpc.NewHandler(projectID)
+		a.grpcProjects[projectID] = project
+	}
+
+	return a.grpcProjects[projectID].SelectMethod(methodID)
 }
 
-func (a *App) SendRequest(id int, address, methodID, payload string) (string, error) {
-	return a.grpcModule.SendRequest(id, address, methodID, payload)
+func (a *App) SendRequest(projectID int, id int, address, methodID, payload string) (string, error) {
+	project, ok := a.grpcProjects[projectID]
+	if !ok {
+		project = grpc.NewHandler(projectID)
+		a.grpcProjects[projectID] = project
+	}
+
+	return a.grpcProjects[projectID].SendRequest(id, address, methodID, payload)
 }
 
-func (a *App) StopRequest(id int) error {
-	return a.grpcModule.StopRequest(id)
+func (a *App) StopRequest(projectID int, id int) error {
+	project, ok := a.grpcProjects[projectID]
+	if !ok {
+		project = grpc.NewHandler(projectID)
+		a.grpcProjects[projectID] = project
+	}
+
+	return a.grpcProjects[projectID].StopRequest(id)
 }

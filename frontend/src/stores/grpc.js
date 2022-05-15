@@ -5,151 +5,157 @@ import { RefreshProtoDescriptors, SelectMethod, SendRequest, StopRequest } from 
 export const useGRPCStore = defineStore({
   id: "grpc",
   state: () => ({
-    forms: {
+    projects: {
       1: {
-        address: "0.0.0.0:50051",
-        selectedMethodID: "",
-        request: "",
-        response: "",
-        requestInProgress: false,
+        forms: {
+          1: {
+            address: "0.0.0.0:50051",
+            selectedMethodID: "",
+            request: "",
+            response: "",
+            requestInProgress: false,
+          },
+        },
+        currentFormID: 1,
+        importPathList: [],
+        protoFileList: [],
+        nodes: [],
       },
     },
-    currentFormID: 1,
-    importPathList: [],
-    protoFileList: [],
-    nodes: [],
   }),
   actions: {
-    createNewForm() {
+    createNewForm(projectID) {
       const formID = Math.floor(Date.now() * Math.random());
-      this.forms[formID] = {
+      this.projects[projectID].forms[formID] = {
         address: "0.0.0.0:50051",
         selectedMethodID: "",
         request: "",
         response: "",
       };
-      this.currentFormID = formID;
+      this.projects[projectID].currentFormID = formID;
 
       this.saveState();
     },
 
-    removeForm(formID) {
-      if (Object.keys(this.forms).length <= 1) {
+    removeForm(projectID, formID) {
+      if (Object.keys(this.projects[projectID].forms).length <= 1) {
         return;
       }
 
-      delete this.forms[formID];
-      this.currentFormID = parseInt(Object.keys(this.forms)[0]);
+      delete this.projects[projectID].forms[formID];
+      this.projects[projectID].currentFormID = parseInt(Object.keys(this.projects[projectID].forms)[0]);
 
       this.saveState();
     },
 
-    selectMethod(formID, methodID) {
-      SelectMethod(methodID)
+    selectMethod(projectID, formID, methodID) {
+      SelectMethod(projectID, methodID)
         .then((payload) => {
-          this.forms[formID].request = payload;
-          this.forms[formID].selectedMethodID = methodID;
+          this.projects[projectID].forms[formID].request = payload;
+          this.projects[projectID].forms[formID].selectedMethodID = methodID;
         })
         .catch((reason) => {
-          this.forms[formID].response = reason;
+          this.projects[projectID].forms[formID].response = reason;
         });
 
       this.saveState();
     },
 
-    sendRequest(formID) {
-      if (this.forms[formID].requestInProgress) {
+    sendRequest(projectID, formID) {
+      if (this.projects[projectID].forms[formID].requestInProgress) {
         return;
       }
 
-      this.forms[formID].requestInProgress = true;
+      this.projects[projectID].forms[formID].requestInProgress = true;
 
       SendRequest(
+        projectID,
         parseInt(formID),
-        this.forms[formID].address,
-        this.forms[formID].selectedMethodID,
-        this.forms[formID].request
+        this.projects[projectID].forms[formID].address,
+        this.projects[projectID].forms[formID].selectedMethodID,
+        this.projects[projectID].forms[formID].request
       )
         .then((response) => {
-          this.forms[formID].requestInProgress = false;
-          this.forms[formID].response = response;
+          this.projects[projectID].forms[formID].requestInProgress = false;
+          this.projects[projectID].forms[formID].response = response;
         })
         .catch((reason) => {
-          this.forms[formID].requestInProgress = false;
-          this.forms[formID].response = reason;
+          this.projects[projectID].forms[formID].requestInProgress = false;
+          this.projects[projectID].forms[formID].response = reason;
         });
 
       this.saveState();
     },
 
-    stopRequest(formID) {
-      if (!this.forms[formID].requestInProgress) {
+    stopRequest(projectID, formID) {
+      if (!this.projects[projectID].forms[formID].requestInProgress) {
         return;
       }
 
-      StopRequest(parseInt(formID))
+      StopRequest(projectID, parseInt(formID))
         .then((response) => {
-          this.forms[formID].requestInProgress = false;
-          this.forms[formID].response = response;
+          this.projects[projectID].forms[formID].requestInProgress = false;
+          this.projects[projectID].forms[formID].response = response;
         })
         .catch((reason) => {
-          this.forms[formID].requestInProgress = false;
-          this.forms[formID].response = reason;
+          this.projects[projectID].forms[formID].requestInProgress = false;
+          this.projects[projectID].forms[formID].response = reason;
         });
 
       this.saveState();
     },
 
-    addImportPath(importPath) {
-      if (this.importPathList.includes(importPath)) {
+    addImportPath(projectID, importPath) {
+      if (this.projects[projectID].importPathList.includes(importPath)) {
         return;
       }
-      this.importPathList.push(importPath);
+      this.projects[projectID].importPathList.push(importPath);
 
       this.saveState();
     },
 
-    removeImportPath(importPath) {
-      this.importPathList = this.importPathList.filter((item) => item !== importPath);
+    removeImportPath(projectID, importPath) {
+      this.projects[projectID].importPathList = this.projects[projectID].importPathList.filter(
+        (item) => item !== importPath
+      );
 
       this.saveState();
     },
 
-    addProtoFile(protoFile, currentDir) {
-      if (this.protoFileList.includes(protoFile)) {
+    addProtoFile(projectID, protoFile, currentDir) {
+      if (this.projects[projectID].protoFileList.includes(protoFile)) {
         return;
       }
 
-      const importPathList = [...this.importPathList];
+      const importPathList = [...this.projects[projectID].importPathList];
       if (importPathList.length === 0) {
         importPathList.push(currentDir);
       }
 
-      RefreshProtoDescriptors(importPathList, [protoFile, ...this.protoFileList])
+      RefreshProtoDescriptors(projectID, importPathList, [protoFile, ...this.projects[projectID].protoFileList])
         .then((nodes) => {
-          this.nodes = nodes;
+          this.projects[projectID].nodes = nodes;
 
-          this.importPathList = importPathList;
-          this.protoFileList.push(protoFile);
+          this.projects[projectID].importPathList = importPathList;
+          this.projects[projectID].protoFileList.push(protoFile);
           this.saveState();
         })
         .catch((reason) => {
-          this.forms[this.currentFormID].response = reason;
+          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
         });
     },
 
     removeProtoFile(protoFile) {
-      this.protoFileList = this.protoFileList.filter((item) => item !== protoFile);
+      this.projects[projectID].protoFileList = this.projects[projectID].protoFileList.filter(
+        (item) => item !== protoFile
+      );
 
       this.saveState();
     },
 
     saveState() {
       const state = {
-        forms: this.forms,
-        currentFormID: this.currentFormID,
-        importPathList: this.importPathList,
-        protoFileList: this.protoFileList,
+        projects: this.projects,
       };
 
       localStorage.setItem("grpcState", JSON.stringify(state));
@@ -158,40 +164,37 @@ export const useGRPCStore = defineStore({
     loadState() {
       const state = JSON.parse(localStorage.getItem("grpcState")) || {};
 
-      if ("forms" in state) {
-        Object.entries(state.forms).forEach(([_, form]) => (form.requestInProgress = false));
+      if ("projects" in state) {
+        this.projects = state.projects;
 
-        this.forms = state.forms;
+        Object.entries(state.projects).forEach(([projectID, project]) => {
+          if ("forms" in project) {
+            Object.entries(project.forms).forEach(([_, form]) => (form.requestInProgress = false));
+          }
+
+          this.loadNodes(parseInt(projectID));
+        });
       }
-
-      if ("currentFormID" in state) {
-        this.currentFormID = state.currentFormID;
-      }
-
-      if ("importPathList" in state) {
-        this.importPathList = state.importPathList;
-      }
-
-      if ("protoFileList" in state) {
-        this.protoFileList = state.protoFileList;
-      }
-
-      this.loadNodes();
     },
 
     clearState() {
       localStorage.removeItem("grpcState");
 
-      this.loadNodes();
+      // TODO: reset state properly
+      // this.loadNodes();
     },
 
-    loadNodes() {
-      RefreshProtoDescriptors(this.importPathList, this.protoFileList)
+    loadNodes(projectID) {
+      RefreshProtoDescriptors(
+        projectID,
+        this.projects[projectID].importPathList,
+        this.projects[projectID].protoFileList
+      )
         .then((nodes) => {
-          this.nodes = nodes;
+          this.projects[projectID].nodes = nodes;
         })
         .catch((reason) => {
-          this.forms[this.currentFormID].response = reason;
+          this.projects[projectID].forms[this.currentFormID].response = reason;
         });
     },
   },

@@ -1,19 +1,14 @@
 <script setup>
-import { RouterView } from "vue-router";
+import Header from "./components/Header.vue";
+import Project from "./components/Project.vue";
 </script>
 
 <template>
   <q-layout view="hHh lpR fFf">
-    <div class="bg-primary text-white shadow-2">
-      <q-tabs align="left">
-        <q-route-tab to="/" label="Home" />
-        <q-route-tab to="/grpc" label="gRPC" />
-        <q-route-tab to="/thrift" label="Thrift" />
-      </q-tabs>
-    </div>
+    <Header />
 
     <q-page-container>
-      <router-view />
+      <Project />
     </q-page-container>
   </q-layout>
 </template>

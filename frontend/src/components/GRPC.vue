@@ -1,13 +1,16 @@
 <script>
 import { defineComponent } from "vue";
-import { mapState, mapWritableState } from "pinia";
+import { mapState } from "pinia";
 
 import { OpenProtoFile, OpenImportPath } from "../wailsjs/go/main/App";
 import { useGRPCStore } from "../stores/grpc";
-import GRPCForm from "../components/GRPCForm.vue";
+import GRPCForm from "./GRPCForm.vue";
 
 export default defineComponent({
   name: "GRPC",
+  props: {
+    projectID: Number,
+  },
   components: { GRPCForm },
   data() {
     return {
@@ -16,12 +19,29 @@ export default defineComponent({
       tab: "protos",
     };
   },
-  beforeRouteEnter() {
+  beforeCreate() {
+    // TODO: do not load state if already loaded
     useGRPCStore().loadState();
   },
   computed: {
-    ...mapState(useGRPCStore, ["importPathList", "nodes", "forms"]),
-    ...mapWritableState(useGRPCStore, ["currentFormID"]),
+    ...mapState(useGRPCStore, ["projects"]),
+    importPathList() {
+      return useGRPCStore().projects[this.projectID].importPathList;
+    },
+    nodes() {
+      return useGRPCStore().projects[this.projectID].nodes;
+    },
+    forms() {
+      return useGRPCStore().projects[this.projectID].forms;
+    },
+    currentFormID: {
+      get() {
+        return useGRPCStore().projects[this.projectID].currentFormID;
+      },
+      set(value) {
+        return (useGRPCStore().projects[this.projectID].currentFormID = value);
+      },
+    },
   },
   watch: {
     selectedMethod(newMethod, oldMethod) {
@@ -31,7 +51,7 @@ export default defineComponent({
 
       const currentMethod = newMethod || oldMethod;
 
-      useGRPCStore().selectMethod(this.currentFormID, currentMethod);
+      useGRPCStore().selectMethod(this.projectID, this.projects[this.projectID].currentFormID, currentMethod);
     },
   },
   methods: {
@@ -41,11 +61,11 @@ export default defineComponent({
       OpenProtoFile()
         .then((result) => {
           if (result.protoFilePath !== "") {
-            store.addProtoFile(result.protoFilePath, result.currentDir);
+            store.addProtoFile(this.projectID, result.protoFilePath, result.currentDir);
           }
         })
         .catch((reason) => {
-          store.forms[this.currentFormID].response = reason;
+          store.projects[this.projectID].forms[this.currentFormID].response = reason;
         });
     },
 
@@ -54,23 +74,23 @@ export default defineComponent({
 
       OpenImportPath()
         .then((path) => {
-          store.addImportPath(path);
+          store.addImportPath(this.projectID, path);
         })
         .catch((reason) => {
-          store.forms[this.currentFormID].response = reason;
+          store.projects[this.projectID].forms[this.currentFormID].response = reason;
         });
     },
 
     removeImportPath(importPath) {
       const store = useGRPCStore();
 
-      store.removeImportPath(importPath);
+      store.removeImportPath(this.projectID, importPath);
     },
 
     createNewForm() {
       const store = useGRPCStore();
 
-      store.createNewForm();
+      store.createNewForm(this.projectID);
     },
 
     closeFormTab(event, formID) {
@@ -78,7 +98,7 @@ export default defineComponent({
 
       const store = useGRPCStore();
 
-      store.removeForm(formID);
+      store.removeForm(this.projectID, formID);
     },
   },
 });
@@ -133,7 +153,7 @@ export default defineComponent({
 
       <template v-slot:after>
         <q-tabs v-model="currentFormID" align="left" outside-arrows mobile-arrows dense no-caps>
-          <q-tab class="grpc-form-tab" :name="parseInt(formID)" v-for="(form, formID) in forms" :key="`tab-${formID}`">
+          <q-tab :name="parseInt(formID)" v-for="(form, formID) in forms" :key="`tab-${formID}`">
             <div class="row justify-between">
               <div class="col q-tab__label">
                 <div v-if="form.selectedMethodID.length < 15">{{ form.selectedMethodID || "New Form" }}</div>
@@ -173,7 +193,7 @@ export default defineComponent({
 
         <q-tab-panels v-model="currentFormID" animated>
           <q-tab-panel :name="parseInt(formID)" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
-            <GRPCForm :formID="parseInt(formID)" />
+            <GRPCForm :formID="parseInt(formID)" :projectID="this.projectID" />
           </q-tab-panel>
         </q-tab-panels>
       </template>
@@ -188,12 +208,14 @@ export default defineComponent({
   flex-wrap: nowrap;
   justify-content: flex-start;
 }
+
 .grpc-form-tab-name > .start {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex-shrink: 1;
 }
+
 .grpc-form-tab-name > .end {
   white-space: nowrap;
   flex-basis: content;
