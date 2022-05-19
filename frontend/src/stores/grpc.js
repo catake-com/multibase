@@ -24,6 +24,26 @@ export const useGRPCStore = defineStore({
     },
   }),
   actions: {
+    createNewProject(projectID) {
+      this.projects[projectID] = {
+        forms: {
+          1: {
+            address: "0.0.0.0:50051",
+            selectedMethodID: "",
+            request: "",
+            response: "",
+            requestInProgress: false,
+          },
+        },
+        currentFormID: 1,
+        importPathList: [],
+        protoFileList: [],
+        nodes: [],
+      };
+
+      this.saveState();
+    },
+
     createNewForm(projectID) {
       const formID = Math.floor(Date.now() * Math.random());
       this.projects[projectID].forms[formID] = {

@@ -7,7 +7,7 @@ import { mapState, mapWritableState } from "pinia";
 export default defineComponent({
   name: "Header",
   computed: {
-    ...mapState(useProjectStore, ["projects"]),
+    ...mapState(useProjectStore, ["openedProjectIDs", "projects"]),
     ...mapWritableState(useProjectStore, ["currentProjectID"]),
   },
   methods: {
@@ -33,14 +33,12 @@ export default defineComponent({
     <q-tabs v-model="currentProjectID" align="left" outside-arrows mobile-arrows dense no-caps>
       <q-tab
         :name="parseInt(projectID)"
-        v-for="(project, projectID) in projects"
+        v-for="projectID in openedProjectIDs"
         :key="`project-tab-${projectID}`"
         replace
       >
         <div class="row justify-between">
-          <div class="col q-tab__label">
-            {{ project.type }}
-          </div>
+          <div class="col q-tab__label">{{ projects[parseInt(projectID)].type }} {{ projectID }}</div>
 
           <div class="col-1">
             <q-btn
@@ -51,7 +49,7 @@ export default defineComponent({
               flat
               rounded
               dense
-              :disable="Object.keys(this.projects).length === 1"
+              :disable="openedProjectIDs.length === 1"
               @click="closeProjectTab($event, projectID)"
             />
           </div>

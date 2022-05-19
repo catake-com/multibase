@@ -11,33 +11,56 @@ export const useProjectStore = defineStore({
         type: "grpc",
       },
     },
-    openedTabs: [0, 1],
+    openedProjectIDs: [0, 1],
     currentProjectID: 0,
   }),
   actions: {
+    openGRPCProject(newProjectID, grpcProjectID) {
+      if (this.openedProjectIDs.includes(grpcProjectID)) {
+        this.openedProjectIDs = this.openedProjectIDs.filter((pID) => pID !== newProjectID);
+      } else {
+        this.openedProjectIDs = this.openedProjectIDs.map((projectID) => {
+          return projectID === newProjectID ? grpcProjectID : projectID;
+        });
+      }
+
+      this.currentProjectID = grpcProjectID;
+      delete this.projects[newProjectID];
+
+      this.saveState();
+    },
+
+    createNewGRPCProject(grpcProjectID) {
+      this.projects[grpcProjectID] = {
+        type: "grpc",
+      };
+
+      this.saveState();
+    },
+
     createNewProject() {
       const projectID = Math.floor(Date.now() * Math.random());
       this.projects[projectID] = {
         type: "new",
       };
-      this.openedTabs.push(projectID);
+      this.openedProjectIDs.push(projectID);
       this.currentProjectID = projectID;
 
       this.saveState();
     },
 
     closeProjectTab(projectID) {
-      if (this.openedTabs.length <= 1) {
+      if (this.openedProjectIDs.length <= 1) {
         return;
       }
-
-      this.currentProjectID = this.openedTabs[0];
 
       if (this.projects[projectID].type === "new") {
         delete this.projects[projectID];
       }
 
-      this.openedTabs = this.openedTabs.filter((pID) => pID !== parseInt(projectID));
+      this.openedProjectIDs = this.openedProjectIDs.filter((pID) => pID !== parseInt(projectID));
+
+      this.currentProjectID = this.openedProjectIDs[0];
 
       this.saveState();
     },
@@ -45,7 +68,7 @@ export const useProjectStore = defineStore({
     saveState() {
       const state = {
         projects: this.projects,
-        openedTabs: this.openedTabs,
+        openedProjectIDs: this.openedProjectIDs,
         currentProjectID: this.currentProjectID,
       };
 
@@ -59,8 +82,8 @@ export const useProjectStore = defineStore({
         this.projects = state.projects;
       }
 
-      if ("openedTabs" in state) {
-        this.openedTabs = state.openedTabs;
+      if ("openedProjectIDs" in state) {
+        this.openedProjectIDs = state.openedProjectIDs;
       }
 
       if ("currentProjectID" in state) {
