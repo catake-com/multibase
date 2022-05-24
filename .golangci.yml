@@ -1,10 +1,11 @@
 run:
     deadline: 2m
     skip-dirs:
-        - "build"
-        - "frontend"
-        - "scratch"
-        - "scripts"
+        - build
+        - frontend
+        - frontend/dist
+        - scratch
+        - scripts
 
 linters:
     enable-all: true
