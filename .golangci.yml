@@ -3,7 +3,6 @@ run:
     skip-dirs:
         - build
         - frontend
-        - frontend/dist
         - scratch
         - scripts
 
