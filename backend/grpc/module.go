@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"sync"
 
@@ -41,7 +42,7 @@ func (m *Module) OpenProtoFile() (*OpenProtoFileResult, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open proto file: %w", err)
 	}
 
 	return &OpenProtoFileResult{
@@ -53,13 +54,17 @@ func (m *Module) OpenProtoFile() (*OpenProtoFileResult, error) {
 func (m *Module) OpenImportPath() (string, error) {
 	path, err := runtime.OpenDirectoryDialog(m.AppCtx, runtime.OpenDialogOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to open import path: %w", err)
 	}
 
 	return path, nil
 }
 
-func (m *Module) RefreshProtoDescriptors(projectID int, importPathList, protoFileList []string) ([]*ProtoTreeNode, error) {
+func (m *Module) RefreshProtoDescriptors(
+	projectID int,
+	importPathList,
+	protoFileList []string,
+) ([]*ProtoTreeNode, error) {
 	nodes, err := m.project(projectID).RefreshProtoDescriptors(importPathList, protoFileList)
 	if err != nil {
 		return nil, err
@@ -75,13 +80,15 @@ func (m *Module) SelectMethod(projectID int, methodID string) (string, error) {
 func (m *Module) project(id int) *Project {
 	m.projectsMutex.RLock()
 	project, ok := m.projects[id]
-	m.projectsMutex.RUnlock()
+
 	if ok {
 		return project
 	}
+	m.projectsMutex.RUnlock()
 
 	m.projectsMutex.Lock()
 	project, ok = m.projects[id]
+
 	if ok {
 		return project
 	}

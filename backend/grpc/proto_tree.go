@@ -1,6 +1,8 @@
 package grpc
 
 import (
+	"fmt"
+
 	"github.com/fullstorydev/grpcurl"
 	"github.com/jhump/protoreflect/desc"
 )
@@ -21,13 +23,13 @@ func NewProtoTree(protoDescriptorSource grpcurl.DescriptorSource) (*ProtoTree, e
 
 	services, err := protoDescriptorSource.ListServices()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list grpc services: %w", err)
 	}
 
 	for _, service := range services {
 		des, err := protoDescriptorSource.FindSymbol(service)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to find service: %w", err)
 		}
 
 		serviceDesc := des.(*desc.ServiceDescriptor)
@@ -48,7 +50,10 @@ func NewProtoTree(protoDescriptorSource grpcurl.DescriptorSource) (*ProtoTree, e
 			protoTree.methodsByIDs[protoTreeMethod.id] = protoTreeMethod
 		}
 
-		protoTreeFile := protoTree.AddFile(serviceDesc.GetFile().GetFullyQualifiedName(), serviceDesc.GetFile().GetName())
+		protoTreeFile := protoTree.AddFile(
+			serviceDesc.GetFile().GetFullyQualifiedName(),
+			serviceDesc.GetFile().GetName(),
+		)
 		protoTreeFile.services = append(protoTreeFile.services, protoTreeService)
 	}
 
@@ -63,7 +68,7 @@ type ProtoTreeNode struct {
 }
 
 func (t *ProtoTree) Nodes() []*ProtoTreeNode {
-	var nodes []*ProtoTreeNode
+	nodes := make([]*ProtoTreeNode, 0, len(t.files))
 
 	for _, file := range t.files {
 		fileNode := &ProtoTreeNode{

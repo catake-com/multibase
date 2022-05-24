@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync"
 	"time"
@@ -34,7 +35,8 @@ func NewClient(
 	protoDescriptorSource grpcurl.DescriptorSource,
 	protoDescriptorSourceCreatedAt time.Time,
 ) (*Client, error) {
-	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
 	connection, err := grpc.DialContext(
 		ctx,
@@ -42,7 +44,7 @@ func NewClient(
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to establish grpc connection: %w", err)
 	}
 
 	client := &Client{
@@ -81,14 +83,14 @@ func (c *Client) SendRequest(methodID, payload string) (string, error) {
 		func(message proto.Message) error {
 			err := jsonpb.UnmarshalString(payload, message)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to unmarshal grpc request: %w", err)
 			}
 
 			return io.EOF
 		},
 	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to make grpc request: %w", err)
 	}
 
 	return responseHandler.response, nil
@@ -98,6 +100,7 @@ func (c *Client) StopCurrentRequest() {
 	if c.requestCancelFunc == nil {
 		return
 	}
+
 	c.requestCancelMutex.Lock()
 	defer c.requestCancelMutex.Unlock()
 
@@ -106,7 +109,12 @@ func (c *Client) StopCurrentRequest() {
 }
 
 func (c *Client) Close() error {
-	return c.connection.Close()
+	err := c.connection.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close grpc connection: %w", err)
+	}
+
+	return nil
 }
 
 type responseHandler struct {

@@ -2,12 +2,18 @@ package grpc
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/fullstorydev/grpcurl"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/dynamic"
+)
+
+var (
+	errNoGRPCClient   = errors.New("no grpc client exist")
+	errSpecifyAddress = errors.New("specify address")
 )
 
 type Project struct {
@@ -46,7 +52,7 @@ func (p *Project) StopRequest(id int) error {
 	grpcClient := p.grpcClients[id]
 
 	if grpcClient == nil {
-		return errors.New("no grpc client exist")
+		return errNoGRPCClient
 	}
 
 	grpcClient.StopCurrentRequest()
@@ -60,7 +66,7 @@ func (p *Project) RefreshProtoDescriptors(importPathList, protoFileList []string
 		protoFileList...,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read from proto files: %w", err)
 	}
 
 	protoTree, err := NewProtoTree(protoDescriptorSource)
@@ -81,7 +87,7 @@ func (p *Project) SelectMethod(methodID string) (string, error) {
 
 	methodPayloadJSON, err := methodMessage.MarshalJSONPB(&jsonpb.Marshaler{EmitDefaults: true, OrigName: true})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to prepare grpc request: %w", err)
 	}
 
 	return string(methodPayloadJSON), nil
@@ -89,7 +95,7 @@ func (p *Project) SelectMethod(methodID string) (string, error) {
 
 func (p *Project) initGRPCConnection(id int, address string) error {
 	if address == "" {
-		return errors.New("specify address")
+		return errSpecifyAddress
 	}
 
 	p.grpcClientsMutex.Lock()
@@ -128,7 +134,7 @@ func (p *Project) isExistingConnectionActive(id int, address string) (bool, erro
 
 	err := grpcClient.Close()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to close grpc client: %w", err)
 	}
 
 	return false, nil

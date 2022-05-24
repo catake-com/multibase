@@ -25,7 +25,7 @@ func (a *App) startup(ctx context.Context) {
 func (a *App) domReady(ctx context.Context) {
 }
 
-func (a *App) beforeClose(ctx context.Context) (prevent bool) {
+func (a *App) beforeClose(ctx context.Context) bool {
 	return false
 }
 

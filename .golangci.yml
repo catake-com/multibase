@@ -1,0 +1,25 @@
+run:
+    deadline: 2m
+    skip-dirs:
+        - "scratch"
+
+linters:
+    enable-all: true
+    disable:
+        - containedctx
+        - exhaustivestruct
+        - exhaustruct
+        - forcetypeassert
+        - gofumpt
+        - gomnd
+        - ifshort
+        - staticcheck
+        - varnamelen
+
+linters-settings:
+    goimports:
+        local-prefixes: github.com/multibase-io/multibase
+    exhaustive:
+        default-signifies-exhaustive: true
+    lll:
+        tab-width: 8
