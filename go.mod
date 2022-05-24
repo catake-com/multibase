@@ -3,12 +3,11 @@ module github.com/multibase-io/multibase
 go 1.18
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/fullstorydev/grpcurl v1.8.6
 	github.com/golang/protobuf v1.5.2
 	github.com/jhump/protoreflect v1.12.0
 	github.com/wailsapp/wails/v2 v2.0.0-beta.36
-	google.golang.org/grpc v1.45.0
+	google.golang.org/grpc v1.46.2
 )
 
 require (
@@ -31,10 +30,10 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
-	golang.org/x/sys v0.0.0-20220429233432-b5fbb4746d32 // indirect
+	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
+	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
-	google.golang.org/protobuf v1.26.0 // indirect
+	google.golang.org/genproto v0.0.0-20220524164028-0aa58a9287dd // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 )

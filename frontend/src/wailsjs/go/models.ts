@@ -1,22 +1,3 @@
-export namespace main {
-	
-	export class OpenProtoFileResult {
-	    protoFilePath: string;
-	    currentDir: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new OpenProtoFileResult(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.protoFilePath = source["protoFilePath"];
-	        this.currentDir = source["currentDir"];
-	    }
-	}
-
-}
-
 export namespace grpc {
 	
 	export class ProtoTreeNode {
@@ -54,6 +35,20 @@ export namespace grpc {
 		    }
 		    return a;
 		}
+	}
+	export class OpenProtoFileResult {
+	    protoFilePath: string;
+	    currentDir: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenProtoFileResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.protoFilePath = source["protoFilePath"];
+	        this.currentDir = source["currentDir"];
+	    }
 	}
 
 }

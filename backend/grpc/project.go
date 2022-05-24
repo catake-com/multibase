@@ -10,8 +10,8 @@ import (
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-type Handler struct {
-	projectID                      int
+type Project struct {
+	id                             int
 	grpcClients                    map[int]*Client
 	grpcClientsMutex               *sync.RWMutex
 	protoTree                      *ProtoTree
@@ -19,34 +19,34 @@ type Handler struct {
 	protoDescriptorSourceCreatedAt time.Time
 }
 
-func NewHandler(projectID int) *Handler {
-	return &Handler{
-		projectID:        projectID,
+func NewProject(id int) *Project {
+	return &Project{
+		id:               id,
 		grpcClients:      make(map[int]*Client),
 		grpcClientsMutex: &sync.RWMutex{},
 	}
 }
 
-func (h *Handler) SendRequest(id int, address, methodID, payload string) (string, error) {
-	err := h.initGRPCConnection(id, address)
+func (p *Project) SendRequest(id int, address, methodID, payload string) (string, error) {
+	err := p.initGRPCConnection(id, address)
 	if err != nil {
 		return "", err
 	}
 
-	h.grpcClientsMutex.RLock()
-	defer h.grpcClientsMutex.RUnlock()
-	grpcClient := h.grpcClients[id]
+	p.grpcClientsMutex.RLock()
+	defer p.grpcClientsMutex.RUnlock()
+	grpcClient := p.grpcClients[id]
 
 	return grpcClient.SendRequest(methodID, payload)
 }
 
-func (h *Handler) StopRequest(id int) error {
-	h.grpcClientsMutex.RLock()
-	defer h.grpcClientsMutex.RUnlock()
-	grpcClient := h.grpcClients[id]
+func (p *Project) StopRequest(id int) error {
+	p.grpcClientsMutex.RLock()
+	defer p.grpcClientsMutex.RUnlock()
+	grpcClient := p.grpcClients[id]
 
 	if grpcClient == nil {
-		errors.New("no grpc client exist")
+		return errors.New("no grpc client exist")
 	}
 
 	grpcClient.StopCurrentRequest()
@@ -54,7 +54,7 @@ func (h *Handler) StopRequest(id int) error {
 	return nil
 }
 
-func (h *Handler) RefreshProtoDescriptors(importPathList, protoFileList []string) ([]*ProtoTreeNode, error) {
+func (p *Project) RefreshProtoDescriptors(importPathList, protoFileList []string) ([]*ProtoTreeNode, error) {
 	protoDescriptorSource, err := grpcurl.DescriptorSourceFromProtoFiles(
 		importPathList,
 		protoFileList...,
@@ -68,15 +68,15 @@ func (h *Handler) RefreshProtoDescriptors(importPathList, protoFileList []string
 		return nil, err
 	}
 
-	h.protoDescriptorSource = protoDescriptorSource
-	h.protoTree = protoTree
-	h.protoDescriptorSourceCreatedAt = time.Now().UTC()
+	p.protoDescriptorSource = protoDescriptorSource
+	p.protoTree = protoTree
+	p.protoDescriptorSourceCreatedAt = time.Now().UTC()
 
 	return protoTree.Nodes(), nil
 }
 
-func (h *Handler) SelectMethod(methodID string) (string, error) {
-	method := h.protoTree.Method(methodID)
+func (p *Project) SelectMethod(methodID string) (string, error) {
+	method := p.protoTree.Method(methodID)
 	methodMessage := dynamic.NewMessageFactoryWithDefaults().NewDynamicMessage(method.Descriptor().GetInputType())
 
 	methodPayloadJSON, err := methodMessage.MarshalJSONPB(&jsonpb.Marshaler{EmitDefaults: true, OrigName: true})
@@ -87,15 +87,15 @@ func (h *Handler) SelectMethod(methodID string) (string, error) {
 	return string(methodPayloadJSON), nil
 }
 
-func (h *Handler) initGRPCConnection(id int, address string) error {
+func (p *Project) initGRPCConnection(id int, address string) error {
 	if address == "" {
 		return errors.New("specify address")
 	}
 
-	h.grpcClientsMutex.Lock()
-	defer h.grpcClientsMutex.Unlock()
+	p.grpcClientsMutex.Lock()
+	defer p.grpcClientsMutex.Unlock()
 
-	isConnectionActive, err := h.isExistingConnectionActive(id, address)
+	isConnectionActive, err := p.isExistingConnectionActive(id, address)
 	if err != nil {
 		return err
 	}
@@ -104,25 +104,25 @@ func (h *Handler) initGRPCConnection(id int, address string) error {
 		return nil
 	}
 
-	grpcClient, err := NewClient(id, address, h.protoDescriptorSource, h.protoDescriptorSourceCreatedAt)
+	grpcClient, err := NewClient(id, address, p.protoDescriptorSource, p.protoDescriptorSourceCreatedAt)
 	if err != nil {
 		return err
 	}
 
-	h.grpcClients[id] = grpcClient
+	p.grpcClients[id] = grpcClient
 
 	return nil
 }
 
-func (h *Handler) isExistingConnectionActive(id int, address string) (bool, error) {
-	grpcClient := h.grpcClients[id]
+func (p *Project) isExistingConnectionActive(id int, address string) (bool, error) {
+	grpcClient := p.grpcClients[id]
 
 	if grpcClient == nil {
 		return false, nil
 	}
 
 	if address == grpcClient.Address() &&
-		h.protoDescriptorSourceCreatedAt.Equal(grpcClient.ProtoDescriptorSourceCreatedAt()) {
+		p.protoDescriptorSourceCreatedAt.Equal(grpcClient.ProtoDescriptorSourceCreatedAt()) {
 		return true, nil
 	}
 

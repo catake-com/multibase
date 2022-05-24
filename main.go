@@ -18,10 +18,8 @@ var assets embed.FS
 var icon []byte
 
 func main() {
-	// Create an instance of the app structure
 	app := NewApp()
 
-	// Create application with options
 	err := wails.Run(&options.App{
 		Title:     "Multibase",
 		Width:     1024,
@@ -47,6 +45,7 @@ func main() {
 		WindowStartState:  options.Normal,
 		Bind: []interface{}{
 			app,
+			app.GRPCModule,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{
@@ -75,7 +74,6 @@ func main() {
 			},
 		},
 	})
-
 	if err != nil {
 		log.Fatal(err)
 	}

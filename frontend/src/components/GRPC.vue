@@ -2,7 +2,7 @@
 import { defineComponent } from "vue";
 import { mapState } from "pinia";
 
-import { OpenProtoFile, OpenImportPath } from "../wailsjs/go/main/App";
+import { OpenProtoFile, OpenImportPath } from "../wailsjs/go/grpc/Module";
 import { useGRPCStore } from "../stores/grpc";
 import GRPCForm from "./GRPCForm.vue";
 

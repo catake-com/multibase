@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-import { RefreshProtoDescriptors, SelectMethod, SendRequest, StopRequest } from "../wailsjs/go/main/App";
+import { RefreshProtoDescriptors, SelectMethod, SendRequest, StopRequest } from "../wailsjs/go/grpc/Module";
 
 export const useGRPCStore = defineStore({
   id: "grpc",

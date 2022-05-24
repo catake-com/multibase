@@ -8,20 +8,20 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@quasar/extras": "^1.13.5",
-    "pinia": "^2.0.13",
-    "quasar": "^2.6.6",
-    "vue": "^3.2.33"
+    "@quasar/extras": "1.14.0",
+    "pinia": "2.0.14",
+    "quasar": "2.7.1",
+    "vue": "3.2.36"
   },
   "devDependencies": {
-    "@quasar/vite-plugin": "^1.0.9",
-    "@rushstack/eslint-patch": "^1.1.0",
-    "@vitejs/plugin-vue": "^2.3.1",
-    "@vue/eslint-config-prettier": "^7.0.0",
-    "eslint": "^8.5.0",
-    "eslint-plugin-vue": "^8.2.0",
-    "prettier": "^2.5.1",
-    "sass": "^1.32.0",
-    "vite": "^2.9.5"
+    "@quasar/vite-plugin": "1.0.10",
+    "@rushstack/eslint-patch": "1.1.3",
+    "@vitejs/plugin-vue": "2.3.3",
+    "@vue/eslint-config-prettier": "7.0.0",
+    "eslint": "8.16.0",
+    "eslint-plugin-vue": "9.0.1",
+    "prettier": "2.6.2",
+    "sass": "1.52.1",
+    "vite": "2.9.9"
   }
 }

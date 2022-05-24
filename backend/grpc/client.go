@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/fullstorydev/grpcurl"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -115,28 +114,21 @@ type responseHandler struct {
 }
 
 func (h *responseHandler) OnReceiveTrailers(status *status.Status, md metadata.MD) {
-	spew.Dump("OnReceiveTrailers", status, md)
-
 	if status.Code() != codes.OK {
 		h.response = status.String()
 	}
 }
 
 func (h *responseHandler) OnResolveMethod(md *desc.MethodDescriptor) {
-	spew.Dump("OnResolveMethod", md)
 }
 
 func (h *responseHandler) OnSendHeaders(md metadata.MD) {
-	spew.Dump("OnSendHeaders", md)
 }
 
 func (h *responseHandler) OnReceiveHeaders(md metadata.MD) {
-	spew.Dump("OnReceiveHeaders", md)
 }
 
 func (h *responseHandler) OnReceiveResponse(msg proto.Message) {
-	spew.Dump("OnReceiveResponse", msg)
-
 	dmsg := msg.(*dynamic.Message)
 	v, _ := dmsg.MarshalJSONPB(&jsonpb.Marshaler{EmitDefaults: true, OrigName: true})
 	sv := string(v)
