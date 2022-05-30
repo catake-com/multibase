@@ -4,16 +4,19 @@ import (
 	"context"
 
 	"github.com/multibase-io/multibase/backend/grpc"
+	"github.com/multibase-io/multibase/backend/project"
 )
 
 type App struct {
-	ctx        context.Context
-	GRPCModule *grpc.Module
+	ctx           context.Context
+	ProjectModule *project.Module
+	GRPCModule    *grpc.Module
 }
 
-func NewApp() *App {
+func NewApp(projectModule *project.Module, grpcModule *grpc.Module) *App {
 	return &App{
-		GRPCModule: grpc.NewModule(),
+		ProjectModule: projectModule,
+		GRPCModule:    grpcModule,
 	}
 }
 

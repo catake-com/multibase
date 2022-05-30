@@ -20,7 +20,7 @@ import (
 )
 
 type Client struct {
-	id                             int
+	id                             string
 	address                        string
 	connection                     *grpc.ClientConn
 	protoDescriptorSource          grpcurl.DescriptorSource
@@ -30,7 +30,7 @@ type Client struct {
 }
 
 func NewClient(
-	id int,
+	id string,
 	address string,
 	protoDescriptorSource grpcurl.DescriptorSource,
 	protoDescriptorSourceCreatedAt time.Time,

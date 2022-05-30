@@ -6,8 +6,8 @@ import { useGRPCStore } from "../stores/grpc";
 export default defineComponent({
   name: "GRPCForm",
   props: {
-    projectID: Number,
-    formID: Number,
+    projectID: String,
+    formID: String,
   },
   computed: {
     forms() {

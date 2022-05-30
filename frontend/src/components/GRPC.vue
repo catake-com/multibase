@@ -2,14 +2,13 @@
 import { defineComponent } from "vue";
 import { mapState } from "pinia";
 
-import { OpenProtoFile, OpenImportPath } from "../wailsjs/go/grpc/Module";
 import { useGRPCStore } from "../stores/grpc";
 import GRPCForm from "./GRPCForm.vue";
 
 export default defineComponent({
   name: "GRPC",
   props: {
-    projectID: Number,
+    projectID: String,
   },
   components: { GRPCForm },
   data() {
@@ -20,23 +19,31 @@ export default defineComponent({
     };
   },
   beforeCreate() {
-    // TODO: do not load state if already loaded
+    // TODO: load state per project instead of all state
     useGRPCStore().loadState();
   },
   computed: {
     ...mapState(useGRPCStore, ["projects"]),
     importPathList() {
-      return useGRPCStore().projects[this.projectID].importPathList;
+      if (useGRPCStore().projects[this.projectID]) {
+        return useGRPCStore().projects[this.projectID].importPathList;
+      }
     },
     nodes() {
-      return useGRPCStore().projects[this.projectID].nodes;
+      if (useGRPCStore().projects[this.projectID]) {
+        return useGRPCStore().projects[this.projectID].nodes;
+      }
     },
     forms() {
-      return useGRPCStore().projects[this.projectID].forms;
+      if (useGRPCStore().projects[this.projectID]) {
+        return useGRPCStore().projects[this.projectID].forms;
+      }
     },
     currentFormID: {
       get() {
-        return useGRPCStore().projects[this.projectID].currentFormID;
+        if (useGRPCStore().projects[this.projectID]) {
+          return useGRPCStore().projects[this.projectID].currentFormID;
+        }
       },
       set(value) {
         return (useGRPCStore().projects[this.projectID].currentFormID = value);
@@ -58,27 +65,13 @@ export default defineComponent({
     openProtoFile() {
       const store = useGRPCStore();
 
-      OpenProtoFile()
-        .then((result) => {
-          if (result.protoFilePath !== "") {
-            store.addProtoFile(this.projectID, result.protoFilePath, result.currentDir);
-          }
-        })
-        .catch((reason) => {
-          store.projects[this.projectID].forms[this.currentFormID].response = reason;
-        });
+      store.openProtoFile(this.projectID);
     },
 
     openImportPath() {
       const store = useGRPCStore();
 
-      OpenImportPath()
-        .then((path) => {
-          store.addImportPath(this.projectID, path);
-        })
-        .catch((reason) => {
-          store.projects[this.projectID].forms[this.currentFormID].response = reason;
-        });
+      store.openImportPath(this.projectID);
     },
 
     removeImportPath(importPath) {
@@ -153,7 +146,7 @@ export default defineComponent({
 
       <template v-slot:after>
         <q-tabs v-model="currentFormID" align="left" outside-arrows mobile-arrows dense no-caps>
-          <q-tab :name="parseInt(formID)" v-for="(form, formID) in forms" :key="`tab-${formID}`">
+          <q-tab :name="formID" v-for="(form, formID) in forms" :key="`tab-${formID}`">
             <div class="row justify-between">
               <div class="col q-tab__label">
                 <div v-if="form.selectedMethodID.length < 15">{{ form.selectedMethodID || "New Form" }}</div>
@@ -192,8 +185,8 @@ export default defineComponent({
         <q-separator />
 
         <q-tab-panels v-model="currentFormID" animated>
-          <q-tab-panel :name="parseInt(formID)" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
-            <GRPCForm :formID="parseInt(formID)" :projectID="this.projectID" />
+          <q-tab-panel :name="formID" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
+            <GRPCForm :formID="formID" :projectID="this.projectID" />
           </q-tab-panel>
         </q-tab-panels>
       </template>

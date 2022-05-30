@@ -3,10 +3,14 @@ module github.com/multibase-io/multibase
 go 1.18
 
 require (
+	github.com/adrg/xdg v0.4.0
 	github.com/fullstorydev/grpcurl v1.8.6
+	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/jhump/protoreflect v1.12.0
+	github.com/samber/lo v1.21.0
 	github.com/wailsapp/wails/v2 v2.0.0-beta.36
+	go.uber.org/multierr v1.8.0
 	google.golang.org/grpc v1.46.2
 )
 
@@ -30,7 +34,9 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect

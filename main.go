@@ -9,6 +9,9 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
+
+	"github.com/multibase-io/multibase/backend/grpc"
+	"github.com/multibase-io/multibase/backend/project"
 )
 
 //go:embed frontend/dist
@@ -18,9 +21,19 @@ var assets embed.FS
 var icon []byte
 
 func main() {
-	app := NewApp()
+	projectModule, err := project.NewModule()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	err := wails.Run(&options.App{
+	grpcModule, err := grpc.NewModule()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	app := NewApp(projectModule, grpcModule)
+
+	err = wails.Run(&options.App{
 		Title:     "Multibase",
 		Width:     1024,
 		Height:    768,
@@ -45,6 +58,7 @@ func main() {
 		WindowStartState:  options.Normal,
 		Bind: []interface{}{
 			app,
+			app.ProjectModule,
 			app.GRPCModule,
 		},
 		// Windows platform specific options
