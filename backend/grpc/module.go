@@ -66,6 +66,8 @@ func NewModule() (*Module, error) {
 		return nil, err
 	}
 
+	// TODO: initialize projects with descriptors (unify with state?)
+
 	return module, nil
 }
 
@@ -77,7 +79,12 @@ func (m *Module) SendRequest(projectID, formID string, address, methodID, payloa
 	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 	m.state.Projects[projectID].Forms[formID].Request = payload
 
-	response, err := m.project(projectID).SendRequest(formID, address, methodID, payload)
+	project, err := m.project(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := project.SendRequest(formID, address, methodID, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +103,12 @@ func (m *Module) StopRequest(projectID, formID string) (*State, error) {
 	m.stateMutex.RLock()
 	defer m.stateMutex.RUnlock()
 
-	err := m.project(projectID).StopRequest(formID)
+	project, err := m.project(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = project.StopRequest(formID)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +162,12 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 
 	protoFileList := append([]string{protoFilePath}, m.state.Projects[projectID].ProtoFileList...)
 
-	nodes, err := m.project(projectID).RefreshProtoDescriptors(importPathList, protoFileList)
+	project, err := m.project(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes, err := project.RefreshProtoDescriptors(importPathList, protoFileList)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +208,12 @@ func (m *Module) OpenImportPath(projectID string) (*State, error) {
 }
 
 func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error) {
-	payload, err := m.project(projectID).SelectMethod(methodID)
+	project, err := m.project(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := project.SelectMethod(methodID)
 	if err != nil {
 		return nil, err
 	}
@@ -363,25 +385,34 @@ func (m *Module) saveState() (rerr error) {
 	return nil
 }
 
-func (m *Module) project(id string) *Project {
+func (m *Module) project(projectID string) (*Project, error) {
 	m.projectsMutex.RLock()
-	project, ok := m.projects[id]
+	project, ok := m.projects[projectID]
 
 	if ok {
-		return project
+		return project, nil
 	}
 	m.projectsMutex.RUnlock()
 
 	m.projectsMutex.Lock()
-	project, ok = m.projects[id]
+	project, ok = m.projects[projectID]
 
 	if ok {
-		return project
+		return project, nil
 	}
 
-	project = NewProject(id)
-	m.projects[id] = project
+	project = NewProject(projectID)
+
+	_, err := project.RefreshProtoDescriptors(
+		m.state.Projects[projectID].ImportPathList,
+		m.state.Projects[projectID].ProtoFileList,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.projects[projectID] = project
 	m.projectsMutex.Unlock()
 
-	return project
+	return project, nil
 }

@@ -13,6 +13,7 @@ linters:
         - exhaustivestruct
         - exhaustruct
         - forcetypeassert
+        - godox
         - gofumpt
         - gomnd
         - ifshort
