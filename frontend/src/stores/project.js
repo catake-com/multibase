@@ -1,100 +1,73 @@
 import { defineStore } from "pinia";
 
+import {
+  State,
+  CreateGRPCProject,
+  CreateNewProject,
+  OpenGRPCProject,
+  CloseProject,
+} from "../wailsjs/go/project/Module";
+
 export const useProjectStore = defineStore({
   id: "project",
   state: () => ({
     projects: {
-      0: {
+      "404f5702-6179-4861-9533-b5ee16161c78": {
         type: "new",
       },
-      1: {
-        type: "grpc",
-      },
     },
-    openedProjectIDs: [0, 1],
-    currentProjectID: 0,
+    openedProjectIDs: ["404f5702-6179-4861-9533-b5ee16161c78"],
+    currentProjectID: "404f5702-6179-4861-9533-b5ee16161c78",
   }),
   actions: {
     openGRPCProject(newProjectID, grpcProjectID) {
-      if (this.openedProjectIDs.includes(grpcProjectID)) {
-        this.openedProjectIDs = this.openedProjectIDs.filter((pID) => pID !== newProjectID);
-      } else {
-        this.openedProjectIDs = this.openedProjectIDs.map((projectID) => {
-          return projectID === newProjectID ? grpcProjectID : projectID;
+      OpenGRPCProject(newProjectID, grpcProjectID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          console.log(reason);
         });
-      }
-
-      this.currentProjectID = grpcProjectID;
-      delete this.projects[newProjectID];
-
-      this.saveState();
     },
 
     createNewGRPCProject(grpcProjectID) {
-      this.projects[grpcProjectID] = {
-        type: "grpc",
-      };
-
-      this.saveState();
+      CreateGRPCProject(grpcProjectID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          console.log(reason);
+        });
     },
 
     createNewProject() {
-      const projectID = Math.floor(Date.now() * Math.random());
-      this.projects[projectID] = {
-        type: "new",
-      };
-      this.openedProjectIDs.push(projectID);
-      this.currentProjectID = projectID;
-
-      this.saveState();
+      CreateNewProject()
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          console.log(reason);
+        });
     },
 
     closeProjectTab(projectID) {
-      if (this.openedProjectIDs.length <= 1) {
-        return;
-      }
-
-      if (this.projects[projectID].type === "new") {
-        delete this.projects[projectID];
-      }
-
-      this.openedProjectIDs = this.openedProjectIDs.filter((pID) => pID !== parseInt(projectID));
-
-      this.currentProjectID = this.openedProjectIDs[0];
-
-      this.saveState();
-    },
-
-    saveState() {
-      const state = {
-        projects: this.projects,
-        openedProjectIDs: this.openedProjectIDs,
-        currentProjectID: this.currentProjectID,
-      };
-
-      localStorage.setItem("projectState", JSON.stringify(state));
+      CloseProject(projectID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          console.log(reason);
+        });
     },
 
     loadState() {
-      const state = JSON.parse(localStorage.getItem("projectState")) || {};
-
-      if ("projects" in state) {
-        this.projects = state.projects;
-      }
-
-      if ("openedProjectIDs" in state) {
-        this.openedProjectIDs = state.openedProjectIDs;
-      }
-
-      if ("currentProjectID" in state) {
-        this.currentProjectID = state.currentProjectID;
-      }
-    },
-
-    clearState() {
-      localStorage.removeItem("projectState");
-
-      this.loadNodes();
+      State()
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          console.log(reason);
+        });
     },
   },
 });

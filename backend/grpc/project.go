@@ -17,23 +17,23 @@ var (
 )
 
 type Project struct {
-	id                             int
-	grpcClients                    map[int]*Client
+	id                             string
+	grpcClients                    map[string]*Client
 	grpcClientsMutex               *sync.RWMutex
 	protoTree                      *ProtoTree
 	protoDescriptorSource          grpcurl.DescriptorSource
 	protoDescriptorSourceCreatedAt time.Time
 }
 
-func NewProject(id int) *Project {
+func NewProject(id string) *Project {
 	return &Project{
 		id:               id,
-		grpcClients:      make(map[int]*Client),
+		grpcClients:      make(map[string]*Client),
 		grpcClientsMutex: &sync.RWMutex{},
 	}
 }
 
-func (p *Project) SendRequest(id int, address, methodID, payload string) (string, error) {
+func (p *Project) SendRequest(id, address, methodID, payload string) (string, error) {
 	err := p.initGRPCConnection(id, address)
 	if err != nil {
 		return "", err
@@ -46,7 +46,7 @@ func (p *Project) SendRequest(id int, address, methodID, payload string) (string
 	return grpcClient.SendRequest(methodID, payload)
 }
 
-func (p *Project) StopRequest(id int) error {
+func (p *Project) StopRequest(id string) error {
 	p.grpcClientsMutex.RLock()
 	defer p.grpcClientsMutex.RUnlock()
 	grpcClient := p.grpcClients[id]
@@ -93,7 +93,7 @@ func (p *Project) SelectMethod(methodID string) (string, error) {
 	return string(methodPayloadJSON), nil
 }
 
-func (p *Project) initGRPCConnection(id int, address string) error {
+func (p *Project) initGRPCConnection(id, address string) error {
 	if address == "" {
 		return errSpecifyAddress
 	}
@@ -120,7 +120,7 @@ func (p *Project) initGRPCConnection(id int, address string) error {
 	return nil
 }
 
-func (p *Project) isExistingConnectionActive(id int, address string) (bool, error) {
+func (p *Project) isExistingConnectionActive(id, address string) (bool, error) {
 	grpcClient := p.grpcClients[id]
 
 	if grpcClient == nil {

@@ -17,10 +17,14 @@ var assets embed.FS
 //go:embed build/appicon.png
 var icon []byte
 
+// nolint: funlen
 func main() {
-	app := NewApp()
+	app, err := NewApp()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:     "Multibase",
 		Width:     1024,
 		Height:    768,
@@ -45,6 +49,7 @@ func main() {
 		WindowStartState:  options.Normal,
 		Bind: []interface{}{
 			app,
+			app.ProjectModule,
 			app.GRPCModule,
 		},
 		// Windows platform specific options

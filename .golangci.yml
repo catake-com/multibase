@@ -16,6 +16,7 @@ linters:
         - gofumpt
         - gomnd
         - ifshort
+        - nonamedreturns
         - staticcheck
         - varnamelen
 
@@ -26,3 +27,8 @@ linters-settings:
         default-signifies-exhaustive: true
     lll:
         tab-width: 8
+    tagliatelle:
+        case:
+            use-field-name: true
+            rules:
+                json: goCamel

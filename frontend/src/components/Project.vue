@@ -25,7 +25,7 @@ export default defineComponent({
     openGRPCProject(newProjectID, grpcProjectID) {
       const store = useProjectStore();
 
-      store.openGRPCProject(parseInt(newProjectID), parseInt(grpcProjectID));
+      store.openGRPCProject(newProjectID, grpcProjectID);
     },
 
     newGRPCProject() {
@@ -38,11 +38,7 @@ export default defineComponent({
 
 <template>
   <q-tab-panels v-model="currentProjectID">
-    <q-tab-panel
-      :name="parseInt(projectID)"
-      v-for="(project, projectID) in projects"
-      :key="`project-panel-${projectID}`"
-    >
+    <q-tab-panel :name="projectID" v-for="(project, projectID) in projects" :key="`project-panel-${projectID}`">
       <div v-if="project.type === 'new'">
         <div class="row q-col-gutter-sm" style="margin-top: 10%">
           <div class="col"></div>
@@ -74,7 +70,7 @@ export default defineComponent({
       </div>
 
       <div v-if="project.type === 'grpc'">
-        <GRPC :projectID="parseInt(projectID)" />
+        <GRPC :projectID="projectID" />
       </div>
     </q-tab-panel>
   </q-tab-panels>

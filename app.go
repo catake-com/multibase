@@ -2,19 +2,33 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/multibase-io/multibase/backend/grpc"
+	"github.com/multibase-io/multibase/backend/project"
 )
 
 type App struct {
-	ctx        context.Context
-	GRPCModule *grpc.Module
+	ctx           context.Context
+	ProjectModule *project.Module
+	GRPCModule    *grpc.Module
 }
 
-func NewApp() *App {
-	return &App{
-		GRPCModule: grpc.NewModule(),
+func NewApp() (*App, error) {
+	projectModule, err := project.NewModule()
+	if err != nil {
+		return nil, fmt.Errorf("failed to init a project module: %w", err)
 	}
+
+	grpcModule, err := grpc.NewModule()
+	if err != nil {
+		return nil, fmt.Errorf("failed to init a grpc module: %w", err)
+	}
+
+	return &App{
+		ProjectModule: projectModule,
+		GRPCModule:    grpcModule,
+	}, nil
 }
 
 func (a *App) startup(ctx context.Context) {
