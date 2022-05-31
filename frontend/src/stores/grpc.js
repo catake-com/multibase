@@ -38,7 +38,7 @@ export const useGRPCStore = defineStore({
     createNewProject(projectID) {
       CreateNewProject(projectID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
@@ -48,7 +48,7 @@ export const useGRPCStore = defineStore({
     createNewForm(projectID) {
       CreateNewForm(projectID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
@@ -58,7 +58,7 @@ export const useGRPCStore = defineStore({
     removeForm(projectID, formID) {
       RemoveForm(projectID, formID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
@@ -68,7 +68,7 @@ export const useGRPCStore = defineStore({
     selectMethod(projectID, formID, methodID) {
       SelectMethod(projectID, formID, methodID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           this.projects[projectID].forms[formID].response = reason;
@@ -91,7 +91,7 @@ export const useGRPCStore = defineStore({
       )
         .then((state) => {
           this.projects[projectID].forms[formID].requestInProgress = false;
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           this.projects[projectID].forms[formID].requestInProgress = false;
@@ -107,7 +107,7 @@ export const useGRPCStore = defineStore({
       StopRequest(projectID, formID)
         .then((state) => {
           this.projects[projectID].forms[formID].requestInProgress = false;
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           this.projects[projectID].forms[formID].requestInProgress = false;
@@ -118,7 +118,7 @@ export const useGRPCStore = defineStore({
     openImportPath(projectID) {
       OpenImportPath(projectID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
@@ -128,7 +128,7 @@ export const useGRPCStore = defineStore({
     removeImportPath(projectID, importPath) {
       RemoveImportPath(projectID, importPath)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
@@ -138,7 +138,7 @@ export const useGRPCStore = defineStore({
     openProtoFile(projectID) {
       OpenProtoFile(projectID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
@@ -148,15 +148,11 @@ export const useGRPCStore = defineStore({
     loadState() {
       State()
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
         });
-    },
-
-    setState(state) {
-      this.projects = state.projects;
     },
   },
 });

@@ -33,8 +33,8 @@ export default defineComponent({
 
 <template>
   <div class="bg-primary text-white shadow-2">
-    <q-tabs v-model="currentProjectID" align="left" outside-arrows mobile-arrows dense no-caps>
-      <q-tab :name="projectID" v-for="projectID in openedProjectIDs" :key="`project-tab-${projectID}`" replace>
+    <q-tabs v-model="currentProjectID" align="left" outside-arrows mobile-arrows no-caps>
+      <q-tab :name="projectID" v-for="projectID in openedProjectIDs" :key="`project-tab-${projectID}`">
         <div class="row justify-between">
           <div class="col q-tab__label">{{ projects[projectID].type }} {{ projectID }}</div>
 

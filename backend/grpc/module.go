@@ -40,6 +40,7 @@ type Module struct {
 	AppCtx         context.Context
 	configFilePath string
 	state          *State
+	stateMutex     *sync.RWMutex
 	projects       map[string]*Project
 	projectsMutex  *sync.RWMutex
 }
@@ -55,6 +56,7 @@ func NewModule() (*Module, error) {
 		state: &State{
 			Projects: make(map[string]*StateProject),
 		},
+		stateMutex:    &sync.RWMutex{},
 		projects:      map[string]*Project{},
 		projectsMutex: &sync.RWMutex{},
 	}
@@ -68,6 +70,9 @@ func NewModule() (*Module, error) {
 }
 
 func (m *Module) SendRequest(projectID, formID string, address, methodID, payload string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	m.state.Projects[projectID].Forms[formID].Address = address
 	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 	m.state.Projects[projectID].Forms[formID].Request = payload
@@ -88,12 +93,10 @@ func (m *Module) SendRequest(projectID, formID string, address, methodID, payloa
 }
 
 func (m *Module) StopRequest(projectID, formID string) (*State, error) {
-	err := m.project(projectID).StopRequest(formID)
-	if err != nil {
-		return nil, err
-	}
+	m.stateMutex.RLock()
+	defer m.stateMutex.RUnlock()
 
-	err = m.saveState()
+	err := m.project(projectID).StopRequest(formID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,6 +105,9 @@ func (m *Module) StopRequest(projectID, formID string) (*State, error) {
 }
 
 func (m *Module) RemoveImportPath(projectID, importPath string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	m.state.Projects[projectID].ImportPathList = lo.Reject(
 		m.state.Projects[projectID].ImportPathList,
 		func(ip string, _ int) bool {
@@ -127,21 +133,22 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 		return nil, fmt.Errorf("failed to open proto file: %w", err)
 	}
 
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	if lo.Contains(m.state.Projects[projectID].ProtoFileList, protoFilePath) {
 		return m.state, nil
 	}
 
-	importPathList := make([]string, len(m.state.Projects[projectID].ImportPathList))
-	copy(importPathList, m.state.Projects[projectID].ImportPathList)
-
-	if len(importPathList) == 0 {
+	var importPathList []string
+	if len(m.state.Projects[projectID].ImportPathList) > 0 {
+		importPathList = m.state.Projects[projectID].ImportPathList
+	} else {
 		currentDir := path.Dir(protoFilePath)
-		importPathList = append(importPathList, currentDir)
+		importPathList = []string{currentDir}
 	}
 
-	protoFileList := make([]string, len(m.state.Projects[projectID].ProtoFileList))
-	copy(protoFileList, m.state.Projects[projectID].ProtoFileList)
-	protoFileList = append(protoFileList, protoFilePath)
+	protoFileList := append([]string{protoFilePath}, m.state.Projects[projectID].ProtoFileList...)
 
 	nodes, err := m.project(projectID).RefreshProtoDescriptors(importPathList, protoFileList)
 	if err != nil {
@@ -152,6 +159,11 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 	m.state.Projects[projectID].ImportPathList = importPathList
 	m.state.Projects[projectID].ProtoFileList = protoFileList
 
+	err = m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
 	return m.state, nil
 }
 
@@ -160,6 +172,9 @@ func (m *Module) OpenImportPath(projectID string) (*State, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open import path: %w", err)
 	}
+
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
 
 	if lo.Contains(m.state.Projects[projectID].ImportPathList, importPath) {
 		return m.state, nil
@@ -181,6 +196,9 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 		return nil, err
 	}
 
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	m.state.Projects[projectID].Forms[formID].Request = payload
 	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 
@@ -193,6 +211,9 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 }
 
 func (m *Module) CreateNewProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	formID := uuid.Must(uuid.NewV4()).String()
 
 	m.state.Projects[projectID] = &StateProject{
@@ -215,6 +236,9 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 }
 
 func (m *Module) CreateNewForm(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	formID := uuid.Must(uuid.NewV4()).String()
 
 	m.state.Projects[projectID].Forms[formID] = &StateProjectForm{
@@ -236,6 +260,9 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 		return m.state, nil
 	}
 
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	delete(m.state.Projects[projectID].Forms, formID)
 	m.state.Projects[projectID].CurrentFormID = lo.Keys(m.state.Projects[projectID].Forms)[0]
 
@@ -248,6 +275,9 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 }
 
 func (m *Module) State() (*State, error) {
+	m.stateMutex.RLock()
+	defer m.stateMutex.RUnlock()
+
 	return m.state, nil
 }
 
@@ -258,7 +288,7 @@ func (m *Module) readOrInitializeState() error {
 			return m.initializeState()
 		}
 
-		return err
+		return fmt.Errorf("failed to describe a grpc config file: %w", err)
 	}
 
 	return m.readState()
@@ -267,8 +297,9 @@ func (m *Module) readOrInitializeState() error {
 func (m *Module) initializeState() (rerr error) {
 	file, err := os.Create(m.configFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create a grpc config file: %w", err)
 	}
+
 	defer func() {
 		err := file.Close()
 		if err != nil {
@@ -277,9 +308,10 @@ func (m *Module) initializeState() (rerr error) {
 	}()
 
 	encoder := json.NewEncoder(file)
+
 	err = encoder.Encode(m.state)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to encode a grpc state: %w", err)
 	}
 
 	return nil
@@ -288,8 +320,9 @@ func (m *Module) initializeState() (rerr error) {
 func (m *Module) readState() (rerr error) {
 	file, err := os.Open(m.configFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open a grpc config file: %w", err)
 	}
+
 	defer func() {
 		err := file.Close()
 		if err != nil {
@@ -298,9 +331,10 @@ func (m *Module) readState() (rerr error) {
 	}()
 
 	decoder := json.NewDecoder(file)
+
 	err = decoder.Decode(&m.state)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decode a grpc state: %w", err)
 	}
 
 	return nil
@@ -309,8 +343,9 @@ func (m *Module) readState() (rerr error) {
 func (m *Module) saveState() (rerr error) {
 	file, err := os.Create(m.configFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create/truncate a grpc config file: %w", err)
 	}
+
 	defer func() {
 		err := file.Close()
 		if err != nil {
@@ -319,9 +354,10 @@ func (m *Module) saveState() (rerr error) {
 	}()
 
 	encoder := json.NewEncoder(file)
+
 	err = encoder.Encode(m.state)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to encode a grpc state: %w", err)
 	}
 
 	return nil

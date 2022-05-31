@@ -49,12 +49,15 @@ func NewModule() (*Module, error) {
 }
 
 func (m *Module) OpenGRPCProject(newProjectID, grpcProjectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	if lo.Contains(m.state.OpenedProjectIDs, grpcProjectID) {
 		m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(projectID string, _ int) bool {
 			return projectID == newProjectID
 		})
 	} else {
-		lo.ReplaceAll(m.state.OpenedProjectIDs, newProjectID, grpcProjectID)
+		m.state.OpenedProjectIDs = lo.ReplaceAll(m.state.OpenedProjectIDs, newProjectID, grpcProjectID)
 	}
 
 	m.state.CurrentProjectID = grpcProjectID
@@ -64,10 +67,14 @@ func (m *Module) OpenGRPCProject(newProjectID, grpcProjectID string) (*State, er
 	if err != nil {
 		return nil, err
 	}
+
 	return m.state, nil
 }
 
 func (m *Module) CreateGRPCProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	m.state.Projects[projectID] = &StateProject{
 		ID:   projectID,
 		Type: "grpc",
@@ -82,6 +89,9 @@ func (m *Module) CreateGRPCProject(projectID string) (*State, error) {
 }
 
 func (m *Module) CreateNewProject() (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	projectID := uuid.Must(uuid.NewV4()).String()
 
 	m.state.Projects[projectID] = &StateProject{
@@ -101,6 +111,9 @@ func (m *Module) CreateNewProject() (*State, error) {
 }
 
 func (m *Module) CloseProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	if len(m.state.OpenedProjectIDs) <= 1 {
 		return m.state, nil
 	}
@@ -123,6 +136,9 @@ func (m *Module) CloseProject(projectID string) (*State, error) {
 }
 
 func (m *Module) State() (*State, error) {
+	m.stateMutex.RLock()
+	defer m.stateMutex.RUnlock()
+
 	return m.state, nil
 }
 
@@ -133,7 +149,7 @@ func (m *Module) readOrInitializeState() error {
 			return m.initializeState()
 		}
 
-		return err
+		return fmt.Errorf("failed to describe a project config file: %w", err)
 	}
 
 	return m.readState()
@@ -153,8 +169,9 @@ func (m *Module) initializeState() (rerr error) {
 
 	file, err := os.Create(m.configFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create a project config file: %w", err)
 	}
+
 	defer func() {
 		err := file.Close()
 		if err != nil {
@@ -163,9 +180,10 @@ func (m *Module) initializeState() (rerr error) {
 	}()
 
 	encoder := json.NewEncoder(file)
+
 	err = encoder.Encode(m.state)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to encode a project state: %w", err)
 	}
 
 	return nil
@@ -174,8 +192,9 @@ func (m *Module) initializeState() (rerr error) {
 func (m *Module) readState() (rerr error) {
 	file, err := os.Open(m.configFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open a project config file: %w", err)
 	}
+
 	defer func() {
 		err := file.Close()
 		if err != nil {
@@ -184,9 +203,10 @@ func (m *Module) readState() (rerr error) {
 	}()
 
 	decoder := json.NewDecoder(file)
+
 	err = decoder.Decode(&m.state)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decode a project state: %w", err)
 	}
 
 	return nil
@@ -195,8 +215,9 @@ func (m *Module) readState() (rerr error) {
 func (m *Module) saveState() (rerr error) {
 	file, err := os.Create(m.configFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create/truncate a project config file: %w", err)
 	}
+
 	defer func() {
 		err := file.Close()
 		if err != nil {
@@ -205,9 +226,10 @@ func (m *Module) saveState() (rerr error) {
 	}()
 
 	encoder := json.NewEncoder(file)
+
 	err = encoder.Encode(m.state)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to encode a project state: %w", err)
 	}
 
 	return nil

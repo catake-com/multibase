@@ -23,7 +23,7 @@ export const useProjectStore = defineStore({
     openGRPCProject(newProjectID, grpcProjectID) {
       OpenGRPCProject(newProjectID, grpcProjectID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
@@ -33,7 +33,7 @@ export const useProjectStore = defineStore({
     createNewGRPCProject(grpcProjectID) {
       CreateGRPCProject(grpcProjectID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
@@ -43,7 +43,7 @@ export const useProjectStore = defineStore({
     createNewProject() {
       CreateNewProject()
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
@@ -53,7 +53,7 @@ export const useProjectStore = defineStore({
     closeProjectTab(projectID) {
       CloseProject(projectID)
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
@@ -63,17 +63,11 @@ export const useProjectStore = defineStore({
     loadState() {
       State()
         .then((state) => {
-          this.setState(state);
+          this.$state = state;
         })
         .catch((reason) => {
           console.log(reason);
         });
-    },
-
-    setState(state) {
-      this.projects = state.projects;
-      this.openedProjectIDs = state.openedProjectIDs;
-      this.currentProjectID = state.currentProjectID;
     },
   },
 });

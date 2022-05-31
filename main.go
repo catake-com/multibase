@@ -9,9 +9,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
-
-	"github.com/multibase-io/multibase/backend/grpc"
-	"github.com/multibase-io/multibase/backend/project"
 )
 
 //go:embed frontend/dist
@@ -20,18 +17,12 @@ var assets embed.FS
 //go:embed build/appicon.png
 var icon []byte
 
+// nolint: funlen
 func main() {
-	projectModule, err := project.NewModule()
+	app, err := NewApp()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	grpcModule, err := grpc.NewModule()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	app := NewApp(projectModule, grpcModule)
 
 	err = wails.Run(&options.App{
 		Title:     "Multibase",
