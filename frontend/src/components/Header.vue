@@ -36,7 +36,8 @@ export default defineComponent({
     <q-tabs v-model="currentProjectID" align="left" outside-arrows mobile-arrows no-caps>
       <q-tab :name="projectID" v-for="projectID in openedProjectIDs" :key="`project-tab-${projectID}`">
         <div class="row justify-between">
-          <div class="col q-tab__label">{{ projects[projectID].type }} {{ projectID }}</div>
+          <div class="col q-tab__label" v-if="projects[projectID].type === 'new'">New Tab</div>
+          <div class="col q-tab__label" v-if="projects[projectID].type === 'grpc'">{{ projects[projectID].name }}</div>
 
           <div class="col-1">
             <q-btn

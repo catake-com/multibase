@@ -1,3 +1,71 @@
+export namespace project {
+	
+	export class StateProject {
+	    type: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new StateProject(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.name = source["name"];
+	    }
+	}
+	export class StateStats {
+	    _: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new StateStats(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this._ = source["_"];
+	    }
+	}
+	export class State {
+	    // Go type: StateStats
+	    _?: any;
+	    projects: {[key: string]: StateProject};
+	    openedProjectIDs: string[];
+	    currentProjectID: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new State(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this._ = this.convertValues(source["_"], null);
+	        this.projects = source["projects"];
+	        this.openedProjectIDs = source["openedProjectIDs"];
+	        this.currentProjectID = source["currentProjectID"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace grpc {
 	
 	export class ProtoTreeNode {
@@ -102,39 +170,6 @@ export namespace grpc {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projects = source["projects"];
-	    }
-	}
-
-}
-
-export namespace project {
-	
-	export class StateProject {
-	    type: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new StateProject(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.type = source["type"];
-	    }
-	}
-	export class State {
-	    projects: {[key: string]: StateProject};
-	    openedProjectIDs: string[];
-	    currentProjectID: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new State(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.projects = source["projects"];
-	        this.openedProjectIDs = source["openedProjectIDs"];
-	        this.currentProjectID = source["currentProjectID"];
 	    }
 	}
 

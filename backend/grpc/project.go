@@ -93,6 +93,17 @@ func (p *Project) SelectMethod(methodID string) (string, error) {
 	return string(methodPayloadJSON), nil
 }
 
+func (p *Project) Close() error {
+	for _, client := range p.grpcClients {
+		err := client.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (p *Project) initGRPCConnection(id, address string) error {
 	if address == "" {
 		return errSpecifyAddress

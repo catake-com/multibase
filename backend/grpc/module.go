@@ -66,8 +66,6 @@ func NewModule() (*Module, error) {
 		return nil, err
 	}
 
-	// TODO: initialize projects with descriptors (unify with state?)
-
 	return module, nil
 }
 
@@ -268,6 +266,32 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 		Address: "0.0.0.0:50051",
 	}
 	m.state.Projects[projectID].CurrentFormID = formID
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) DeleteProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	delete(m.state.Projects, projectID)
+	m.stateMutex.Unlock()
+
+	m.projectsMutex.Lock()
+	project, ok := m.projects[projectID]
+
+	if ok {
+		err := project.Close()
+		if err != nil {
+			return nil, err
+		}
+
+		delete(m.projects, projectID)
+	}
+	m.projectsMutex.Unlock()
 
 	err := m.saveState()
 	if err != nil {

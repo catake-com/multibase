@@ -13,6 +13,7 @@ import (
 )
 
 type State struct {
+	Stats            *StateStats              `json:"-"`
 	Projects         map[string]*StateProject `json:"projects"`
 	OpenedProjectIDs []string                 `json:"openedProjectIDs"`
 	CurrentProjectID string                   `json:"currentProjectID"`
@@ -21,6 +22,11 @@ type State struct {
 type StateProject struct {
 	ID   string `json:"-"`
 	Type string `json:"type"`
+	Name string `json:"name"`
+}
+
+type StateStats struct {
+	GRPCProjectCount int `json:"-"`
 }
 
 type Module struct {
@@ -75,10 +81,53 @@ func (m *Module) CreateGRPCProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
+	m.state.Stats.GRPCProjectCount++
+
+	projectName := fmt.Sprintf("gRPC %d", m.state.Stats.GRPCProjectCount)
+
 	m.state.Projects[projectID] = &StateProject{
 		ID:   projectID,
 		Type: "grpc",
+		Name: projectName,
 	}
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) DeleteGRPCProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Stats.GRPCProjectCount--
+
+	delete(m.state.Projects, projectID)
+
+	m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(pID string, _ int) bool {
+		return pID == projectID
+	})
+
+	if m.state.CurrentProjectID == projectID {
+		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
+	}
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) RenameGRPCProject(projectID, name string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].Name = name
 
 	err := m.saveState()
 	if err != nil {
@@ -125,7 +174,10 @@ func (m *Module) CloseProject(projectID string) (*State, error) {
 	m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(pID string, _ int) bool {
 		return pID == projectID
 	})
-	m.state.CurrentProjectID = m.state.OpenedProjectIDs[0]
+
+	if m.state.CurrentProjectID == projectID {
+		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
+	}
 
 	err := m.saveState()
 	if err != nil {
@@ -157,6 +209,7 @@ func (m *Module) readOrInitializeState() error {
 
 func (m *Module) initializeState() (rerr error) {
 	m.state = &State{
+		Stats: &StateStats{GRPCProjectCount: 0},
 		Projects: map[string]*StateProject{
 			"404f5702-6179-4861-9533-b5ee16161c78": {
 				ID:   "404f5702-6179-4861-9533-b5ee16161c78",

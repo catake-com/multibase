@@ -4,15 +4,7 @@ import {grpc} from '../models';
 
 export function CreateNewProject(arg1:string):Promise<grpc.State|Error>;
 
-export function SendRequest(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<grpc.State|Error>;
-
-export function State():Promise<grpc.State|Error>;
-
-export function StopRequest(arg1:string,arg2:string):Promise<grpc.State|Error>;
-
-export function CreateNewForm(arg1:string):Promise<grpc.State|Error>;
-
-export function OpenImportPath(arg1:string):Promise<grpc.State|Error>;
+export function DeleteProject(arg1:string):Promise<grpc.State|Error>;
 
 export function OpenProtoFile(arg1:string):Promise<grpc.State|Error>;
 
@@ -20,4 +12,14 @@ export function RemoveForm(arg1:string,arg2:string):Promise<grpc.State|Error>;
 
 export function RemoveImportPath(arg1:string,arg2:string):Promise<grpc.State|Error>;
 
+export function State():Promise<grpc.State|Error>;
+
+export function CreateNewForm(arg1:string):Promise<grpc.State|Error>;
+
+export function OpenImportPath(arg1:string):Promise<grpc.State|Error>;
+
 export function SelectMethod(arg1:string,arg2:string,arg3:string):Promise<grpc.State|Error>;
+
+export function SendRequest(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<grpc.State|Error>;
+
+export function StopRequest(arg1:string,arg2:string):Promise<grpc.State|Error>;

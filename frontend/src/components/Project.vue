@@ -53,10 +53,10 @@ export default defineComponent({
                 @click="openGRPCProject(projectID, projectItemID)"
               >
                 <q-item-section v-if="projectItem.type === 'grpc'" avatar>
-                  <q-icon color="primary" name="folder" />
+                  <q-icon name="img:grpc.jpg" size="36px" />
                 </q-item-section>
 
-                <q-item-section v-if="projectItem.type === 'grpc'">gRPC project {{ projectItemID }}</q-item-section>
+                <q-item-section v-if="projectItem.type === 'grpc'">{{ projectItem.name }}</q-item-section>
               </q-item>
             </q-list>
           </div>
