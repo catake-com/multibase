@@ -11,7 +11,8 @@
     "@quasar/extras": "1.14.0",
     "pinia": "2.0.14",
     "quasar": "2.7.1",
-    "vue": "3.2.36"
+    "vue": "3.2.36",
+    "vue3-ace-editor": "2.2.2"
   },
   "devDependencies": {
     "@quasar/vite-plugin": "1.0.10",

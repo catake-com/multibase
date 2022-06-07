@@ -240,8 +240,10 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 		ID: projectID,
 		Forms: map[string]*StateProjectForm{
 			formID: {
-				ID:      formID,
-				Address: "0.0.0.0:50051",
+				ID:       formID,
+				Address:  "0.0.0.0:50051",
+				Request:  "{}",
+				Response: "{}",
 			},
 		},
 		CurrentFormID: formID,
@@ -262,8 +264,10 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 	formID := uuid.Must(uuid.NewV4()).String()
 
 	m.state.Projects[projectID].Forms[formID] = &StateProjectForm{
-		ID:      formID,
-		Address: "0.0.0.0:50051",
+		ID:       formID,
+		Address:  "0.0.0.0:50051",
+		Request:  "{}",
+		Response: "{}",
 	}
 	m.state.Projects[projectID].CurrentFormID = formID
 

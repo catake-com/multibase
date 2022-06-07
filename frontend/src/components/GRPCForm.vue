@@ -1,10 +1,14 @@
 <script>
 import { defineComponent } from "vue";
+import { VAceEditor } from "vue3-ace-editor";
+import "ace-builds/src-noconflict/mode-json";
+import "../vendor/merbivore";
 
 import { useGRPCStore } from "../stores/grpc";
 
 export default defineComponent({
   name: "GRPCForm",
+  components: { VAceEditor },
   props: {
     projectID: String,
     formID: String,
@@ -23,7 +27,13 @@ export default defineComponent({
     },
     request: {
       get() {
-        return useGRPCStore().projects[this.projectID].forms[this.formID].request;
+        let request = useGRPCStore().projects[this.projectID].forms[this.formID].request;
+        try {
+          request = JSON.parse(request);
+          request = JSON.stringify(request, null, 4);
+        } catch {}
+
+        return request;
       },
       set(value) {
         return (useGRPCStore().projects[this.projectID].forms[this.formID].request = value);
@@ -31,7 +41,13 @@ export default defineComponent({
     },
     response: {
       get() {
-        return useGRPCStore().projects[this.projectID].forms[this.formID].response;
+        let response = useGRPCStore().projects[this.projectID].forms[this.formID].response;
+        try {
+          response = JSON.parse(response);
+          response = JSON.stringify(response, null, 4);
+        } catch {}
+
+        return response;
       },
       set(value) {
         return (useGRPCStore().projects[this.projectID].forms[this.formID].response = value);
@@ -55,9 +71,9 @@ export default defineComponent({
     <q-form class="q-gutter-md full-height">
       <q-input v-model="address" label="Address" />
 
-      <q-input type="textarea" v-model="request" label="Request" filled />
+      <v-ace-editor v-model:value="request" lang="json" theme="merbivore_custom" style="height: 30%" />
 
-      <q-input type="textarea" v-model="response" label="Response" filled />
+      <v-ace-editor v-model:value="response" lang="json" theme="merbivore_custom" style="height: 30%" readonly />
 
       <div>
         <q-btn v-if="!this.forms[this.formID].requestInProgress" label="Send" color="secondary" @click="sendRequest" />
