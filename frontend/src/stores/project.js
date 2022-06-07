@@ -6,6 +6,7 @@ import {
   CreateNewProject,
   OpenGRPCProject,
   CloseProject,
+  SaveCurrentProjectID,
 } from "../wailsjs/go/project/Module";
 
 export const useProjectStore = defineStore({
@@ -52,6 +53,16 @@ export const useProjectStore = defineStore({
 
     closeProjectTab(projectID) {
       CloseProject(projectID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          console.log(reason);
+        });
+    },
+
+    saveCurrentProjectID(projectID) {
+      SaveCurrentProjectID(projectID)
         .then((state) => {
           this.$state = state;
         })

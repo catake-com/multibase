@@ -17,6 +17,9 @@ export default defineComponent({
         Object.entries(useProjectStore().projects).filter(([projectID, project]) => project.type !== "new")
       );
     },
+    nonNewProjectList() {
+      return Object.values(this.nonNewProjects);
+    },
   },
   beforeCreate() {
     useProjectStore().loadState();
@@ -32,6 +35,11 @@ export default defineComponent({
       useGRPCStore().createNewProject(this.currentProjectID);
       useProjectStore().createNewGRPCProject(this.currentProjectID);
     },
+
+    deleteGRPCProject() {
+      useGRPCStore().createNewProject(this.currentProjectID);
+      useProjectStore().createNewGRPCProject(this.currentProjectID);
+    },
   },
 });
 </script>
@@ -44,21 +52,57 @@ export default defineComponent({
           <div class="col"></div>
 
           <div class="col-6">
-            <q-list bordered separator>
-              <q-item
-                clickable
-                v-ripple
-                v-for="(projectItem, projectItemID) in nonNewProjects"
-                :key="`project-list-item-${projectItemID}`"
-                @click="openGRPCProject(projectID, projectItemID)"
-              >
-                <q-item-section v-if="projectItem.type === 'grpc'" avatar>
-                  <q-icon name="img:grpc.jpg" size="36px" />
-                </q-item-section>
+            <q-table
+              :rows="nonNewProjectList"
+              :columns="[
+                { name: 'icon', field: 'icon', align: 'left' },
+                { name: 'name', field: 'name', align: 'left' },
+                { name: 'actions', field: 'actions', align: 'right' },
+              ]"
+              hide-header
+              hide-pagination
+              dense
+              bordered
+              separator="cell"
+              no-data-label="No projects has been created yet"
+              row-key="id"
+            >
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td key="icon" :props="props" auto-width no-hover>
+                    <q-icon v-if="props.row.type === 'grpc'" name="img:grpc.jpg" size="36px" />
+                  </q-td>
 
-                <q-item-section v-if="projectItem.type === 'grpc'">{{ projectItem.name }}</q-item-section>
-              </q-item>
-            </q-list>
+                  <q-td
+                    key="name"
+                    :props="props"
+                    style="cursor: pointer"
+                    @click="openGRPCProject(projectID, props.row.id)"
+                  >
+                    {{ props.row.name }}
+                  </q-td>
+
+                  <q-td key="actions" :props="props" auto-width no-hover>
+                    <q-btn
+                      class="inline"
+                      icon="delete"
+                      size="10px"
+                      style="width: 20px"
+                      flat
+                      rounded
+                      dense
+                      @click="deleteGRPCProject($event, props.row.id)"
+                    />
+                  </q-td>
+                </q-tr>
+              </template>
+
+              <template v-slot:no-data="{ icon, message, filter }">
+                <div class="full-width row flex-center">
+                  {{ message }}
+                </div>
+              </template>
+            </q-table>
           </div>
 
           <div class="col-2">
@@ -69,7 +113,7 @@ export default defineComponent({
         </div>
       </div>
 
-      <div v-if="project.type === 'grpc'">
+      <div v-if="project.type === 'grpc'" class="full-height">
         <GRPC :projectID="projectID" />
       </div>
     </q-tab-panel>

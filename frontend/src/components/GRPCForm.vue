@@ -51,16 +51,16 @@ export default defineComponent({
 </script>
 
 <template>
-  <div>
-    <q-form class="q-gutter-md">
+  <div class="full-height">
+    <q-form class="q-gutter-md full-height">
       <q-input v-model="address" label="Address" />
 
-      <q-input type="textarea" v-model="request" label="Request" />
+      <q-input type="textarea" v-model="request" label="Request" filled />
 
-      <q-input type="textarea" v-model="response" label="Response" />
+      <q-input type="textarea" v-model="response" label="Response" filled />
 
       <div>
-        <q-btn v-if="!this.forms[this.formID].requestInProgress" label="Send" color="primary" @click="sendRequest" />
+        <q-btn v-if="!this.forms[this.formID].requestInProgress" label="Send" color="secondary" @click="sendRequest" />
         <q-btn v-else label="Stop" color="negative" @click="stopRequest" />
       </div>
     </q-form>

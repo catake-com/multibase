@@ -98,8 +98,8 @@ export default defineComponent({
 </script>
 
 <template>
-  <div>
-    <q-splitter v-model="val">
+  <div class="full-height">
+    <q-splitter v-model="val" class="full-height">
       <template v-slot:before>
         <q-tabs v-model="tab">
           <q-tab name="protos" label="Protos" />
@@ -110,7 +110,7 @@ export default defineComponent({
 
         <q-tab-panels v-model="tab" animated>
           <q-tab-panel name="protos">
-            <q-btn size="sm" label="Open .proto file" @click="openProtoFile" />
+            <q-btn size="sm" label="Open .proto file" color="primary" @click="openProtoFile" />
 
             <q-tree
               v-if="(nodes || []).length > 0"
@@ -123,7 +123,7 @@ export default defineComponent({
           </q-tab-panel>
 
           <q-tab-panel name="import_paths">
-            <q-btn size="sm" label="Add import path" @click="openImportPath" />
+            <q-btn size="sm" label="Add import path" color="primary" @click="openImportPath" />
 
             <q-list dense>
               <q-item v-for="importPath in importPathList" :key="importPath">
@@ -179,12 +179,12 @@ export default defineComponent({
             </div>
           </q-tab>
 
-          <q-btn @click="createNewForm" icon="add" color="secondary" />
+          <q-btn @click="createNewForm" icon="add" color="primary" />
         </q-tabs>
 
         <q-separator />
 
-        <q-tab-panels v-model="currentFormID" animated>
+        <q-tab-panels v-model="currentFormID" animated class="full-height">
           <q-tab-panel :name="formID" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
             <GRPCForm :formID="formID" :projectID="this.projectID" />
           </q-tab-panel>

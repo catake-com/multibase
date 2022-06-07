@@ -20,7 +20,7 @@ type State struct {
 }
 
 type StateProject struct {
-	ID             string                       `json:"-"`
+	ID             string                       `json:"id"`
 	Forms          map[string]*StateProjectForm `json:"forms"`
 	CurrentFormID  string                       `json:"currentFormID"`
 	ImportPathList []string                     `json:"importPathList"`
@@ -29,7 +29,7 @@ type StateProject struct {
 }
 
 type StateProjectForm struct {
-	ID               string `json:"-"`
+	ID               string `json:"id"`
 	Address          string `json:"address"`
 	SelectedMethodID string `json:"selectedMethodID"`
 	Request          string `json:"request"`

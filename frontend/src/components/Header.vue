@@ -13,6 +13,17 @@ export default defineComponent({
   beforeCreate() {
     useProjectStore().loadState();
   },
+  watch: {
+    currentProjectID(newValue, oldValue) {
+      if (newValue === oldValue) {
+        return;
+      }
+
+      const projectID = newValue || oldValue;
+
+      useProjectStore().saveCurrentProjectID(projectID);
+    },
+  },
   methods: {
     createNewProject() {
       const store = useProjectStore();

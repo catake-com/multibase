@@ -18,3 +18,8 @@ update-wails:
 cleanup-state:
 	@rm ~/Library/Application\ Support/multibase/project.json
 	@rm ~/Library/Application\ Support/multibase/grpc.json
+
+.PHONY: show-state
+show-state:
+	@jq . ~/Library/Application\ Support/multibase/project.json
+	@jq . ~/Library/Application\ Support/multibase/grpc.json

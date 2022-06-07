@@ -1,6 +1,7 @@
 export namespace project {
 	
 	export class StateProject {
+	    id: string;
 	    type: string;
 	    name: string;
 	
@@ -10,12 +11,13 @@ export namespace project {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.type = source["type"];
 	        this.name = source["name"];
 	    }
 	}
 	export class StateStats {
-	    _: number;
+	    grpc_project_count: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new StateStats(source);
@@ -23,12 +25,12 @@ export namespace project {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this._ = source["_"];
+	        this.grpc_project_count = source["grpc_project_count"];
 	    }
 	}
 	export class State {
 	    // Go type: StateStats
-	    _?: any;
+	    stats?: any;
 	    projects: {[key: string]: StateProject};
 	    openedProjectIDs: string[];
 	    currentProjectID: string;
@@ -39,7 +41,7 @@ export namespace project {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this._ = this.convertValues(source["_"], null);
+	        this.stats = this.convertValues(source["stats"], null);
 	        this.projects = source["projects"];
 	        this.openedProjectIDs = source["openedProjectIDs"];
 	        this.currentProjectID = source["currentProjectID"];
@@ -105,6 +107,7 @@ export namespace grpc {
 		}
 	}
 	export class StateProjectForm {
+	    id: string;
 	    address: string;
 	    selectedMethodID: string;
 	    request: string;
@@ -116,6 +119,7 @@ export namespace grpc {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.address = source["address"];
 	        this.selectedMethodID = source["selectedMethodID"];
 	        this.request = source["request"];
@@ -123,6 +127,7 @@ export namespace grpc {
 	    }
 	}
 	export class StateProject {
+	    id: string;
 	    forms: {[key: string]: StateProjectForm};
 	    currentFormID: string;
 	    importPathList: string[];
@@ -135,6 +140,7 @@ export namespace grpc {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.forms = source["forms"];
 	        this.currentFormID = source["currentFormID"];
 	        this.importPathList = source["importPathList"];
