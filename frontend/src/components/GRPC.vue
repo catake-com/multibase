@@ -184,7 +184,7 @@ export default defineComponent({
 
         <q-separator />
 
-        <q-tab-panels v-model="currentFormID" animated class="full-height">
+        <q-tab-panels id="formContainer" v-model="currentFormID" animated>
           <q-tab-panel :name="formID" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
             <GRPCForm :formID="formID" :projectID="this.projectID" />
           </q-tab-panel>
@@ -195,6 +195,10 @@ export default defineComponent({
 </template>
 
 <style>
+#formContainer {
+  height: calc(100% - 48px) !important;
+}
+
 .grpc-form-tab-name {
   display: flex;
   flex-direction: row;

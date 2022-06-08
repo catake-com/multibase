@@ -14,13 +14,17 @@ export default {
 </script>
 
 <template>
-  <q-layout view="hHh lpR fFf">
+  <q-layout view="hHh lpR fFf" class="window-height">
     <Header />
 
-    <q-page-container>
-      <Project class="window-height" />
+    <q-page-container id="pageContainer">
+      <Project class="full-height" />
     </q-page-container>
   </q-layout>
 </template>
 
-<style></style>
+<style>
+#pageContainer {
+  height: calc(100% - 48px) !important;
+}
+</style>
