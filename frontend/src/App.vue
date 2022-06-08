@@ -27,4 +27,8 @@ export default {
 #pageContainer {
   height: calc(100% - 48px) !important;
 }
+
+body {
+  overflow: hidden !important;
+}
 </style>
