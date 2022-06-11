@@ -68,6 +68,12 @@ export default defineComponent({
       store.openProtoFile(this.projectID);
     },
 
+    deleteAllProtoFiles() {
+      const store = useGRPCStore();
+
+      store.deleteAllProtoFiles(this.projectID);
+    },
+
     openImportPath() {
       const store = useGRPCStore();
 
@@ -108,9 +114,10 @@ export default defineComponent({
 
         <q-separator />
 
-        <q-tab-panels v-model="tab" animated>
-          <q-tab-panel name="protos">
+        <q-tab-panels v-model="tab" animated style="height: calc(100% - 49px) !important">
+          <q-tab-panel name="protos" class="full-height">
             <q-btn size="sm" label="Open .proto file" color="primary" @click="openProtoFile" />
+            <q-btn size="sm" icon="delete" color="primary" round @click="deleteAllProtoFiles" class="float-right" />
 
             <q-tree
               v-if="(nodes || []).length > 0"

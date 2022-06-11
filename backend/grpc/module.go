@@ -143,6 +143,10 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 		return nil, fmt.Errorf("failed to open proto file: %w", err)
 	}
 
+	if protoFilePath == "" {
+		return m.state, nil
+	}
+
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
@@ -182,10 +186,43 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 	return m.state, nil
 }
 
+func (m *Module) DeleteAllProtoFiles(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	project, err := m.project(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	m.state.Projects[projectID].ProtoFileList = nil
+
+	nodes, err := project.RefreshProtoDescriptors(
+		m.state.Projects[projectID].ImportPathList,
+		m.state.Projects[projectID].ProtoFileList,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.state.Projects[projectID].Nodes = nodes
+
+	err = m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
 func (m *Module) OpenImportPath(projectID string) (*State, error) {
 	importPath, err := runtime.OpenDirectoryDialog(m.AppCtx, runtime.OpenDialogOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open import path: %w", err)
+	}
+
+	if importPath == "" {
+		return m.state, nil
 	}
 
 	m.stateMutex.Lock()

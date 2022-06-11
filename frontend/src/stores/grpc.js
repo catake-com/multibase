@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import {
   CreateNewProject,
   CreateNewForm,
+  DeleteAllProtoFiles,
   RemoveForm,
   SelectMethod,
   SendRequest,
@@ -137,6 +138,16 @@ export const useGRPCStore = defineStore({
 
     openProtoFile(projectID) {
       OpenProtoFile(projectID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
+        });
+    },
+
+    deleteAllProtoFiles(projectID) {
+      DeleteAllProtoFiles(projectID)
         .then((state) => {
           this.$state = state;
         })
