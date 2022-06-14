@@ -17,12 +17,15 @@ export default defineComponent({
     forms() {
       return useGRPCStore().projects[this.projectID].forms;
     },
+    form() {
+      return useGRPCStore().projects[this.projectID].forms[this.formID];
+    },
     address: {
       get() {
         return useGRPCStore().projects[this.projectID].forms[this.formID].address;
       },
-      set(value) {
-        return (useGRPCStore().projects[this.projectID].forms[this.formID].address = value);
+      set(address) {
+        useGRPCStore().saveAddress(this.projectID, this.formID, address);
       },
     },
     request: {
@@ -35,8 +38,8 @@ export default defineComponent({
 
         return request;
       },
-      set(value) {
-        return (useGRPCStore().projects[this.projectID].forms[this.formID].request = value);
+      set(requestPayload) {
+        useGRPCStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
       },
     },
     response: {
@@ -76,7 +79,13 @@ export default defineComponent({
       <v-ace-editor v-model:value="response" lang="json" theme="merbivore_custom" style="height: 30%" readonly />
 
       <div>
-        <q-btn v-if="!this.forms[this.formID].requestInProgress" label="Send" color="secondary" @click="sendRequest" />
+        <q-btn
+          v-if="!form.requestInProgress"
+          label="Send"
+          color="secondary"
+          :disable="!form.selectedMethodID"
+          @click="sendRequest"
+        />
         <q-btn v-else label="Stop" color="negative" @click="stopRequest" />
       </div>
     </q-form>

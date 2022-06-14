@@ -286,6 +286,34 @@ func (m *Module) SaveCurrentFormID(projectID, currentFormID string) (*State, err
 	return m.state, nil
 }
 
+func (m *Module) SaveAddress(projectID, formID, address string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].Forms[formID].Address = address
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) SaveRequestPayload(projectID, formID, requestPayload string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].Forms[formID].Request = requestPayload
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
 func (m *Module) CreateNewProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -320,9 +348,14 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 
 	formID := uuid.Must(uuid.NewV4()).String()
 
+	address := "0.0.0.0:50051"
+	if m.state.Projects[projectID].CurrentFormID != "" {
+		address = m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID].Address
+	}
+
 	m.state.Projects[projectID].Forms[formID] = &StateProjectForm{
 		ID:       formID,
-		Address:  "0.0.0.0:50051",
+		Address:  address,
 		Request:  "{}",
 		Response: "{}",
 	}

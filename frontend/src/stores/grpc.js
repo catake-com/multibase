@@ -12,6 +12,8 @@ import {
   RemoveImportPath,
   OpenProtoFile,
   SaveCurrentFormID,
+  SaveAddress,
+  SaveRequestPayload,
   State,
 } from "../wailsjs/go/grpc/Module";
 
@@ -89,7 +91,6 @@ export const useGRPCStore = defineStore({
         projectID,
         formID,
         this.projects[projectID].forms[formID].address,
-        this.projects[projectID].forms[formID].selectedMethodID,
         this.projects[projectID].forms[formID].request
       )
         .then((state) => {
@@ -160,6 +161,26 @@ export const useGRPCStore = defineStore({
 
     async saveCurrentFormID(projectID, currentFormID) {
       return SaveCurrentFormID(projectID, currentFormID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
+        });
+    },
+
+    async saveAddress(projectID, formID, address) {
+      return SaveAddress(projectID, formID, address)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
+        });
+    },
+
+    async saveRequestPayload(projectID, formID, requestPayload) {
+      return SaveRequestPayload(projectID, formID, requestPayload)
         .then((state) => {
           this.$state = state;
         })
