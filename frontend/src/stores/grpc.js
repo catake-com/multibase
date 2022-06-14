@@ -11,6 +11,7 @@ import {
   OpenImportPath,
   RemoveImportPath,
   OpenProtoFile,
+  SaveCurrentFormID,
   State,
 } from "../wailsjs/go/grpc/Module";
 
@@ -137,8 +138,8 @@ export const useGRPCStore = defineStore({
         });
     },
 
-    openProtoFile(projectID) {
-      OpenProtoFile(projectID)
+    async openProtoFile(projectID) {
+      return OpenProtoFile(projectID)
         .then((state) => {
           this.$state = state;
         })
@@ -149,6 +150,16 @@ export const useGRPCStore = defineStore({
 
     deleteAllProtoFiles(projectID) {
       DeleteAllProtoFiles(projectID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
+        });
+    },
+
+    async saveCurrentFormID(projectID, currentFormID) {
+      return SaveCurrentFormID(projectID, currentFormID)
         .then((state) => {
           this.$state = state;
         })

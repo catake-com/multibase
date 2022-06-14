@@ -272,6 +272,20 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 	return m.state, nil
 }
 
+func (m *Module) SaveCurrentFormID(projectID, currentFormID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].CurrentFormID = currentFormID
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
 func (m *Module) CreateNewProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -364,7 +378,10 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 			return formID == fID
 		},
 	)
-	m.state.Projects[projectID].CurrentFormID = lo.Keys(m.state.Projects[projectID].Forms)[0]
+
+	if m.state.Projects[projectID].CurrentFormID == formID {
+		m.state.Projects[projectID].CurrentFormID = lo.Keys(m.state.Projects[projectID].Forms)[0]
+	}
 
 	err := m.saveState()
 	if err != nil {

@@ -14,7 +14,6 @@ export default defineComponent({
   data() {
     return {
       val: 30,
-      selectedMethod: null,
       tab: "protos",
     };
   },
@@ -50,27 +49,45 @@ export default defineComponent({
           return useGRPCStore().projects[this.projectID].currentFormID;
         }
       },
-      set(value) {
-        return (useGRPCStore().projects[this.projectID].currentFormID = value);
+      set(currentFormID) {
+        useGRPCStore().saveCurrentFormID(this.projectID, currentFormID);
+      },
+    },
+    selectedMethod: {
+      get() {
+        if (useGRPCStore().projects[this.projectID]) {
+          const currentFormID = useGRPCStore().projects[this.projectID].currentFormID;
+          const currentForm = useGRPCStore().projects[this.projectID].forms[currentFormID];
+
+          if (currentForm) {
+            return currentForm.selectedMethodID;
+          }
+        }
+      },
+      set(selectedMethodID) {
+        useGRPCStore().selectMethod(this.projectID, this.projects[this.projectID].currentFormID, selectedMethodID);
       },
     },
   },
   watch: {
-    selectedMethod(newMethod, oldMethod) {
-      if (newMethod === oldMethod) {
+    currentFormID(newCurrentFormID, oldCurrentFormID) {
+      if (newCurrentFormID === oldCurrentFormID) {
         return;
       }
 
-      const currentMethod = newMethod || oldMethod;
+      const formID = newCurrentFormID || oldCurrentFormID;
+      const form = useGRPCStore().projects[this.projectID].forms[formID];
 
-      useGRPCStore().selectMethod(this.projectID, this.projects[this.projectID].currentFormID, currentMethod);
+      if (form.selectedMethodID && this.selectedMethod !== form.selectedMethodID) {
+        this.selectedMethod = form.selectedMethodID;
+      }
     },
   },
   methods: {
-    openProtoFile() {
+    async openProtoFile() {
       const store = useGRPCStore();
 
-      store.openProtoFile(this.projectID);
+      await store.openProtoFile(this.projectID);
     },
 
     deleteAllProtoFiles() {
@@ -126,6 +143,7 @@ export default defineComponent({
 
             <q-tree
               v-if="(nodes || []).length > 0"
+              ref="protoTree"
               :nodes="nodes"
               default-expand-all
               no-selection-unset
