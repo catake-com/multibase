@@ -22,6 +22,7 @@ type State struct {
 type StateProject struct {
 	ID             string                       `json:"id"`
 	Forms          map[string]*StateProjectForm `json:"forms"`
+	FormIDs        []string                     `json:"formIDs"`
 	CurrentFormID  string                       `json:"currentFormID"`
 	ImportPathList []string                     `json:"importPathList"`
 	ProtoFileList  []string                     `json:"protoFileList"`
@@ -69,12 +70,11 @@ func NewModule() (*Module, error) {
 	return module, nil
 }
 
-func (m *Module) SendRequest(projectID, formID string, address, methodID, payload string) (*State, error) {
+func (m *Module) SendRequest(projectID, formID string, address, payload string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
 	m.state.Projects[projectID].Forms[formID].Address = address
-	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 	m.state.Projects[projectID].Forms[formID].Request = payload
 
 	project, err := m.project(projectID)
@@ -82,7 +82,12 @@ func (m *Module) SendRequest(projectID, formID string, address, methodID, payloa
 		return nil, err
 	}
 
-	response, err := project.SendRequest(formID, address, methodID, payload)
+	response, err := project.SendRequest(
+		formID,
+		address,
+		m.state.Projects[projectID].Forms[formID].SelectedMethodID,
+		payload,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -285,6 +290,7 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 		},
 		CurrentFormID: formID,
 	}
+	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 
 	err := m.saveState()
 	if err != nil {
@@ -306,6 +312,7 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 		Request:  "{}",
 		Response: "{}",
 	}
+	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 	m.state.Projects[projectID].CurrentFormID = formID
 
 	err := m.saveState()
@@ -351,6 +358,12 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 	defer m.stateMutex.Unlock()
 
 	delete(m.state.Projects[projectID].Forms, formID)
+	m.state.Projects[projectID].FormIDs = lo.Reject(
+		m.state.Projects[projectID].FormIDs,
+		func(fID string, _ int) bool {
+			return formID == fID
+		},
+	)
 	m.state.Projects[projectID].CurrentFormID = lo.Keys(m.state.Projects[projectID].Forms)[0]
 
 	err := m.saveState()

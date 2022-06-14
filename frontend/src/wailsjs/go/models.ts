@@ -129,6 +129,7 @@ export namespace grpc {
 	export class StateProject {
 	    id: string;
 	    forms: {[key: string]: StateProjectForm};
+	    formIDs: string[];
 	    currentFormID: string;
 	    importPathList: string[];
 	    protoFileList: string[];
@@ -142,6 +143,7 @@ export namespace grpc {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.forms = source["forms"];
+	        this.formIDs = source["formIDs"];
 	        this.currentFormID = source["currentFormID"];
 	        this.importPathList = source["importPathList"];
 	        this.protoFileList = source["protoFileList"];

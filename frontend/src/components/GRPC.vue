@@ -39,6 +39,11 @@ export default defineComponent({
         return useGRPCStore().projects[this.projectID].forms;
       }
     },
+    formIDs() {
+      if (useGRPCStore().projects[this.projectID]) {
+        return useGRPCStore().projects[this.projectID].formIDs;
+      }
+    },
     currentFormID: {
       get() {
         if (useGRPCStore().projects[this.projectID]) {
@@ -153,17 +158,21 @@ export default defineComponent({
 
       <template v-slot:after>
         <q-tabs v-model="currentFormID" align="left" outside-arrows mobile-arrows dense no-caps>
-          <q-tab :name="formID" v-for="(form, formID) in forms" :key="`tab-${formID}`">
+          <q-tab :name="formID" v-for="formID in formIDs" :key="`tab-${formID}`">
             <div class="row justify-between">
               <div class="col q-tab__label">
-                <div v-if="form.selectedMethodID.length < 15">{{ form.selectedMethodID || "New Form" }}</div>
+                <div v-if="forms[formID].selectedMethodID.length < 15">
+                  {{ forms[formID].selectedMethodID || "New Form" }}
+                </div>
 
                 <div v-else class="grpc-form-tab-name">
-                  <div class="start">{{ form.selectedMethodID.substring(0, 20) }}</div>
+                  <div class="start">{{ forms[formID].selectedMethodID.substring(0, 20) }}</div>
                   <div class="end">
                     {{
-                      form.selectedMethodID.substring(
-                        form.selectedMethodID.length - 20 > 20 ? form.selectedMethodID.length - 20 : 20
+                      forms[formID].selectedMethodID.substring(
+                        forms[formID].selectedMethodID.length - 20 > 20
+                          ? forms[formID].selectedMethodID.length - 20
+                          : 20
                       )
                     }}
                   </div>
@@ -225,5 +234,9 @@ export default defineComponent({
   flex-basis: content;
   flex-grow: 0;
   flex-shrink: 0;
+}
+
+.q-tree__node--selected .q-tree__node-header-content {
+  color: #3498db;
 }
 </style>

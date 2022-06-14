@@ -28,6 +28,7 @@ export const useGRPCStore = defineStore({
             requestInProgress: false,
           },
         },
+        formIDs: [],
         currentFormID: "b7ce6ea8-c5f1-477f-bdb1-43814c2106ed",
         importPathList: [],
         protoFileList: [],
