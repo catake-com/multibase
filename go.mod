@@ -9,20 +9,20 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/jhump/protoreflect v1.12.0
 	github.com/samber/lo v1.21.0
-	github.com/wailsapp/wails/v2 v2.0.0-beta.37
+	github.com/wailsapp/wails/v2 v2.0.0-beta.38
 	go.uber.org/multierr v1.8.0
-	google.golang.org/grpc v1.46.2
+	google.golang.org/grpc v1.47.0
 )
 
 require (
+	github.com/bep/debounce v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/labstack/echo/v4 v4.7.2 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
-	github.com/leaanthony/go-ansi-parser v1.4.0 // indirect
-	github.com/leaanthony/go-common-file-dialog v1.0.3 // indirect
+	github.com/leaanthony/go-ansi-parser v1.5.0 // indirect
 	github.com/leaanthony/gosod v1.0.3 // indirect
 	github.com/leaanthony/slicer v1.6.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -35,11 +35,11 @@ require (
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
-	golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf // indirect
-	golang.org/x/net v0.0.0-20220531185740-c18622019355 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
+	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d // indirect
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
+	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220531173845-685668d2de03 // indirect
+	google.golang.org/genproto v0.0.0-20220628213854-d9e0b6570c03 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
