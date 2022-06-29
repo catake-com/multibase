@@ -58,6 +58,7 @@ export namespace grpc {
 	}
 	export class StateProject {
 	    id: string;
+	    splitterWidth: number;
 	    forms: {[key: string]: StateProjectForm};
 	    formIDs: string[];
 	    currentFormID: string;
@@ -72,6 +73,7 @@ export namespace grpc {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	        this.splitterWidth = source["splitterWidth"];
 	        this.forms = source["forms"];
 	        this.formIDs = source["formIDs"];
 	        this.currentFormID = source["currentFormID"];

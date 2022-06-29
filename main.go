@@ -29,7 +29,7 @@ func main() {
 		Width:     1024,
 		Height:    768,
 		MinWidth:  1024,
-		MinHeight: 768,
+		MinHeight: 300,
 		// MaxWidth:          1280,
 		// MaxHeight:         800,
 		DisableResize:     false,

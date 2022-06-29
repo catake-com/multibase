@@ -21,6 +21,7 @@ type State struct {
 
 type StateProject struct {
 	ID             string                       `json:"id"`
+	SplitterWidth  float64                      `json:"splitterWidth"`
 	Forms          map[string]*StateProjectForm `json:"forms"`
 	FormIDs        []string                     `json:"formIDs"`
 	CurrentFormID  string                       `json:"currentFormID"`
@@ -300,6 +301,20 @@ func (m *Module) SaveAddress(projectID, formID, address string) (*State, error) 
 	return m.state, nil
 }
 
+func (m *Module) SaveSplitterWidth(projectID string, splitterWidth float64) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].SplitterWidth = splitterWidth
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
 func (m *Module) SaveRequestPayload(projectID, formID, requestPayload string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -321,7 +336,8 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 	formID := uuid.Must(uuid.NewV4()).String()
 
 	m.state.Projects[projectID] = &StateProject{
-		ID: projectID,
+		ID:            projectID,
+		SplitterWidth: 30,
 		Forms: map[string]*StateProjectForm{
 			formID: {
 				ID:       formID,

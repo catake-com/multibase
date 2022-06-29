@@ -13,7 +13,6 @@ export default defineComponent({
   components: { GRPCForm },
   data() {
     return {
-      val: 30,
       tab: "protos",
     };
   },
@@ -51,6 +50,16 @@ export default defineComponent({
       },
       set(currentFormID) {
         useGRPCStore().saveCurrentFormID(this.projectID, currentFormID);
+      },
+    },
+    splitterWidth: {
+      get() {
+        if (useGRPCStore().projects[this.projectID]) {
+          return useGRPCStore().projects[this.projectID].splitterWidth;
+        }
+      },
+      set(splitterWidth) {
+        useGRPCStore().saveSplitterWidth(this.projectID, splitterWidth);
       },
     },
     selectedMethod: {
@@ -127,9 +136,9 @@ export default defineComponent({
 
 <template>
   <div class="full-height">
-    <q-splitter v-model="val" class="full-height">
+    <q-splitter v-model="splitterWidth" class="full-height" :limits="[20, 80]">
       <template v-slot:before>
-        <q-tabs v-model="tab">
+        <q-tabs v-model="tab" class="full-width">
           <q-tab name="protos" label="Protos" />
           <q-tab name="import_paths" label="Import Paths" />
         </q-tabs>
@@ -256,5 +265,9 @@ export default defineComponent({
 
 .q-tree__node--selected .q-tree__node-header-content {
   color: #3498db;
+}
+
+.q-tabs__content--align-center .q-tab {
+  flex: 1 1 auto;
 }
 </style>

@@ -31,9 +31,9 @@ export default defineComponent({
       store.openGRPCProject(newProjectID, grpcProjectID);
     },
 
-    newGRPCProject() {
-      useGRPCStore().createNewProject(this.currentProjectID);
-      useProjectStore().createNewGRPCProject(this.currentProjectID);
+    async newGRPCProject() {
+      await useGRPCStore().createNewProject(this.currentProjectID);
+      await useProjectStore().createNewGRPCProject(this.currentProjectID);
     },
 
     deleteGRPCProject() {

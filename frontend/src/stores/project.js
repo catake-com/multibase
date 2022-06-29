@@ -41,8 +41,8 @@ export const useProjectStore = defineStore({
         });
     },
 
-    createNewProject() {
-      CreateNewProject()
+    async createNewProject() {
+      return CreateNewProject()
         .then((state) => {
           this.$state = state;
         })

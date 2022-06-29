@@ -13,6 +13,7 @@ import {
   OpenProtoFile,
   SaveCurrentFormID,
   SaveAddress,
+  SaveSplitterWidth,
   SaveRequestPayload,
   State,
 } from "../wailsjs/go/grpc/Module";
@@ -22,6 +23,7 @@ export const useGRPCStore = defineStore({
   state: () => ({
     projects: {
       "ae3d1fa3-09c7-4af0-a57f-65c24cbdf5f3": {
+        splitterWidth: 30,
         forms: {
           "b7ce6ea8-c5f1-477f-bdb1-43814c2106ed": {
             address: "0.0.0.0:50051",
@@ -40,8 +42,8 @@ export const useGRPCStore = defineStore({
     },
   }),
   actions: {
-    createNewProject(projectID) {
-      CreateNewProject(projectID)
+    async createNewProject(projectID) {
+      return CreateNewProject(projectID)
         .then((state) => {
           this.$state = state;
         })
@@ -171,6 +173,16 @@ export const useGRPCStore = defineStore({
 
     async saveAddress(projectID, formID, address) {
       return SaveAddress(projectID, formID, address)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
+        });
+    },
+
+    async saveSplitterWidth(projectID, address) {
+      return SaveSplitterWidth(projectID, address)
         .then((state) => {
           this.$state = state;
         })
