@@ -1,11 +1,10 @@
-package grpc
+package thrift
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"sync"
 
 	"github.com/adrg/xdg"
@@ -20,22 +19,21 @@ type State struct {
 }
 
 type StateProject struct {
-	ID             string                       `json:"id"`
-	SplitterWidth  float64                      `json:"splitterWidth"`
-	Forms          map[string]*StateProjectForm `json:"forms"`
-	FormIDs        []string                     `json:"formIDs"`
-	CurrentFormID  string                       `json:"currentFormID"`
-	ImportPathList []string                     `json:"importPathList"`
-	ProtoFileList  []string                     `json:"protoFileList"`
-	Nodes          []*ProtoTreeNode             `json:"nodes"`
+	ID            string                       `json:"id"`
+	SplitterWidth float64                      `json:"splitterWidth"`
+	Forms         map[string]*StateProjectForm `json:"forms"`
+	FormIDs       []string                     `json:"formIDs"`
+	CurrentFormID string                       `json:"currentFormID"`
+	FilePath      string                       `json:"filePath"`
+	Nodes         []*ServiceTreeNode           `json:"nodes"`
 }
 
 type StateProjectForm struct {
-	ID               string `json:"id"`
-	Address          string `json:"address"`
-	SelectedMethodID string `json:"selectedMethodID"`
-	Request          string `json:"request"`
-	Response         string `json:"response"`
+	ID                 string `json:"id"`
+	Address            string `json:"address"`
+	SelectedFunctionID string `json:"selectedFunctionID"`
+	Request            string `json:"request"`
+	Response           string `json:"response"`
 }
 
 type Module struct {
@@ -44,13 +42,12 @@ type Module struct {
 	state          *State
 	stateMutex     *sync.RWMutex
 	projects       map[string]*Project
-	projectsMutex  *sync.RWMutex
 }
 
 func NewModule() (*Module, error) {
-	configFilePath, err := xdg.ConfigFile("multibase/grpc.json")
+	configFilePath, err := xdg.ConfigFile("multibase/thrift.json")
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve grpc config path: %w", err)
+		return nil, fmt.Errorf("failed to resolve thrift config path: %w", err)
 	}
 
 	module := &Module{
@@ -58,12 +55,16 @@ func NewModule() (*Module, error) {
 		state: &State{
 			Projects: make(map[string]*StateProject),
 		},
-		stateMutex:    &sync.RWMutex{},
-		projects:      map[string]*Project{},
-		projectsMutex: &sync.RWMutex{},
+		stateMutex: &sync.RWMutex{},
+		projects:   map[string]*Project{},
 	}
 
 	err = module.readOrInitializeState()
+	if err != nil {
+		return nil, err
+	}
+
+	err = module.initializeProjects()
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +79,12 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 	m.state.Projects[projectID].Forms[formID].Address = address
 	m.state.Projects[projectID].Forms[formID].Request = payload
 
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
+	project := m.projects[projectID]
 
 	response, err := project.SendRequest(
 		formID,
 		address,
-		m.state.Projects[projectID].Forms[formID].SelectedMethodID,
+		m.state.Projects[projectID].Forms[formID].SelectedFunctionID,
 		payload,
 	)
 	if err != nil {
@@ -107,82 +105,44 @@ func (m *Module) StopRequest(projectID, formID string) (*State, error) {
 	m.stateMutex.RLock()
 	defer m.stateMutex.RUnlock()
 
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = project.StopRequest(formID)
-	if err != nil {
-		return nil, err
-	}
+	project := m.projects[projectID]
+	project.StopRequest(formID)
 
 	return m.state, nil
 }
 
-func (m *Module) RemoveImportPath(projectID, importPath string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Projects[projectID].ImportPathList = lo.Reject(
-		m.state.Projects[projectID].ImportPathList,
-		func(ip string, _ int) bool {
-			return ip == importPath
-		},
-	)
-
-	err := m.saveState()
-	if err != nil {
-		return nil, err
-	}
-
-	return m.state, nil
-}
-
-func (m *Module) OpenProtoFile(projectID string) (*State, error) {
-	protoFilePath, err := runtime.OpenFileDialog(m.AppCtx, runtime.OpenDialogOptions{
+func (m *Module) OpenFilePath(projectID string) (*State, error) {
+	filePath, err := runtime.OpenFileDialog(m.AppCtx, runtime.OpenDialogOptions{
 		Filters: []runtime.FileFilter{
-			{DisplayName: "Proto Files (*.proto)", Pattern: "*.proto;"},
+			{DisplayName: "Thrift Files (*.thrift)", Pattern: "*.thrift;"},
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open proto file: %w", err)
+		return nil, fmt.Errorf("failed to open thrift file: %w", err)
 	}
 
-	if protoFilePath == "" {
+	if filePath == "" {
 		return m.state, nil
 	}
 
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	if lo.Contains(m.state.Projects[projectID].ProtoFileList, protoFilePath) {
-		return m.state, nil
-	}
+	project := m.projects[projectID]
 
-	var importPathList []string
-	if len(m.state.Projects[projectID].ImportPathList) > 0 {
-		importPathList = m.state.Projects[projectID].ImportPathList
-	} else {
-		currentDir := path.Dir(protoFilePath)
-		importPathList = []string{currentDir}
-	}
-
-	protoFileList := append([]string{protoFilePath}, m.state.Projects[projectID].ProtoFileList...)
-
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	nodes, err := project.RefreshProtoDescriptors(importPathList, protoFileList)
+	nodes, err := project.GenerateServiceTreeNodes(filePath)
 	if err != nil {
 		return nil, err
 	}
 
 	m.state.Projects[projectID].Nodes = nodes
-	m.state.Projects[projectID].ImportPathList = importPathList
-	m.state.Projects[projectID].ProtoFileList = protoFileList
+	m.state.Projects[projectID].FilePath = filePath
+
+	for _, form := range m.state.Projects[projectID].Forms {
+		form.SelectedFunctionID = ""
+		form.Request = "{}"
+		form.Response = "{}"
+	}
 
 	err = m.saveState()
 	if err != nil {
@@ -192,69 +152,10 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 	return m.state, nil
 }
 
-func (m *Module) DeleteAllProtoFiles(projectID string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
+func (m *Module) SelectFunction(projectID, formID, functionID string) (*State, error) {
+	project := m.projects[projectID]
 
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	m.state.Projects[projectID].ProtoFileList = nil
-
-	nodes, err := project.RefreshProtoDescriptors(
-		m.state.Projects[projectID].ImportPathList,
-		m.state.Projects[projectID].ProtoFileList,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	m.state.Projects[projectID].Nodes = nodes
-
-	err = m.saveState()
-	if err != nil {
-		return nil, err
-	}
-
-	return m.state, nil
-}
-
-func (m *Module) OpenImportPath(projectID string) (*State, error) {
-	importPath, err := runtime.OpenDirectoryDialog(m.AppCtx, runtime.OpenDialogOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to open import path: %w", err)
-	}
-
-	if importPath == "" {
-		return m.state, nil
-	}
-
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	if lo.Contains(m.state.Projects[projectID].ImportPathList, importPath) {
-		return m.state, nil
-	}
-
-	m.state.Projects[projectID].ImportPathList = append(m.state.Projects[projectID].ImportPathList, importPath)
-
-	err = m.saveState()
-	if err != nil {
-		return nil, err
-	}
-
-	return m.state, nil
-}
-
-func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error) {
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	payload, err := project.SelectMethod(methodID)
+	payload, err := project.SelectFunction(functionID)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +164,8 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 	defer m.stateMutex.Unlock()
 
 	m.state.Projects[projectID].Forms[formID].Request = payload
-	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
+	m.state.Projects[projectID].Forms[formID].Response = "{}"
+	m.state.Projects[projectID].Forms[formID].SelectedFunctionID = functionID
 
 	err = m.saveState()
 	if err != nil {
@@ -341,7 +243,7 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 		Forms: map[string]*StateProjectForm{
 			formID: {
 				ID:       formID,
-				Address:  "0.0.0.0:50051",
+				Address:  "0.0.0.0:9090",
 				Request:  "{}",
 				Response: "{}",
 			},
@@ -364,7 +266,7 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 
 	formID := uuid.Must(uuid.NewV4()).String()
 
-	address := "0.0.0.0:50051"
+	address := "0.0.0.0:9090"
 	if m.state.Projects[projectID].CurrentFormID != "" {
 		address = m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID].Address
 	}
@@ -388,12 +290,11 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 
 func (m *Module) DeleteProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	delete(m.state.Projects, projectID)
-	m.stateMutex.Unlock()
 
-	m.projectsMutex.Lock()
 	project, ok := m.projects[projectID]
-
 	if ok {
 		err := project.Close()
 		if err != nil {
@@ -402,7 +303,6 @@ func (m *Module) DeleteProject(projectID string) (*State, error) {
 
 		delete(m.projects, projectID)
 	}
-	m.projectsMutex.Unlock()
 
 	err := m.saveState()
 	if err != nil {
@@ -451,7 +351,7 @@ func (m *Module) readOrInitializeState() error {
 	_, err := os.Stat(m.configFilePath)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return fmt.Errorf("failed to describe a grpc config file: %w", err)
+			return fmt.Errorf("failed to describe a thrift config file: %w", err)
 		}
 
 		return m.initializeState()
@@ -463,7 +363,7 @@ func (m *Module) readOrInitializeState() error {
 func (m *Module) initializeState() (rerr error) {
 	file, err := os.Create(m.configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to create a grpc config file: %w", err)
+		return fmt.Errorf("failed to create a thrift config file: %w", err)
 	}
 
 	defer func() {
@@ -477,7 +377,7 @@ func (m *Module) initializeState() (rerr error) {
 
 	err = encoder.Encode(m.state)
 	if err != nil {
-		return fmt.Errorf("failed to encode a grpc state: %w", err)
+		return fmt.Errorf("failed to encode a thrift state: %w", err)
 	}
 
 	return nil
@@ -486,7 +386,7 @@ func (m *Module) initializeState() (rerr error) {
 func (m *Module) readState() (rerr error) {
 	file, err := os.Open(m.configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to open a grpc config file: %w", err)
+		return fmt.Errorf("failed to open a thrift config file: %w", err)
 	}
 
 	defer func() {
@@ -500,7 +400,7 @@ func (m *Module) readState() (rerr error) {
 
 	err = decoder.Decode(&m.state)
 	if err != nil {
-		return fmt.Errorf("failed to decode a grpc state: %w", err)
+		return fmt.Errorf("failed to decode a thrift state: %w", err)
 	}
 
 	return nil
@@ -509,7 +409,7 @@ func (m *Module) readState() (rerr error) {
 func (m *Module) saveState() (rerr error) {
 	file, err := os.Create(m.configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to create/truncate a grpc config file: %w", err)
+		return fmt.Errorf("failed to create/truncate a thrift config file: %w", err)
 	}
 
 	defer func() {
@@ -523,40 +423,30 @@ func (m *Module) saveState() (rerr error) {
 
 	err = encoder.Encode(m.state)
 	if err != nil {
-		return fmt.Errorf("failed to encode a grpc state: %w", err)
+		return fmt.Errorf("failed to encode a thrift state: %w", err)
 	}
 
 	return nil
 }
 
-func (m *Module) project(projectID string) (*Project, error) {
-	m.projectsMutex.RLock()
-	project, ok := m.projects[projectID]
+func (m *Module) initializeProjects() error {
+	for _, stateProject := range m.state.Projects {
+		project := NewProject(stateProject.ID)
 
-	if ok {
-		return project, nil
-	}
-	m.projectsMutex.RUnlock()
+		_, err := project.GenerateServiceTreeNodes(stateProject.FilePath)
+		if err != nil {
+			return err
+		}
 
-	m.projectsMutex.Lock()
-	project, ok = m.projects[projectID]
+		for _, form := range stateProject.Forms {
+			err := project.InitializeForm(form.ID)
+			if err != nil {
+				return err
+			}
+		}
 
-	if ok {
-		return project, nil
-	}
-
-	project = NewProject(projectID)
-
-	_, err := project.RefreshProtoDescriptors(
-		m.state.Projects[projectID].ImportPathList,
-		m.state.Projects[projectID].ProtoFileList,
-	)
-	if err != nil {
-		return nil, err
+		m.projects[stateProject.ID] = project
 	}
 
-	m.projects[projectID] = project
-	m.projectsMutex.Unlock()
-
-	return project, nil
+	return nil
 }
