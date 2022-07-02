@@ -4,14 +4,17 @@ import { mapState } from "pinia";
 
 import { useProjectStore } from "../stores/project";
 import { useGRPCStore } from "../stores/grpc";
+import { useThriftStore } from "../stores/thrift";
 import GRPC from "./GRPC.vue";
+import Thrift from "./Thrift.vue";
 
 export default defineComponent({
   name: "Project",
-  components: { GRPC },
+  components: { GRPC, Thrift },
   computed: {
     ...mapState(useProjectStore, ["projects", "currentProjectID"]),
     ...mapState(useGRPCStore, { grpcProjects: "projects" }),
+    ...mapState(useThriftStore, { thriftProjects: "projects" }),
     nonNewProjects() {
       return Object.fromEntries(
         Object.entries(useProjectStore().projects).filter(([projectID, project]) => project.type !== "new")
@@ -25,10 +28,10 @@ export default defineComponent({
     useProjectStore().loadState();
   },
   methods: {
-    openGRPCProject(newProjectID, grpcProjectID) {
+    openProject(newProjectID, projectToOpenID) {
       const store = useProjectStore();
 
-      store.openGRPCProject(newProjectID, grpcProjectID);
+      store.openProject(newProjectID, projectToOpenID);
     },
 
     async newGRPCProject() {
@@ -39,6 +42,16 @@ export default defineComponent({
     deleteGRPCProject() {
       useGRPCStore().createNewProject(this.currentProjectID);
       useProjectStore().createNewGRPCProject(this.currentProjectID);
+    },
+
+    async newThriftProject() {
+      await useThriftStore().createNewProject(this.currentProjectID);
+      await useProjectStore().createNewThriftProject(this.currentProjectID);
+    },
+
+    deleteThriftProject() {
+      useThriftStore().createNewProject(this.currentProjectID);
+      useProjectStore().createNewThriftProject(this.currentProjectID);
     },
   },
 });
@@ -71,14 +84,10 @@ export default defineComponent({
                 <q-tr :props="props">
                   <q-td key="icon" :props="props" auto-width no-hover>
                     <q-icon v-if="props.row.type === 'grpc'" name="img:grpc.jpg" size="36px" />
+                    <q-icon v-if="props.row.type === 'thrift'" name="img:thrift.jpg" size="36px" />
                   </q-td>
 
-                  <q-td
-                    key="name"
-                    :props="props"
-                    style="cursor: pointer"
-                    @click="openGRPCProject(projectID, props.row.id)"
-                  >
+                  <q-td key="name" :props="props" style="cursor: pointer" @click="openProject(projectID, props.row.id)">
                     {{ props.row.name }}
                   </q-td>
 
@@ -107,6 +116,7 @@ export default defineComponent({
 
           <div class="col-2">
             <q-btn padding="sm" no-caps color="primary" label="New gRPC project" @click="newGRPCProject()" />
+            <q-btn padding="sm" no-caps color="primary" label="New Thrift project" @click="newThriftProject()" />
           </div>
 
           <div class="col"></div>
@@ -115,6 +125,10 @@ export default defineComponent({
 
       <div v-if="project.type === 'grpc'" class="full-height">
         <GRPC :projectID="projectID" />
+      </div>
+
+      <div v-if="project.type === 'thrift'" class="full-height">
+        <Thrift :projectID="projectID" />
       </div>
     </q-tab-panel>
   </q-tab-panels>

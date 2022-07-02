@@ -14,6 +14,7 @@ require (
 	go.uber.org/multierr v1.8.0
 	go.uber.org/thriftrw v1.29.2
 	google.golang.org/grpc v1.47.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

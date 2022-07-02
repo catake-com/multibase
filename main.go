@@ -52,6 +52,7 @@ func main() {
 			app,
 			app.ProjectModule,
 			app.GRPCModule,
+			app.ThriftModule,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

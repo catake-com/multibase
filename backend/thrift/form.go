@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/yarpc/yab/thrift"
 	"go.uber.org/multierr"
+	"gopkg.in/yaml.v3"
 )
 
 type Form struct {
@@ -45,7 +47,7 @@ func (f *Form) SendRequest(functionID, address, payload string) (string, error) 
 
 	var requestPayload map[string]interface{}
 
-	err := json.Unmarshal([]byte(payload), &requestPayload)
+	err := yaml.Unmarshal([]byte(payload), &requestPayload)
 	if err != nil {
 		return "", fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
@@ -62,7 +64,14 @@ func (f *Form) SendRequest(functionID, address, payload string) (string, error) 
 		return "", fmt.Errorf("failed to build thrift encoded payload: %w", err)
 	}
 
-	request, err := http.NewRequestWithContext(ctx, "POST", address, bytes.NewReader(encodedPayload))
+	requestURL := &url.URL{Scheme: "http", Host: address}
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		requestURL.String(),
+		bytes.NewReader(encodedPayload),
+	)
 	if err != nil {
 		return "", fmt.Errorf("failed to build thrift request: %w", err)
 	}

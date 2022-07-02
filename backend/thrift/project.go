@@ -61,6 +61,10 @@ func (p *Project) GenerateServiceTreeNodes(filePath string) ([]*ServiceTreeNode,
 
 	p.serviceTree = serviceTree
 
+	for _, form := range p.forms {
+		form.serviceTree = serviceTree
+	}
+
 	return serviceTree.Nodes(), nil
 }
 

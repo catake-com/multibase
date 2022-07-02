@@ -252,7 +252,16 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 	}
 	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 
-	err := m.saveState()
+	project := NewProject(projectID)
+
+	err := project.InitializeForm(formID)
+	if err != nil {
+		return nil, err
+	}
+
+	m.projects[projectID] = project
+
+	err = m.saveState()
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +289,12 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 	m.state.Projects[projectID].CurrentFormID = formID
 
-	err := m.saveState()
+	err := m.projects[projectID].InitializeForm(formID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.saveState()
 	if err != nil {
 		return nil, err
 	}
@@ -433,9 +447,11 @@ func (m *Module) initializeProjects() error {
 	for _, stateProject := range m.state.Projects {
 		project := NewProject(stateProject.ID)
 
-		_, err := project.GenerateServiceTreeNodes(stateProject.FilePath)
-		if err != nil {
-			return err
+		if stateProject.FilePath != "" {
+			_, err := project.GenerateServiceTreeNodes(stateProject.FilePath)
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, form := range stateProject.Forms {

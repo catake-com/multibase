@@ -49,6 +49,9 @@ export default defineComponent({
         <div class="row justify-between">
           <div class="col q-tab__label" v-if="projects[projectID].type === 'new'">New Tab</div>
           <div class="col q-tab__label" v-if="projects[projectID].type === 'grpc'">{{ projects[projectID].name }}</div>
+          <div class="col q-tab__label" v-if="projects[projectID].type === 'thrift'">
+            {{ projects[projectID].name }}
+          </div>
 
           <div class="col-1">
             <q-btn

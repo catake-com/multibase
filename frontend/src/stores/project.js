@@ -3,8 +3,9 @@ import { defineStore } from "pinia";
 import {
   State,
   CreateGRPCProject,
+  CreateThriftProject,
   CreateNewProject,
-  OpenGRPCProject,
+  OpenProject,
   CloseProject,
   SaveCurrentProjectID,
 } from "../wailsjs/go/project/Module";
@@ -21,8 +22,8 @@ export const useProjectStore = defineStore({
     currentProjectID: "404f5702-6179-4861-9533-b5ee16161c78",
   }),
   actions: {
-    openGRPCProject(newProjectID, grpcProjectID) {
-      OpenGRPCProject(newProjectID, grpcProjectID)
+    openProject(newProjectID, projectToOpenID) {
+      OpenProject(newProjectID, projectToOpenID)
         .then((state) => {
           this.$state = state;
         })
@@ -33,6 +34,16 @@ export const useProjectStore = defineStore({
 
     createNewGRPCProject(grpcProjectID) {
       CreateGRPCProject(grpcProjectID)
+        .then((state) => {
+          this.$state = state;
+        })
+        .catch((reason) => {
+          console.log(reason);
+        });
+    },
+
+    createNewThriftProject(thriftProjectID) {
+      CreateThriftProject(thriftProjectID)
         .then((state) => {
           this.$state = state;
         })

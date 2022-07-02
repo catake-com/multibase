@@ -26,7 +26,8 @@ type StateProject struct {
 }
 
 type StateStats struct {
-	GRPCProjectCount int `json:"grpcProjectCount"`
+	GRPCProjectCount   int `json:"grpcProjectCount"`
+	ThriftProjectCount int `json:"thriftProjectCount"`
 }
 
 type Module struct {
@@ -54,19 +55,19 @@ func NewModule() (*Module, error) {
 	return module, nil
 }
 
-func (m *Module) OpenGRPCProject(newProjectID, grpcProjectID string) (*State, error) {
+func (m *Module) OpenProject(newProjectID, projectToOpenID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	if lo.Contains(m.state.OpenedProjectIDs, grpcProjectID) {
+	if lo.Contains(m.state.OpenedProjectIDs, projectToOpenID) {
 		m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(projectID string, _ int) bool {
 			return projectID == newProjectID
 		})
 	} else {
-		m.state.OpenedProjectIDs = lo.ReplaceAll(m.state.OpenedProjectIDs, newProjectID, grpcProjectID)
+		m.state.OpenedProjectIDs = lo.ReplaceAll(m.state.OpenedProjectIDs, newProjectID, projectToOpenID)
 	}
 
-	m.state.CurrentProjectID = grpcProjectID
+	m.state.CurrentProjectID = projectToOpenID
 	delete(m.state.Projects, newProjectID)
 
 	err := m.saveState()
@@ -123,7 +124,53 @@ func (m *Module) DeleteGRPCProject(projectID string) (*State, error) {
 	return m.state, nil
 }
 
-func (m *Module) RenameGRPCProject(projectID, name string) (*State, error) {
+func (m *Module) CreateThriftProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Stats.ThriftProjectCount++
+
+	projectName := fmt.Sprintf("Thrift Project %d", m.state.Stats.ThriftProjectCount)
+
+	m.state.Projects[projectID] = &StateProject{
+		ID:   projectID,
+		Type: "thrift",
+		Name: projectName,
+	}
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) DeleteThriftProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Stats.ThriftProjectCount--
+
+	delete(m.state.Projects, projectID)
+
+	m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(pID string, _ int) bool {
+		return pID == projectID
+	})
+
+	if m.state.CurrentProjectID == projectID {
+		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
+	}
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) RenameProject(projectID, name string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
@@ -211,11 +258,11 @@ func (m *Module) State() (*State, error) {
 func (m *Module) readOrInitializeState() error {
 	_, err := os.Stat(m.configFilePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return m.initializeState()
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("failed to describe a project config file: %w", err)
 		}
 
-		return fmt.Errorf("failed to describe a project config file: %w", err)
+		return m.initializeState()
 	}
 
 	return m.readState()
@@ -223,7 +270,10 @@ func (m *Module) readOrInitializeState() error {
 
 func (m *Module) initializeState() (rerr error) {
 	m.state = &State{
-		Stats: &StateStats{GRPCProjectCount: 0},
+		Stats: &StateStats{
+			GRPCProjectCount:   0,
+			ThriftProjectCount: 0,
+		},
 		Projects: map[string]*StateProject{
 			"404f5702-6179-4861-9533-b5ee16161c78": {
 				ID:   "404f5702-6179-4861-9533-b5ee16161c78",

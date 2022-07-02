@@ -63,6 +63,8 @@ func (t *ServiceTree) Nodes() []*ServiceTreeNode {
 			Selectable: false,
 		}
 
+		nodes = append(nodes, serviceNode)
+
 		serviceNode.Children = make([]*ServiceTreeNode, 0, len(service.functions))
 
 		for _, function := range service.functions {
