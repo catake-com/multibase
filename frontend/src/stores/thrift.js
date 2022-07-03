@@ -39,43 +39,35 @@ export const useThriftStore = defineStore({
   }),
   actions: {
     async createNewProject(projectID) {
-      return CreateNewProject(projectID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+      try {
+        this.$state = await CreateNewProject(projectID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
     async createNewForm(projectID) {
-      return CreateNewForm(projectID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+      try {
+        this.$state = await CreateNewForm(projectID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
     async removeForm(projectID, formID) {
-      return RemoveForm(projectID, formID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+      try {
+        this.$state = await RemoveForm(projectID, formID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
     async selectFunction(projectID, formID, methodID) {
-      return SelectFunction(projectID, formID, methodID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[formID].response = reason;
-        });
+      try {
+        this.$state = await SelectFunction(projectID, formID, methodID);
+      } catch (error) {
+        this.projects[projectID].forms[formID].response = error;
+      }
     },
 
     async sendRequest(projectID, formID) {
@@ -85,20 +77,18 @@ export const useThriftStore = defineStore({
 
       this.projects[projectID].forms[formID].requestInProgress = true;
 
-      return SendRequest(
-        projectID,
-        formID,
-        this.projects[projectID].forms[formID].address,
-        this.projects[projectID].forms[formID].request
-      )
-        .then((state) => {
-          this.projects[projectID].forms[formID].requestInProgress = false;
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[formID].requestInProgress = false;
-          this.projects[projectID].forms[formID].response = reason;
-        });
+      try {
+        this.$state = await SendRequest(
+          projectID,
+          formID,
+          this.projects[projectID].forms[formID].address,
+          this.projects[projectID].forms[formID].request
+        );
+        this.projects[projectID].forms[formID].requestInProgress = false;
+      } catch (error) {
+        this.projects[projectID].forms[formID].requestInProgress = false;
+        this.projects[projectID].forms[formID].response = error;
+      }
     },
 
     async stopRequest(projectID, formID) {
@@ -106,75 +96,61 @@ export const useThriftStore = defineStore({
         return;
       }
 
-      return StopRequest(projectID, formID)
-        .then((state) => {
-          this.projects[projectID].forms[formID].requestInProgress = false;
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[formID].requestInProgress = false;
-          this.projects[projectID].forms[formID].response = reason;
-        });
+      try {
+        this.$state = await StopRequest(projectID, formID);
+        this.projects[projectID].forms[formID].requestInProgress = false;
+      } catch (error) {
+        this.projects[projectID].forms[formID].requestInProgress = false;
+        this.projects[projectID].forms[formID].response = error;
+      }
     },
 
     async openFilePath(projectID) {
-      return OpenFilePath(projectID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
-        });
+      try {
+        this.$state = await OpenFilePath(projectID);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
     },
 
     async saveCurrentFormID(projectID, currentFormID) {
-      return SaveCurrentFormID(projectID, currentFormID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
-        });
+      try {
+        this.$state = await SaveCurrentFormID(projectID, currentFormID);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
     },
 
     async saveAddress(projectID, formID, address) {
-      return SaveAddress(projectID, formID, address)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
-        });
+      try {
+        this.$state = await SaveAddress(projectID, formID, address);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
     },
 
-    async saveSplitterWidth(projectID, address) {
-      return SaveSplitterWidth(projectID, address)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
-        });
+    async saveSplitterWidth(projectID, splitterWidth) {
+      try {
+        this.$state = await SaveSplitterWidth(projectID, splitterWidth);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
     },
 
     async saveRequestPayload(projectID, formID, requestPayload) {
-      return SaveRequestPayload(projectID, formID, requestPayload)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          this.projects[projectID].forms[this.projects[projectID].currentFormID].response = reason;
-        });
+      try {
+        this.$state = await SaveRequestPayload(projectID, formID, requestPayload);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
     },
 
     async loadState() {
-      return State()
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+      try {
+        this.$state = await State();
+      } catch (error) {
+        console.log(error);
+      }
     },
   },
 });

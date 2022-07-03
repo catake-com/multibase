@@ -28,10 +28,10 @@ export default defineComponent({
     useProjectStore().loadState();
   },
   methods: {
-    openProject(newProjectID, projectToOpenID) {
+    async openProject(newProjectID, projectToOpenID) {
       const store = useProjectStore();
 
-      store.openProject(newProjectID, projectToOpenID);
+      await store.openProject(newProjectID, projectToOpenID);
     },
 
     async newGRPCProject() {
@@ -39,9 +39,9 @@ export default defineComponent({
       await useProjectStore().createNewGRPCProject(this.currentProjectID);
     },
 
-    deleteGRPCProject() {
-      useGRPCStore().createNewProject(this.currentProjectID);
-      useProjectStore().createNewGRPCProject(this.currentProjectID);
+    async deleteGRPCProject() {
+      await useGRPCStore().createNewProject(this.currentProjectID);
+      await useProjectStore().createNewGRPCProject(this.currentProjectID);
     },
 
     async newThriftProject() {
@@ -49,9 +49,9 @@ export default defineComponent({
       await useProjectStore().createNewThriftProject(this.currentProjectID);
     },
 
-    deleteThriftProject() {
-      useThriftStore().createNewProject(this.currentProjectID);
-      useProjectStore().createNewThriftProject(this.currentProjectID);
+    async deleteThriftProject() {
+      await useThriftStore().createNewProject(this.currentProjectID);
+      await useProjectStore().createNewThriftProject(this.currentProjectID);
     },
   },
 });

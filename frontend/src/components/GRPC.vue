@@ -17,7 +17,6 @@ export default defineComponent({
     };
   },
   beforeCreate() {
-    // TODO: load state per project instead of all state
     useGRPCStore().loadState();
   },
   computed: {
@@ -48,8 +47,8 @@ export default defineComponent({
           return useGRPCStore().projects[this.projectID].currentFormID;
         }
       },
-      set(currentFormID) {
-        useGRPCStore().saveCurrentFormID(this.projectID, currentFormID);
+      async set(currentFormID) {
+        await useGRPCStore().saveCurrentFormID(this.projectID, currentFormID);
       },
     },
     splitterWidth: {
@@ -58,8 +57,8 @@ export default defineComponent({
           return useGRPCStore().projects[this.projectID].splitterWidth;
         }
       },
-      set(splitterWidth) {
-        useGRPCStore().saveSplitterWidth(this.projectID, splitterWidth);
+      async set(splitterWidth) {
+        await useGRPCStore().saveSplitterWidth(this.projectID, splitterWidth);
       },
     },
     selectedMethod: {
@@ -73,8 +72,12 @@ export default defineComponent({
           }
         }
       },
-      set(selectedMethodID) {
-        useGRPCStore().selectMethod(this.projectID, this.projects[this.projectID].currentFormID, selectedMethodID);
+      async set(selectedMethodID) {
+        await useGRPCStore().selectMethod(
+          this.projectID,
+          this.projects[this.projectID].currentFormID,
+          selectedMethodID
+        );
       },
     },
   },
@@ -99,36 +102,36 @@ export default defineComponent({
       await store.openProtoFile(this.projectID);
     },
 
-    deleteAllProtoFiles() {
+    async deleteAllProtoFiles() {
       const store = useGRPCStore();
 
-      store.deleteAllProtoFiles(this.projectID);
+      await store.deleteAllProtoFiles(this.projectID);
     },
 
-    openImportPath() {
+    async openImportPath() {
       const store = useGRPCStore();
 
-      store.openImportPath(this.projectID);
+      await store.openImportPath(this.projectID);
     },
 
-    removeImportPath(importPath) {
+    async removeImportPath(importPath) {
       const store = useGRPCStore();
 
-      store.removeImportPath(this.projectID, importPath);
+      await store.removeImportPath(this.projectID, importPath);
     },
 
-    createNewForm() {
+    async createNewForm() {
       const store = useGRPCStore();
 
-      store.createNewForm(this.projectID);
+      await store.createNewForm(this.projectID);
     },
 
-    closeFormTab(event, formID) {
+    async closeFormTab(event, formID) {
       event.preventDefault();
 
       const store = useGRPCStore();
 
-      store.removeForm(this.projectID, formID);
+      await store.removeForm(this.projectID, formID);
     },
   },
 });

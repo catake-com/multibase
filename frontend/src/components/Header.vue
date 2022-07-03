@@ -14,29 +14,29 @@ export default defineComponent({
     useProjectStore().loadState();
   },
   watch: {
-    currentProjectID(newValue, oldValue) {
+    async currentProjectID(newValue, oldValue) {
       if (newValue === oldValue) {
         return;
       }
 
       const projectID = newValue || oldValue;
 
-      useProjectStore().saveCurrentProjectID(projectID);
+      await useProjectStore().saveCurrentProjectID(projectID);
     },
   },
   methods: {
-    createNewProject() {
+    async createNewProject() {
       const store = useProjectStore();
 
-      store.createNewProject();
+      await store.createNewProject();
     },
 
-    closeProjectTab(event, projectID) {
+    async closeProjectTab(event, projectID) {
       event.preventDefault();
 
       const store = useProjectStore();
 
-      store.closeProjectTab(projectID);
+      await store.closeProjectTab(projectID);
     },
   },
 });

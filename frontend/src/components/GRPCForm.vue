@@ -24,8 +24,8 @@ export default defineComponent({
       get() {
         return useGRPCStore().projects[this.projectID].forms[this.formID].address;
       },
-      set(address) {
-        useGRPCStore().saveAddress(this.projectID, this.formID, address);
+      async set(address) {
+        await useGRPCStore().saveAddress(this.projectID, this.formID, address);
       },
     },
     request: {
@@ -38,8 +38,8 @@ export default defineComponent({
 
         return request;
       },
-      set(requestPayload) {
-        useGRPCStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
+      async set(requestPayload) {
+        await useGRPCStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
       },
     },
     response: {
@@ -58,12 +58,12 @@ export default defineComponent({
     },
   },
   methods: {
-    sendRequest() {
-      useGRPCStore().sendRequest(this.projectID, this.formID);
+    async sendRequest() {
+      await useGRPCStore().sendRequest(this.projectID, this.formID);
     },
 
-    stopRequest() {
-      useGRPCStore().stopRequest(this.projectID, this.formID);
+    async stopRequest() {
+      await useGRPCStore().stopRequest(this.projectID, this.formID);
     },
   },
 });

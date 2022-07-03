@@ -28,8 +28,8 @@ export default defineComponent({
       get() {
         return useThriftStore().projects[this.projectID].forms[this.formID].address;
       },
-      set(address) {
-        useThriftStore().saveAddress(this.projectID, this.formID, address);
+      async set(address) {
+        await useThriftStore().saveAddress(this.projectID, this.formID, address);
       },
     },
     request: {
@@ -42,8 +42,8 @@ export default defineComponent({
 
         return request;
       },
-      set(requestPayload) {
-        useThriftStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
+      async set(requestPayload) {
+        await useThriftStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
       },
     },
     response: {
@@ -62,12 +62,12 @@ export default defineComponent({
     },
   },
   methods: {
-    sendRequest() {
-      useThriftStore().sendRequest(this.projectID, this.formID);
+    async sendRequest() {
+      await useThriftStore().sendRequest(this.projectID, this.formID);
     },
 
-    stopRequest() {
-      useThriftStore().stopRequest(this.projectID, this.formID);
+    async stopRequest() {
+      await useThriftStore().stopRequest(this.projectID, this.formID);
     },
   },
 });

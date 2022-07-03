@@ -22,74 +22,60 @@ export const useProjectStore = defineStore({
     currentProjectID: "404f5702-6179-4861-9533-b5ee16161c78",
   }),
   actions: {
-    openProject(newProjectID, projectToOpenID) {
-      OpenProject(newProjectID, projectToOpenID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+    async openProject(newProjectID, projectToOpenID) {
+      try {
+        this.$state = await OpenProject(newProjectID, projectToOpenID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
-    createNewGRPCProject(grpcProjectID) {
-      CreateGRPCProject(grpcProjectID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+    async createNewGRPCProject(grpcProjectID) {
+      try {
+        this.$state = await CreateGRPCProject(grpcProjectID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
-    createNewThriftProject(thriftProjectID) {
-      CreateThriftProject(thriftProjectID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+    async createNewThriftProject(thriftProjectID) {
+      try {
+        this.$state = await CreateThriftProject(thriftProjectID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
     async createNewProject() {
-      return CreateNewProject()
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+      try {
+        this.$state = await CreateNewProject();
+      } catch (error) {
+        console.log(error);
+      }
     },
 
-    closeProjectTab(projectID) {
-      CloseProject(projectID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+    async closeProjectTab(projectID) {
+      try {
+        this.$state = await CloseProject(projectID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
-    saveCurrentProjectID(projectID) {
-      SaveCurrentProjectID(projectID)
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+    async saveCurrentProjectID(projectID) {
+      try {
+        this.$state = await SaveCurrentProjectID(projectID);
+      } catch (error) {
+        console.log(error);
+      }
     },
 
-    loadState() {
-      State()
-        .then((state) => {
-          this.$state = state;
-        })
-        .catch((reason) => {
-          console.log(reason);
-        });
+    async loadState() {
+      try {
+        this.$state = await State();
+      } catch (error) {
+        console.log(error);
+      }
     },
   },
 });

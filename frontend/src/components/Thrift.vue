@@ -42,8 +42,8 @@ export default defineComponent({
           return useThriftStore().projects[this.projectID].currentFormID;
         }
       },
-      set(currentFormID) {
-        useThriftStore().saveCurrentFormID(this.projectID, currentFormID);
+      async set(currentFormID) {
+        await useThriftStore().saveCurrentFormID(this.projectID, currentFormID);
       },
     },
     splitterWidth: {
@@ -52,8 +52,8 @@ export default defineComponent({
           return useThriftStore().projects[this.projectID].splitterWidth;
         }
       },
-      set(splitterWidth) {
-        useThriftStore().saveSplitterWidth(this.projectID, splitterWidth);
+      async set(splitterWidth) {
+        await useThriftStore().saveSplitterWidth(this.projectID, splitterWidth);
       },
     },
     selectedFunction: {
@@ -67,8 +67,8 @@ export default defineComponent({
           }
         }
       },
-      set(selectedFunctionID) {
-        useThriftStore().selectFunction(
+      async set(selectedFunctionID) {
+        await useThriftStore().selectFunction(
           this.projectID,
           this.projects[this.projectID].currentFormID,
           selectedFunctionID
@@ -97,18 +97,18 @@ export default defineComponent({
       await store.openFilePath(this.projectID);
     },
 
-    createNewForm() {
+    async createNewForm() {
       const store = useThriftStore();
 
-      store.createNewForm(this.projectID);
+      await store.createNewForm(this.projectID);
     },
 
-    closeFormTab(event, formID) {
+    async closeFormTab(event, formID) {
       event.preventDefault();
 
       const store = useThriftStore();
 
-      store.removeForm(this.projectID, formID);
+      await store.removeForm(this.projectID, formID);
     },
   },
 });
