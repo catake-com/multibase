@@ -39,7 +39,7 @@ func NewForm(
 	return form, nil
 }
 
-func (f *Form) SendRequest(functionID, address, payload string) (string, error) {
+func (f *Form) SendRequest(functionID, address, payload string, headers []*StateProjectFormHeader) (string, error) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
 	f.requestCancelFunc = cancelFunc
 
@@ -74,6 +74,10 @@ func (f *Form) SendRequest(functionID, address, payload string) (string, error) 
 	)
 	if err != nil {
 		return "", fmt.Errorf("failed to build thrift request: %w", err)
+	}
+
+	for _, header := range headers {
+		request.Header.Add(header.Key, header.Value)
 	}
 
 	responseBody, err := f.executeRequest(request)

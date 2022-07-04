@@ -17,7 +17,7 @@ export default defineComponent({
     formID: String,
   },
   data() {
-    return { localRequest: "" };
+    return { localRequest: "", localHeaders: [] };
   },
   beforeUpdate() {
     this.localRequest = "";
@@ -29,6 +29,13 @@ export default defineComponent({
     form() {
       return useThriftStore().projects[this.projectID].forms[this.formID];
     },
+    headers() {
+      if (this.localHeaders.length > 0) {
+        return this.localHeaders;
+      }
+
+      return useThriftStore().projects[this.projectID].forms[this.formID].headers;
+    },
     address: {
       get() {
         return useThriftStore().projects[this.projectID].forms[this.formID].address;
@@ -36,7 +43,7 @@ export default defineComponent({
       async set(address) {
         await useThriftStore().saveAddress(this.projectID, this.formID, address);
       },
-    },g
+    },
     request: {
       get() {
         if (this.localRequest !== "") {
@@ -73,6 +80,21 @@ export default defineComponent({
     async stopRequest() {
       await useThriftStore().stopRequest(this.projectID, this.formID);
     },
+
+    async addHeader() {
+      await useThriftStore().addHeader(this.projectID, this.formID);
+      this.localHeaders = useThriftStore().projects[this.projectID].forms[this.formID].headers;
+    },
+
+    async deleteHeader(headerID) {
+      await useThriftStore().deleteHeader(this.projectID, this.formID, headerID);
+      this.localHeaders = useThriftStore().projects[this.projectID].forms[this.formID].headers;
+    },
+
+    async saveHeaders(headers) {
+      this.localHeaders = headers;
+      await useThriftStore().saveHeaders(this.projectID, this.formID, headers);
+    },
   },
 });
 </script>
@@ -81,6 +103,22 @@ export default defineComponent({
   <div class="full-height">
     <q-form class="q-gutter-md full-height">
       <q-input v-model="address" label="Address" />
+
+      <q-btn outline label="Add Header" size="xs" @click="addHeader" />
+
+      <div class="row" v-for="header in headers" :key="header.id">
+        <div class="col">
+          <q-input v-model="header.key" label="Header" @keyup="saveHeaders(headers)" />
+        </div>
+
+        <div class="col">
+          <q-input v-model="header.value" label="Value" @keyup="saveHeaders(headers)" />
+        </div>
+
+        <div class="col">
+          <q-btn round icon="delete" size="xs" @click="deleteHeader(header.id)" style="margin: 30px 0 0 10px" />
+        </div>
+      </div>
 
       <v-ace-editor
         v-model:value="request"

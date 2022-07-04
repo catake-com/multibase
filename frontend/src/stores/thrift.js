@@ -13,6 +13,9 @@ import {
   SaveSplitterWidth,
   SaveRequestPayload,
   State,
+  AddHeader,
+  SaveHeaders,
+  DeleteHeader,
 } from "../wailsjs/go/thrift/Module";
 
 export const useThriftStore = defineStore({
@@ -28,6 +31,7 @@ export const useThriftStore = defineStore({
             request: "",
             response: "",
             requestInProgress: false,
+            headers: [{ id: "dd11abd9-80f5-494a-b85e-358c3103704a", key: "", value: "" }],
           },
         },
         formIDs: [],
@@ -124,6 +128,30 @@ export const useThriftStore = defineStore({
     async saveAddress(projectID, formID, address) {
       try {
         this.$state = await SaveAddress(projectID, formID, address);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
+    },
+
+    async addHeader(projectID, formID) {
+      try {
+        this.$state = await AddHeader(projectID, formID);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
+    },
+
+    async saveHeaders(projectID, formID, headers) {
+      try {
+        this.$state = await SaveHeaders(projectID, formID, headers);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
+    },
+
+    async deleteHeader(projectID, formID, headerID) {
+      try {
+        this.$state = await DeleteHeader(projectID, formID, headerID);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }

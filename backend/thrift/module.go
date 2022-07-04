@@ -29,11 +29,18 @@ type StateProject struct {
 }
 
 type StateProjectForm struct {
-	ID                 string `json:"id"`
-	Address            string `json:"address"`
-	SelectedFunctionID string `json:"selectedFunctionID"`
-	Request            string `json:"request"`
-	Response           string `json:"response"`
+	ID                 string                    `json:"id"`
+	Address            string                    `json:"address"`
+	Headers            []*StateProjectFormHeader `json:"headers"`
+	SelectedFunctionID string                    `json:"selectedFunctionID"`
+	Request            string                    `json:"request"`
+	Response           string                    `json:"response"`
+}
+
+type StateProjectFormHeader struct {
+	ID    string `json:"id"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type Module struct {
@@ -86,6 +93,7 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 		address,
 		m.state.Projects[projectID].Forms[formID].SelectedFunctionID,
 		payload,
+		m.state.Projects[projectID].Forms[formID].Headers,
 	)
 	if err != nil {
 		return nil, err
@@ -217,6 +225,81 @@ func (m *Module) SaveAddress(projectID, formID, address string) (*State, error) 
 	return m.state, nil
 }
 
+func (m *Module) AddHeader(projectID, formID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].Forms[formID].Headers = append(
+		m.state.Projects[projectID].Forms[formID].Headers,
+		&StateProjectFormHeader{
+			ID:    uuid.Must(uuid.NewV4()).String(),
+			Key:   "",
+			Value: "",
+		},
+	)
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) SaveHeaders(projectID, formID string, headers []*StateProjectFormHeader) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	// existingHeader, ok := lo.Find(
+	// 	m.state.Projects[projectID].Forms[formID].Headers,
+	// 	func(header *StateProjectFormHeader) bool {
+	// 		if header.ID == newHeader.ID {
+	// 			return true
+	// 		}
+	//
+	// 		return false
+	// 	},
+	// )
+	//
+	// if ok {
+	// 	existingHeader.Key = newHeader.Key
+	// 	existingHeader.Value = newHeader.Value
+	// } else {
+	// 	m.state.Projects[projectID].Forms[formID].Headers = append(
+	// 		m.state.Projects[projectID].Forms[formID].Headers,
+	// 		newHeader,
+	// 	)
+	// }
+
+	m.state.Projects[projectID].Forms[formID].Headers = headers
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) DeleteHeader(projectID, formID, headerID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].Forms[formID].Headers = lo.Reject(
+		m.state.Projects[projectID].Forms[formID].Headers,
+		func(header *StateProjectFormHeader, _ int) bool {
+			return header.ID == headerID
+		},
+	)
+
+	err := m.saveState()
+	if err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
 func (m *Module) SaveSplitterWidth(projectID string, splitterWidth float64) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -289,9 +372,12 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 
 	formID := uuid.Must(uuid.NewV4()).String()
 
+	var headers []*StateProjectFormHeader
+
 	address := "0.0.0.0:9090"
 	if m.state.Projects[projectID].CurrentFormID != "" {
 		address = m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID].Address
+		headers = m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID].Headers
 	}
 
 	m.state.Projects[projectID].Forms[formID] = &StateProjectForm{
@@ -299,6 +385,7 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 		Address:  address,
 		Request:  "{}",
 		Response: "{}",
+		Headers:  headers,
 	}
 	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 	m.state.Projects[projectID].CurrentFormID = formID
