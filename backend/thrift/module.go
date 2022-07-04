@@ -135,14 +135,28 @@ func (m *Module) OpenFilePath(projectID string) (*State, error) {
 		return nil, err
 	}
 
-	m.state.Projects[projectID].Nodes = nodes
-	m.state.Projects[projectID].FilePath = filePath
+	if m.state.Projects[projectID].FilePath != "" {
+		for _, form := range project.forms {
+			if form.id == m.state.Projects[projectID].CurrentFormID {
+				continue
+			}
 
-	for _, form := range m.state.Projects[projectID].Forms {
+			err := form.Close()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		form := m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID]
 		form.SelectedFunctionID = ""
 		form.Request = "{}"
 		form.Response = "{}"
+
+		m.state.Projects[projectID].Forms = map[string]*StateProjectForm{form.ID: form}
 	}
+
+	m.state.Projects[projectID].Nodes = nodes
+	m.state.Projects[projectID].FilePath = filePath
 
 	err = m.saveState()
 	if err != nil {
@@ -346,7 +360,12 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 		m.state.Projects[projectID].CurrentFormID = lo.Keys(m.state.Projects[projectID].Forms)[0]
 	}
 
-	err := m.saveState()
+	err := m.projects[projectID].forms[formID].Close()
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.saveState()
 	if err != nil {
 		return nil, err
 	}

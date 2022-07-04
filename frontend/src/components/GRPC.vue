@@ -139,7 +139,7 @@ export default defineComponent({
 
 <template>
   <div class="full-height">
-    <q-splitter v-model="splitterWidth" class="full-height" :limits="[20, 80]">
+    <q-splitter v-if="splitterWidth" v-model="splitterWidth" class="full-height" :limits="[20, 80]">
       <template v-slot:before>
         <q-tabs v-model="tab" class="full-width">
           <q-tab name="protos" label="Protos" />

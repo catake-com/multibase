@@ -1,61 +1,46 @@
 package grpc
 
 import (
-	"errors"
 	"fmt"
-	"sync"
-	"time"
 
 	"github.com/fullstorydev/grpcurl"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-var (
-	errNoGRPCClient   = errors.New("no grpc client exist")
-	errSpecifyAddress = errors.New("specify address")
-)
-
 type Project struct {
-	id                             string
-	grpcClients                    map[string]*Client
-	grpcClientsMutex               *sync.RWMutex
-	protoTree                      *ProtoTree
-	protoDescriptorSource          grpcurl.DescriptorSource
-	protoDescriptorSourceCreatedAt time.Time
+	id                    string
+	forms                 map[string]*Form
+	protoTree             *ProtoTree
+	protoDescriptorSource grpcurl.DescriptorSource
 }
 
 func NewProject(id string) *Project {
 	return &Project{
-		id:               id,
-		grpcClients:      make(map[string]*Client),
-		grpcClientsMutex: &sync.RWMutex{},
+		id:    id,
+		forms: make(map[string]*Form),
 	}
 }
 
-func (p *Project) SendRequest(id, address, methodID, payload string) (string, error) {
-	err := p.initGRPCConnection(id, address)
+func (p *Project) SendRequest(id, methodID, address, payload string) (string, error) {
+	form := p.forms[id]
+
+	return form.SendRequest(methodID, address, payload, p.protoDescriptorSource)
+}
+
+func (p *Project) StopRequest(id string) {
+	form := p.forms[id]
+
+	form.StopCurrentRequest()
+}
+
+func (p *Project) InitializeForm(formID, address string) error {
+	form, err := NewForm(formID, address)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	p.grpcClientsMutex.RLock()
-	defer p.grpcClientsMutex.RUnlock()
-	grpcClient := p.grpcClients[id]
-
-	return grpcClient.SendRequest(methodID, payload)
-}
-
-func (p *Project) StopRequest(id string) error {
-	p.grpcClientsMutex.RLock()
-	defer p.grpcClientsMutex.RUnlock()
-	grpcClient := p.grpcClients[id]
-
-	if grpcClient == nil {
-		return errNoGRPCClient
-	}
-
-	grpcClient.StopCurrentRequest()
+	p.forms[formID] = form
 
 	return nil
 }
@@ -76,7 +61,6 @@ func (p *Project) RefreshProtoDescriptors(importPathList, protoFileList []string
 
 	p.protoDescriptorSource = protoDescriptorSource
 	p.protoTree = protoTree
-	p.protoDescriptorSourceCreatedAt = time.Now().UTC()
 
 	return protoTree.Nodes(), nil
 }
@@ -94,59 +78,12 @@ func (p *Project) SelectMethod(methodID string) (string, error) {
 }
 
 func (p *Project) Close() error {
-	for _, client := range p.grpcClients {
-		err := client.Close()
+	for _, form := range p.forms {
+		err := form.Close()
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func (p *Project) initGRPCConnection(id, address string) error {
-	if address == "" {
-		return errSpecifyAddress
-	}
-
-	p.grpcClientsMutex.Lock()
-	defer p.grpcClientsMutex.Unlock()
-
-	isConnectionActive, err := p.isExistingConnectionActive(id, address)
-	if err != nil {
-		return err
-	}
-
-	if isConnectionActive {
-		return nil
-	}
-
-	grpcClient, err := NewClient(id, address, p.protoDescriptorSource, p.protoDescriptorSourceCreatedAt)
-	if err != nil {
-		return err
-	}
-
-	p.grpcClients[id] = grpcClient
-
-	return nil
-}
-
-func (p *Project) isExistingConnectionActive(id, address string) (bool, error) {
-	grpcClient := p.grpcClients[id]
-
-	if grpcClient == nil {
-		return false, nil
-	}
-
-	if address == grpcClient.Address() &&
-		p.protoDescriptorSourceCreatedAt.Equal(grpcClient.ProtoDescriptorSourceCreatedAt()) {
-		return true, nil
-	}
-
-	err := grpcClient.Close()
-	if err != nil {
-		return false, fmt.Errorf("failed to close grpc client: %w", err)
-	}
-
-	return false, nil
 }

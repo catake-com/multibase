@@ -116,7 +116,7 @@ export default defineComponent({
 
 <template>
   <div class="full-height">
-    <q-splitter v-model="splitterWidth" class="full-height" :limits="[20, 80]">
+    <q-splitter v-if="splitterWidth" v-model="splitterWidth" class="full-height" :limits="[20, 80]">
       <template v-slot:before>
         <q-btn size="sm" label="Open Thrift file" color="primary" @click="openFilePath" />
 

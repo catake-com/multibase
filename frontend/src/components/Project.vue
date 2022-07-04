@@ -115,8 +115,22 @@ export default defineComponent({
           </div>
 
           <div class="col-2">
-            <q-btn padding="sm" no-caps color="primary" label="New gRPC project" @click="newGRPCProject()" />
-            <q-btn padding="sm" no-caps color="primary" label="New Thrift project" @click="newThriftProject()" />
+            <q-btn
+              padding="sm"
+              no-caps
+              color="primary"
+              label="New gRPC project"
+              class="block"
+              @click="newGRPCProject()"
+            />
+            <q-btn
+              padding="sm"
+              no-caps
+              color="primary"
+              label="New Thrift project"
+              class="block"
+              @click="newThriftProject()"
+            />
           </div>
 
           <div class="col"></div>

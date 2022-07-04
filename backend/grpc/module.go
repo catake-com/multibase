@@ -44,7 +44,6 @@ type Module struct {
 	state          *State
 	stateMutex     *sync.RWMutex
 	projects       map[string]*Project
-	projectsMutex  *sync.RWMutex
 }
 
 func NewModule() (*Module, error) {
@@ -58,12 +57,16 @@ func NewModule() (*Module, error) {
 		state: &State{
 			Projects: make(map[string]*StateProject),
 		},
-		stateMutex:    &sync.RWMutex{},
-		projects:      map[string]*Project{},
-		projectsMutex: &sync.RWMutex{},
+		stateMutex: &sync.RWMutex{},
+		projects:   map[string]*Project{},
 	}
 
 	err = module.readOrInitializeState()
+	if err != nil {
+		return nil, err
+	}
+
+	err = module.initializeProjects()
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +81,12 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 	m.state.Projects[projectID].Forms[formID].Address = address
 	m.state.Projects[projectID].Forms[formID].Request = payload
 
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
+	project := m.projects[projectID]
 
 	response, err := project.SendRequest(
 		formID,
-		address,
 		m.state.Projects[projectID].Forms[formID].SelectedMethodID,
+		address,
 		payload,
 	)
 	if err != nil {
@@ -107,15 +107,8 @@ func (m *Module) StopRequest(projectID, formID string) (*State, error) {
 	m.stateMutex.RLock()
 	defer m.stateMutex.RUnlock()
 
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = project.StopRequest(formID)
-	if err != nil {
-		return nil, err
-	}
+	project := m.projects[projectID]
+	project.StopRequest(formID)
 
 	return m.state, nil
 }
@@ -170,10 +163,7 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 
 	protoFileList := append([]string{protoFilePath}, m.state.Projects[projectID].ProtoFileList...)
 
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
+	project := m.projects[projectID]
 
 	nodes, err := project.RefreshProtoDescriptors(importPathList, protoFileList)
 	if err != nil {
@@ -196,10 +186,7 @@ func (m *Module) DeleteAllProtoFiles(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
+	project := m.projects[projectID]
 
 	m.state.Projects[projectID].ProtoFileList = nil
 
@@ -212,6 +199,24 @@ func (m *Module) DeleteAllProtoFiles(projectID string) (*State, error) {
 	}
 
 	m.state.Projects[projectID].Nodes = nodes
+
+	for _, form := range project.forms {
+		if form.id == m.state.Projects[projectID].CurrentFormID {
+			continue
+		}
+
+		err := form.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	form := m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID]
+	form.SelectedMethodID = ""
+	form.Request = "{}"
+	form.Response = "{}"
+
+	m.state.Projects[projectID].Forms = map[string]*StateProjectForm{form.ID: form}
 
 	err = m.saveState()
 	if err != nil {
@@ -249,10 +254,7 @@ func (m *Module) OpenImportPath(projectID string) (*State, error) {
 }
 
 func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error) {
-	project, err := m.project(projectID)
-	if err != nil {
-		return nil, err
-	}
+	project := m.projects[projectID]
 
 	payload, err := project.SelectMethod(methodID)
 	if err != nil {
@@ -263,6 +265,7 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 	defer m.stateMutex.Unlock()
 
 	m.state.Projects[projectID].Forms[formID].Request = payload
+	m.state.Projects[projectID].Forms[formID].Response = "{}"
 	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 
 	err = m.saveState()
@@ -334,6 +337,7 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 	defer m.stateMutex.Unlock()
 
 	formID := uuid.Must(uuid.NewV4()).String()
+	address := "0.0.0.0:50051"
 
 	m.state.Projects[projectID] = &StateProject{
 		ID:            projectID,
@@ -341,7 +345,7 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 		Forms: map[string]*StateProjectForm{
 			formID: {
 				ID:       formID,
-				Address:  "0.0.0.0:50051",
+				Address:  address,
 				Request:  "{}",
 				Response: "{}",
 			},
@@ -350,7 +354,16 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 	}
 	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 
-	err := m.saveState()
+	project := NewProject(projectID)
+
+	err := project.InitializeForm(formID, address)
+	if err != nil {
+		return nil, err
+	}
+
+	m.projects[projectID] = project
+
+	err = m.saveState()
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +391,12 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 	m.state.Projects[projectID].CurrentFormID = formID
 
-	err := m.saveState()
+	err := m.projects[projectID].InitializeForm(formID, address)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.saveState()
 	if err != nil {
 		return nil, err
 	}
@@ -388,12 +406,11 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 
 func (m *Module) DeleteProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
 	delete(m.state.Projects, projectID)
-	m.stateMutex.Unlock()
 
-	m.projectsMutex.Lock()
 	project, ok := m.projects[projectID]
-
 	if ok {
 		err := project.Close()
 		if err != nil {
@@ -402,7 +419,6 @@ func (m *Module) DeleteProject(projectID string) (*State, error) {
 
 		delete(m.projects, projectID)
 	}
-	m.projectsMutex.Unlock()
 
 	err := m.saveState()
 	if err != nil {
@@ -432,7 +448,12 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 		m.state.Projects[projectID].CurrentFormID = lo.Keys(m.state.Projects[projectID].Forms)[0]
 	}
 
-	err := m.saveState()
+	err := m.projects[projectID].forms[formID].Close()
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.saveState()
 	if err != nil {
 		return nil, err
 	}
@@ -529,34 +550,29 @@ func (m *Module) saveState() (rerr error) {
 	return nil
 }
 
-func (m *Module) project(projectID string) (*Project, error) {
-	m.projectsMutex.RLock()
-	project, ok := m.projects[projectID]
+func (m *Module) initializeProjects() error {
+	for _, stateProject := range m.state.Projects {
+		project := NewProject(stateProject.ID)
 
-	if ok {
-		return project, nil
-	}
-	m.projectsMutex.RUnlock()
+		if len(stateProject.ProtoFileList) > 0 {
+			_, err := project.RefreshProtoDescriptors(
+				stateProject.ImportPathList,
+				stateProject.ProtoFileList,
+			)
+			if err != nil {
+				return err
+			}
+		}
 
-	m.projectsMutex.Lock()
-	project, ok = m.projects[projectID]
+		for _, form := range stateProject.Forms {
+			err := project.InitializeForm(form.ID, form.Address)
+			if err != nil {
+				return err
+			}
+		}
 
-	if ok {
-		return project, nil
-	}
-
-	project = NewProject(projectID)
-
-	_, err := project.RefreshProtoDescriptors(
-		m.state.Projects[projectID].ImportPathList,
-		m.state.Projects[projectID].ProtoFileList,
-	)
-	if err != nil {
-		return nil, err
+		m.projects[stateProject.ID] = project
 	}
 
-	m.projects[projectID] = project
-	m.projectsMutex.Unlock()
-
-	return project, nil
+	return nil
 }

@@ -18,6 +18,7 @@ update-wails:
 cleanup-state:
 	@rm ~/Library/Application\ Support/multibase/project.json
 	@rm ~/Library/Application\ Support/multibase/grpc.json
+	@rm ~/Library/Application\ Support/multibase/thrift.json
 
 .PHONY: show-state
 show-state:
