@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/adrg/xdg v0.4.0
+	github.com/ditashi/jsbeautifier-go v0.0.0-20141206144643-2520a8026a9c
 	github.com/fullstorydev/grpcurl v1.8.6
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golang/protobuf v1.5.2

@@ -4,9 +4,17 @@ import {thrift} from '../models';
 
 export function SaveCurrentFormID(arg1:string,arg2:string):Promise<thrift.State|Error>;
 
+export function SaveRequestPayload(arg1:string,arg2:string,arg3:string):Promise<thrift.State|Error>;
+
 export function SaveSplitterWidth(arg1:string,arg2:number):Promise<thrift.State|Error>;
 
 export function SendRequest(arg1:string,arg2:string,arg3:string,arg4:string):Promise<thrift.State|Error>;
+
+export function CreateNewForm(arg1:string):Promise<thrift.State|Error>;
+
+export function CreateNewProject(arg1:string):Promise<thrift.State|Error>;
+
+export function DeleteProject(arg1:string):Promise<thrift.State|Error>;
 
 export function OpenFilePath(arg1:string):Promise<thrift.State|Error>;
 
@@ -14,15 +22,7 @@ export function RemoveForm(arg1:string,arg2:string):Promise<thrift.State|Error>;
 
 export function SaveAddress(arg1:string,arg2:string,arg3:string):Promise<thrift.State|Error>;
 
-export function SaveRequestPayload(arg1:string,arg2:string,arg3:string):Promise<thrift.State|Error>;
-
 export function SelectFunction(arg1:string,arg2:string,arg3:string):Promise<thrift.State|Error>;
-
-export function CreateNewForm(arg1:string):Promise<thrift.State|Error>;
-
-export function CreateNewProject(arg1:string):Promise<thrift.State|Error>;
-
-export function DeleteProject(arg1:string):Promise<thrift.State|Error>;
 
 export function State():Promise<thrift.State|Error>;
 

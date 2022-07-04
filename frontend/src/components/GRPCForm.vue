@@ -3,8 +3,11 @@ import { defineComponent } from "vue";
 import { VAceEditor } from "vue3-ace-editor";
 import "ace-builds/src-noconflict/mode-json";
 import "../vendor/merbivore";
-
+import ace from "ace-builds";
+import workerJsonUrl from "ace-builds/src-noconflict/worker-json?url";
 import { useGRPCStore } from "../stores/grpc";
+
+ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
 
 export default defineComponent({
   name: "GRPCForm",
@@ -12,6 +15,12 @@ export default defineComponent({
   props: {
     projectID: String,
     formID: String,
+  },
+  data() {
+    return { localRequest: "" };
+  },
+  beforeUpdate() {
+    this.localRequest = "";
   },
   computed: {
     forms() {
@@ -30,15 +39,14 @@ export default defineComponent({
     },
     request: {
       get() {
-        let request = useGRPCStore().projects[this.projectID].forms[this.formID].request;
-        try {
-          request = JSON.parse(request);
-          request = JSON.stringify(request, null, 4);
-        } catch {}
+        if (this.localRequest !== "") {
+          return this.localRequest;
+        }
 
-        return request;
+        return useGRPCStore().projects[this.projectID].forms[this.formID].request;
       },
       async set(requestPayload) {
+        this.localRequest = requestPayload;
         await useGRPCStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
       },
     },
@@ -74,9 +82,22 @@ export default defineComponent({
     <q-form class="q-gutter-md full-height">
       <q-input v-model="address" label="Address" />
 
-      <v-ace-editor v-model:value="request" lang="json" theme="merbivore_custom" style="height: 30%" />
+      <v-ace-editor
+        v-model:value="request"
+        lang="json"
+        theme="merbivore_custom"
+        style="height: 30%"
+        :options="{ useWorker: true, showPrintMargin: false, behavioursEnabled: false }"
+      />
 
-      <v-ace-editor v-model:value="response" lang="json" theme="merbivore_custom" style="height: 30%" readonly />
+      <v-ace-editor
+        v-model:value="response"
+        lang="json"
+        theme="merbivore_custom"
+        style="height: 30%"
+        readonly
+        :options="{ showPrintMargin: false }"
+      />
 
       <div>
         <q-btn

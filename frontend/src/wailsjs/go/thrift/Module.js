@@ -6,12 +6,28 @@ export function SaveCurrentFormID(arg1, arg2) {
   return window['go']['thrift']['Module']['SaveCurrentFormID'](arg1, arg2);
 }
 
+export function SaveRequestPayload(arg1, arg2, arg3) {
+  return window['go']['thrift']['Module']['SaveRequestPayload'](arg1, arg2, arg3);
+}
+
 export function SaveSplitterWidth(arg1, arg2) {
   return window['go']['thrift']['Module']['SaveSplitterWidth'](arg1, arg2);
 }
 
 export function SendRequest(arg1, arg2, arg3, arg4) {
   return window['go']['thrift']['Module']['SendRequest'](arg1, arg2, arg3, arg4);
+}
+
+export function CreateNewForm(arg1) {
+  return window['go']['thrift']['Module']['CreateNewForm'](arg1);
+}
+
+export function CreateNewProject(arg1) {
+  return window['go']['thrift']['Module']['CreateNewProject'](arg1);
+}
+
+export function DeleteProject(arg1) {
+  return window['go']['thrift']['Module']['DeleteProject'](arg1);
 }
 
 export function OpenFilePath(arg1) {
@@ -26,24 +42,8 @@ export function SaveAddress(arg1, arg2, arg3) {
   return window['go']['thrift']['Module']['SaveAddress'](arg1, arg2, arg3);
 }
 
-export function SaveRequestPayload(arg1, arg2, arg3) {
-  return window['go']['thrift']['Module']['SaveRequestPayload'](arg1, arg2, arg3);
-}
-
 export function SelectFunction(arg1, arg2, arg3) {
   return window['go']['thrift']['Module']['SelectFunction'](arg1, arg2, arg3);
-}
-
-export function CreateNewForm(arg1) {
-  return window['go']['thrift']['Module']['CreateNewForm'](arg1);
-}
-
-export function CreateNewProject(arg1) {
-  return window['go']['thrift']['Module']['CreateNewProject'](arg1);
-}
-
-export function DeleteProject(arg1) {
-  return window['go']['thrift']['Module']['DeleteProject'](arg1);
 }
 
 export function State() {

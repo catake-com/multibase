@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
 	"go.uber.org/thriftrw/compile"
 )
 
@@ -86,7 +87,14 @@ func (p *Project) SelectFunction(functionID string) (string, error) {
 		return "", fmt.Errorf("failed to marshal a function payload: %w", err)
 	}
 
-	return string(payloadJSON), nil
+	payloadJSONStr := string(payloadJSON)
+
+	formattedJSON, err := jsbeautifier.Beautify(&payloadJSONStr, jsbeautifier.DefaultOptions())
+	if err != nil {
+		return "", fmt.Errorf("failed to format a function payload: %w", err)
+	}
+
+	return formattedJSON, nil
 }
 
 func (p *Project) Close() error {

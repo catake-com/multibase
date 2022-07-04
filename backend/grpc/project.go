@@ -3,6 +3,7 @@ package grpc
 import (
 	"fmt"
 
+	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
 	"github.com/fullstorydev/grpcurl"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/dynamic"
@@ -74,7 +75,14 @@ func (p *Project) SelectMethod(methodID string) (string, error) {
 		return "", fmt.Errorf("failed to prepare grpc request: %w", err)
 	}
 
-	return string(methodPayloadJSON), nil
+	payloadJSONStr := string(methodPayloadJSON)
+
+	formattedJSON, err := jsbeautifier.Beautify(&payloadJSONStr, jsbeautifier.DefaultOptions())
+	if err != nil {
+		return "", fmt.Errorf("failed to format a method payload: %w", err)
+	}
+
+	return formattedJSON, nil
 }
 
 func (p *Project) Close() error {

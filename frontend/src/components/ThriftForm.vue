@@ -5,7 +5,6 @@ import "ace-builds/src-noconflict/mode-json";
 import "../vendor/merbivore";
 import ace from "ace-builds";
 import workerJsonUrl from "ace-builds/src-noconflict/worker-json?url";
-
 import { useThriftStore } from "../stores/thrift";
 
 ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
@@ -16,6 +15,12 @@ export default defineComponent({
   props: {
     projectID: String,
     formID: String,
+  },
+  data() {
+    return { localRequest: "" };
+  },
+  beforeUpdate() {
+    this.localRequest = "";
   },
   computed: {
     forms() {
@@ -31,18 +36,17 @@ export default defineComponent({
       async set(address) {
         await useThriftStore().saveAddress(this.projectID, this.formID, address);
       },
-    },
+    },g
     request: {
       get() {
-        let request = useThriftStore().projects[this.projectID].forms[this.formID].request;
-        try {
-          request = JSON.parse(request);
-          request = JSON.stringify(request, null, 4);
-        } catch {}
+        if (this.localRequest !== "") {
+          return this.localRequest;
+        }
 
-        return request;
+        return useThriftStore().projects[this.projectID].forms[this.formID].request;
       },
       async set(requestPayload) {
+        this.localRequest = requestPayload;
         await useThriftStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
       },
     },
@@ -83,10 +87,17 @@ export default defineComponent({
         lang="json"
         theme="merbivore_custom"
         style="height: 30%"
-        :options="{ useWorker: true }"
+        :options="{ useWorker: true, showPrintMargin: false, behavioursEnabled: false }"
       />
 
-      <v-ace-editor v-model:value="response" lang="json" theme="merbivore_custom" style="height: 30%" readonly />
+      <v-ace-editor
+        v-model:value="response"
+        lang="json"
+        theme="merbivore_custom"
+        style="height: 30%"
+        readonly
+        :options="{ showPrintMargin: false }"
+      />
 
       <div>
         <q-btn
