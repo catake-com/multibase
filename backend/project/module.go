@@ -100,30 +100,6 @@ func (m *Module) CreateGRPCProject(projectID string) (*State, error) {
 	return m.state, nil
 }
 
-func (m *Module) DeleteGRPCProject(projectID string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Stats.GRPCProjectCount--
-
-	delete(m.state.Projects, projectID)
-
-	m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(pID string, _ int) bool {
-		return pID == projectID
-	})
-
-	if m.state.CurrentProjectID == projectID {
-		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
-	}
-
-	err := m.saveState()
-	if err != nil {
-		return nil, err
-	}
-
-	return m.state, nil
-}
-
 func (m *Module) CreateThriftProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -146,11 +122,9 @@ func (m *Module) CreateThriftProject(projectID string) (*State, error) {
 	return m.state, nil
 }
 
-func (m *Module) DeleteThriftProject(projectID string) (*State, error) {
+func (m *Module) DeleteProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
-
-	m.state.Stats.ThriftProjectCount--
 
 	delete(m.state.Projects, projectID)
 

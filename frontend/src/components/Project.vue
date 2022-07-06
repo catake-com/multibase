@@ -39,9 +39,9 @@ export default defineComponent({
       await useProjectStore().createNewGRPCProject(this.currentProjectID);
     },
 
-    async deleteGRPCProject() {
-      await useGRPCStore().createNewProject(this.currentProjectID);
-      await useProjectStore().createNewGRPCProject(this.currentProjectID);
+    async deleteGRPCProject(projectID) {
+      await useGRPCStore().deleteProject(projectID);
+      await useProjectStore().deleteProject(projectID);
     },
 
     async newThriftProject() {
@@ -49,9 +49,9 @@ export default defineComponent({
       await useProjectStore().createNewThriftProject(this.currentProjectID);
     },
 
-    async deleteThriftProject() {
-      await useThriftStore().createNewProject(this.currentProjectID);
-      await useProjectStore().createNewThriftProject(this.currentProjectID);
+    async deleteThriftProject(projectID) {
+      await useThriftStore().deleteProject(projectID);
+      await useProjectStore().deleteProject(projectID);
     },
   },
 });
@@ -93,6 +93,7 @@ export default defineComponent({
 
                   <q-td key="actions" :props="props" auto-width no-hover>
                     <q-btn
+                      v-if="props.row.type === 'grpc'"
                       class="inline"
                       icon="delete"
                       size="10px"
@@ -100,7 +101,19 @@ export default defineComponent({
                       flat
                       rounded
                       dense
-                      @click="deleteGRPCProject($event, props.row.id)"
+                      @click="deleteGRPCProject(props.row.id)"
+                    />
+
+                    <q-btn
+                      v-if="props.row.type === 'thrift'"
+                      class="inline"
+                      icon="delete"
+                      size="10px"
+                      style="width: 20px"
+                      flat
+                      rounded
+                      dense
+                      @click="deleteThriftProject(props.row.id)"
                     />
                   </q-td>
                 </q-tr>

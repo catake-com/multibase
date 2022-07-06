@@ -16,6 +16,7 @@ import {
   SaveSplitterWidth,
   SaveRequestPayload,
   State,
+  DeleteProject,
 } from "../wailsjs/go/grpc/Module";
 
 export const useGRPCStore = defineStore({
@@ -45,6 +46,14 @@ export const useGRPCStore = defineStore({
     async createNewProject(projectID) {
       try {
         this.$state = await CreateNewProject(projectID);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async deleteProject(projectID) {
+      try {
+        this.$state = await DeleteProject(projectID);
       } catch (error) {
         console.log(error);
       }

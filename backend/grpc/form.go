@@ -86,6 +86,10 @@ func (f *Form) StopCurrentRequest() {
 }
 
 func (f *Form) Close() error {
+	if f.connection == nil {
+		return nil
+	}
+
 	err := f.connection.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close grpc connection: %w", err)

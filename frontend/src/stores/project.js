@@ -8,6 +8,7 @@ import {
   OpenProject,
   CloseProject,
   SaveCurrentProjectID,
+  DeleteProject,
 } from "../wailsjs/go/project/Module";
 
 export const useProjectStore = defineStore({
@@ -41,6 +42,14 @@ export const useProjectStore = defineStore({
     async createNewThriftProject(thriftProjectID) {
       try {
         this.$state = await CreateThriftProject(thriftProjectID);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async deleteProject(grpcProjectID) {
+      try {
+        this.$state = await DeleteProject(grpcProjectID);
       } catch (error) {
         console.log(error);
       }

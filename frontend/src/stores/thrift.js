@@ -16,6 +16,7 @@ import {
   AddHeader,
   SaveHeaders,
   DeleteHeader,
+  DeleteProject,
 } from "../wailsjs/go/thrift/Module";
 
 export const useThriftStore = defineStore({
@@ -45,6 +46,14 @@ export const useThriftStore = defineStore({
     async createNewProject(projectID) {
       try {
         this.$state = await CreateNewProject(projectID);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async deleteProject(projectID) {
+      try {
+        this.$state = await DeleteProject(projectID);
       } catch (error) {
         console.log(error);
       }
