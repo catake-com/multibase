@@ -23,7 +23,7 @@ jobs:
             -   name: Install Wails
                 run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
             -   name: Build for Mac OS
-                run: wails build -platform darwin/universal -o Multibase.app
+                run: wails build -platform darwin/universal -o Multibase
             -   name: Build for Windows x86
                 run: wails build -platform windows/amd64 -o Multibase_x86.exe
             -   name: Build for Windows ARM
