@@ -10,9 +10,11 @@ jobs:
         strategy:
             matrix:
                 build: [
-                    { name: Multibase, platform: linux/amd64, os: ubuntu-latest },
-                    { name: Multibase, platform: windows/amd64, os: windows-latest },
-                    { name: Multibase, platform: darwin/universal, os: macos-latest }
+                    { name: Multibase_linux_x86, platform: linux/amd64, os: ubuntu-22.04 },
+                    { name: Multibase_linux_arm, platform: linux/arm64, os: ubuntu-22.04 },
+                    { name: Multibase_win_x86, platform: windows/amd64, os: windows-2022 },
+                    { name: Multibase_win_arm, platform: windows/arm64, os: windows-2022 },
+                    { name: Multibase_macos, platform: darwin/universal, os: macos-12 }
                 ]
         runs-on: ${{ matrix.build.os }}
         steps:
