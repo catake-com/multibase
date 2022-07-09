@@ -85,9 +85,10 @@ jobs:
                         wails build -platform linux/amd64 -o Multibase_x86
                         mv Multibase_x86 /artifacts/Multibase_x86
                         echo "Produced artifact at /artifacts/${artifact_name}"
-            -   name: Release
+            -   name: ls
                 run: |
                     ls -al "${PWD}/artifacts"
+            -   name: Release
                 uses: softprops/action-gh-release@v1
                 with:
                     files: |
