@@ -6,37 +6,35 @@ on:
             - "*"
 
 jobs:
-    build-macos-win:
-        runs-on: macos-12
-        steps:
-            -   uses: actions/setup-go@v3
-                with:
-                    go-version: 1.18
-            -   uses: actions/setup-node@v3
-                with:
-                    node-version: 16
-            -   uses: maxim-lobanov/setup-xcode@v1
-                with:
-                    xcode-version: latest-stable
-            -   name: Checkout
-                uses: actions/checkout@v2
-            -   name: Install Wails
-                run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-            -   name: Build for Mac OS
-                run: wails build -platform darwin/universal -o Multibase
-            -   name: Build for Windows x86
-                run: wails build -platform windows/amd64 -o Multibase_x86.exe
-            -   name: Build for Windows ARM
-                run: wails build -platform windows/arm64 -o Multibase_arm.exe
-            -   name: Release
-                uses: softprops/action-gh-release@v1
-                with:
-                    files: |
-                        build/bin/Multibase.app
-                        build/bin/Multibase_x86.exe
-                        build/bin/Multibase_arm.exe
-
-    build-linux:
+    #    build-macos-win:
+    #        runs-on: macos-12
+    #        steps:
+    #            -   uses: actions/setup-go@v3
+    #                with:
+    #                    go-version: 1.18
+    #            -   uses: actions/setup-node@v3
+    #                with:
+    #                    node-version: 16
+    #            -   uses: maxim-lobanov/setup-xcode@v1
+    #                with:
+    #                    xcode-version: latest-stable
+    #            -   name: Checkout
+    #                uses: actions/checkout@v2
+    #            -   name: Install Wails
+    #                run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+    #            -   name: Build for Mac OS
+    #                run: wails build -platform darwin/universal -o Multibase
+    #            -   name: Build for Windows x86
+    #                run: wails build -platform windows/amd64 -o Multibase_x86.exe
+    #            -   name: Build for Windows ARM
+    #                run: wails build -platform windows/arm64 -o Multibase_arm.exe
+    #            -   name: Release
+    #                uses: softprops/action-gh-release@v1
+    #                with:
+    #                    files: |
+    #                        build/bin/*
+    #
+    build-linux-x86:
         runs-on: ubuntu-22.04
         steps:
             -   uses: actions/setup-go@v3
@@ -46,7 +44,7 @@ jobs:
                 with:
                     node-version: 16
             -   name: Install packages
-                run: sudo apt-get update && sudo apt-get install build-essential pkg-config libgtk-3-dev libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu libc6-dev-i386 libc6-i386
+                run: sudo apt-get update && sudo apt-get install build-essential pkg-config libgtk-3-dev libgtk-3-0 libwebkit2gtk-4.0-dev
             -   name: Checkout
                 uses: actions/checkout@v2
             -   name: Install Wails
@@ -57,5 +55,40 @@ jobs:
                 uses: softprops/action-gh-release@v1
                 with:
                     files: |
-                        build/bin/Multibase_x86
-                        build/bin/Multibase_arm
+                        build/bin/*
+
+    build-linux-arm:
+        runs-on: ubuntu-22.04
+        steps:
+            -   uses: actions/checkout@v2
+            -   uses: uraimo/run-on-arch-action@v2
+                name: Build
+                with:
+                    arch: aarch64
+                    distro: ubuntu22.04
+                    setup: |
+                        mkdir -p "${PWD}/artifacts"
+                    dockerRunArgs: |
+                        --volume "${PWD}/artifacts:/artifacts"
+                    env: |
+                        artifact_name: Multibase_arm
+                    shell: /bin/sh
+
+                    install: |
+                        apt-get update -q -y
+                        apt-get install -q -y build-essential pkg-config libgtk-3-dev libgtk-3-0 libwebkit2gtk-4.0-dev
+                        snap install --classic go
+                        snap install --classic node
+                        go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+                    run: |
+                        wails build -platform linux/amd64 -o Multibase_x86
+                        mv Multibase_x86 /artifacts/Multibase_x86
+                        echo "Produced artifact at /artifacts/${artifact_name}"
+            -   name: Release
+                run: |
+                    ls -al "${PWD}/artifacts"
+                uses: softprops/action-gh-release@v1
+                with:
+                    files: |
+                        "${PWD}/artifacts/*"
