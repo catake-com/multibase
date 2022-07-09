@@ -76,9 +76,7 @@ jobs:
 
                     install: |
                         apt-get update -q -y
-                        apt-get install -q -y snapd build-essential pkg-config libgtk-3-dev libgtk-3-0 libwebkit2gtk-4.0-dev
-                        snap install --classic go
-                        snap install --classic node
+                        apt-get install -q -y golang-go nodejs npm build-essential pkg-config libgtk-3-dev libgtk-3-0 libwebkit2gtk-4.0-dev
                         go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
                     run: |
