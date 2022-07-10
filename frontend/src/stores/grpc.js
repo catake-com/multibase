@@ -17,6 +17,9 @@ import {
   SaveRequestPayload,
   State,
   DeleteProject,
+  AddHeader,
+  SaveHeaders,
+  DeleteHeader,
 } from "../wailsjs/go/grpc/Module";
 
 export const useGRPCStore = defineStore({
@@ -32,6 +35,7 @@ export const useGRPCStore = defineStore({
             request: "",
             response: "",
             requestInProgress: false,
+            headers: [{ id: "c135ee1a-c58d-4b55-ba21-3f4ae82e6db0", key: "", value: "" }],
           },
         },
         formIDs: [],
@@ -161,6 +165,30 @@ export const useGRPCStore = defineStore({
     async saveAddress(projectID, formID, address) {
       try {
         this.$state = await SaveAddress(projectID, formID, address);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
+    },
+
+    async addHeader(projectID, formID) {
+      try {
+        this.$state = await AddHeader(projectID, formID);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
+    },
+
+    async saveHeaders(projectID, formID, headers) {
+      try {
+        this.$state = await SaveHeaders(projectID, formID, headers);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
+    },
+
+    async deleteHeader(projectID, formID, headerID) {
+      try {
+        this.$state = await DeleteHeader(projectID, formID, headerID);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }

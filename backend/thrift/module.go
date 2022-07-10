@@ -250,27 +250,6 @@ func (m *Module) SaveHeaders(projectID, formID string, headers []*StateProjectFo
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	// existingHeader, ok := lo.Find(
-	// 	m.state.Projects[projectID].Forms[formID].Headers,
-	// 	func(header *StateProjectFormHeader) bool {
-	// 		if header.ID == newHeader.ID {
-	// 			return true
-	// 		}
-	//
-	// 		return false
-	// 	},
-	// )
-	//
-	// if ok {
-	// 	existingHeader.Key = newHeader.Key
-	// 	existingHeader.Value = newHeader.Value
-	// } else {
-	// 	m.state.Projects[projectID].Forms[formID].Headers = append(
-	// 		m.state.Projects[projectID].Forms[formID].Headers,
-	// 		newHeader,
-	// 	)
-	// }
-
 	m.state.Projects[projectID].Forms[formID].Headers = headers
 
 	err := m.saveState()

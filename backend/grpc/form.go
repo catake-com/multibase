@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
+	"github.com/samber/lo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -42,6 +43,7 @@ func (f *Form) SendRequest(
 	address,
 	payload string,
 	protoDescriptorSource grpcurl.DescriptorSource,
+	headers []*StateProjectFormHeader,
 ) (string, error) {
 	err := f.establishConnection(address)
 	if err != nil {
@@ -51,6 +53,11 @@ func (f *Form) SendRequest(
 	responseHandler := &responseHandler{}
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
+
+	grpcHeaders := lo.Map(headers, func(header *StateProjectFormHeader, _ int) string {
+		return fmt.Sprintf("%s: %s", header.Key, header.Value)
+	})
+
 	f.requestCancelFunc = cancelFunc
 
 	err = grpcurl.InvokeRPC(
@@ -58,7 +65,7 @@ func (f *Form) SendRequest(
 		protoDescriptorSource,
 		f.connection,
 		methodID,
-		nil,
+		grpcHeaders,
 		responseHandler,
 		func(message proto.Message) error {
 			err := jsonpb.UnmarshalString(payload, message)
