@@ -24,6 +24,8 @@ jobs:
                 run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
             -   name: Build for Mac OS
                 run: wails build -platform darwin/universal -o Multibase
+            -   name: Archive Mac OS app
+                run: ditto -c -k --keepParent ./build/bin/Multibase.app ./build/bin/Multibase_macos_universal.zip
             -   name: Build for Windows x86
                 run: wails build -platform windows/amd64 -o Multibase_x86.exe
             -   name: Build for Windows ARM
