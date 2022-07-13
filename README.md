@@ -1,18 +1,12 @@
-# README
+# Multibase
+#### Fast and lightweight GUI client for interacting with gRPC and Thrift servers.
 
-## About
+[![License](https://img.shields.io/github/license/multibase-io/multibase?style=flat-square)](https://github.com/multibase-io/multibase/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/multibase-io/multibase?style=flat-square)](https://github.com/multibase-io/multibase/releases)
 
-This template uses vanilla JS / HTML and CSS.
+## Features
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
-
-## Live Development
-
-To run in live development mode, run `wails dev` in the project directory. The frontend dev server will run
-on http://localhost:34115. Open this in your browser to connect to your application.
-
-## Building
-
-For a production build, use `wails build`.
-
+* **Multi-Project** — create and manage as many gRPC/Thrift projects as you'd like
+* **Workspace Persistence** — state is automatically saved
+* **gRPC** —  multi-tab operations, unary RPC, Metadata support, Request cancellation
+* **Thrift** —  multi-tab operations, full-featured RPC, Headers support, Request cancellation

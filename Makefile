@@ -25,3 +25,9 @@ show-state:
 	@jq . ~/Library/Application\ Support/multibase/project.json
 	@jq . ~/Library/Application\ Support/multibase/grpc.json
 	@jq . ~/Library/Application\ Support/multibase/thrift.json
+
+.PHONY: release
+release:
+	$(eval VERSION = ${v})
+	@git tag ${VERSION}
+	@git push origin ${VERSION}
