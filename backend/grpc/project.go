@@ -29,7 +29,7 @@ func (p *Project) SendRequest(
 	address,
 	payload string,
 	headers []*StateProjectFormHeader,
-) (string, error) {
+) (string, map[string]string, error) {
 	form := p.forms[id]
 
 	return form.SendRequest(methodID, address, payload, p.protoDescriptorSource, headers)

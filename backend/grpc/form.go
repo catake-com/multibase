@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/fullstorydev/grpcurl"
@@ -44,10 +45,10 @@ func (f *Form) SendRequest(
 	payload string,
 	protoDescriptorSource grpcurl.DescriptorSource,
 	headers []*StateProjectFormHeader,
-) (string, error) {
+) (string, map[string]string, error) {
 	err := f.establishConnection(address)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	responseHandler := &responseHandler{}
@@ -77,10 +78,10 @@ func (f *Form) SendRequest(
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("failed to make grpc request: %w", err)
+		return "", nil, fmt.Errorf("failed to make grpc request: %w", err)
 	}
 
-	return responseHandler.response, nil
+	return responseHandler.response, responseHandler.headers, nil
 }
 
 func (f *Form) StopCurrentRequest() {
@@ -138,6 +139,7 @@ func (f *Form) establishConnection(address string) error {
 
 type responseHandler struct {
 	response string
+	headers  map[string]string
 }
 
 func (h *responseHandler) OnReceiveTrailers(status *status.Status, _ metadata.MD) {
@@ -154,7 +156,10 @@ func (h *responseHandler) OnResolveMethod(_ *desc.MethodDescriptor) {
 func (h *responseHandler) OnSendHeaders(_ metadata.MD) {
 }
 
-func (h *responseHandler) OnReceiveHeaders(_ metadata.MD) {
+func (h *responseHandler) OnReceiveHeaders(headers metadata.MD) {
+	h.headers = lo.MapValues(headers, func(values []string, _ string) string {
+		return strings.Join(values, ";")
+	})
 }
 
 func (h *responseHandler) OnReceiveResponse(message proto.Message) {

@@ -10,14 +10,6 @@ export function CreateGRPCProject(arg1) {
   return window['go']['project']['Module']['CreateGRPCProject'](arg1);
 }
 
-export function SaveCurrentProjectID(arg1) {
-  return window['go']['project']['Module']['SaveCurrentProjectID'](arg1);
-}
-
-export function State() {
-  return window['go']['project']['Module']['State']();
-}
-
 export function CreateNewProject() {
   return window['go']['project']['Module']['CreateNewProject']();
 }
@@ -36,4 +28,12 @@ export function OpenProject(arg1, arg2) {
 
 export function RenameProject(arg1, arg2) {
   return window['go']['project']['Module']['RenameProject'](arg1, arg2);
+}
+
+export function SaveCurrentProjectID(arg1) {
+  return window['go']['project']['Module']['SaveCurrentProjectID'](arg1);
+}
+
+export function State() {
+  return window['go']['project']['Module']['State']();
 }

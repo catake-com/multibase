@@ -15,12 +15,18 @@ export default defineComponent({
   props: {
     projectID: String,
     formID: String,
+    selectedMethodID: String,
   },
   data() {
-    return { localRequest: "", localHeaders: [] };
+    return { localRequest: "", localHeaders: [], isResponseHeadersShown: false };
   },
   beforeUpdate() {
     this.localRequest = "";
+  },
+  watch: {
+    selectedMethodID(newValue, oldValue) {
+      this.localRequest = "";
+    },
   },
   computed: {
     forms() {
@@ -28,6 +34,9 @@ export default defineComponent({
     },
     form() {
       return useGRPCStore().projects[this.projectID].forms[this.formID];
+    },
+    responseHeaders() {
+      return useGRPCStore().projects[this.projectID].forms[this.formID].responseHeaders || {};
     },
     headers() {
       if (this.localHeaders.length > 0) {
@@ -127,6 +136,38 @@ export default defineComponent({
         style="height: 30%"
         :options="{ useWorker: true, showPrintMargin: false, behavioursEnabled: false }"
       />
+
+      <q-btn
+        v-if="!isResponseHeadersShown"
+        outline
+        label="Show Response Headers"
+        size="xs"
+        @click="isResponseHeadersShown = true"
+        :disable="Object.keys(responseHeaders).length < 1"
+      />
+
+      <q-btn
+        v-if="isResponseHeadersShown"
+        outline
+        label="Hide Response Headers"
+        size="xs"
+        @click="isResponseHeadersShown = false"
+      />
+
+      <q-markup-table v-if="isResponseHeadersShown" style="width: 50%">
+        <thead>
+          <tr>
+            <th class="text-left">Header</th>
+            <th class="text-left">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(value, key) in responseHeaders" :key="`response-header-${key}`">
+            <td class="text-left">{{ key }}</td>
+            <td class="text-left">{{ value }}</td>
+          </tr>
+        </tbody>
+      </q-markup-table>
 
       <v-ace-editor
         v-model:value="response"

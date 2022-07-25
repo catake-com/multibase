@@ -34,6 +34,7 @@ export const useGRPCStore = defineStore({
             selectedMethodID: "",
             request: "",
             response: "",
+            responseHeaders: {},
             requestInProgress: false,
             headers: [{ id: "c135ee1a-c58d-4b55-ba21-3f4ae82e6db0", key: "", value: "" }],
           },

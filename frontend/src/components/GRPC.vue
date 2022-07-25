@@ -232,7 +232,7 @@ export default defineComponent({
 
         <q-tab-panels id="formContainer" v-model="currentFormID" animated>
           <q-tab-panel :name="formID" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
-            <GRPCForm :formID="formID" :projectID="this.projectID" />
+            <GRPCForm :formID="formID" :projectID="this.projectID" :selectedMethodID="this.selectedMethod" />
           </q-tab-panel>
         </q-tab-panels>
       </template>
