@@ -9,8 +9,8 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/jhump/protoreflect v1.12.0
-	github.com/samber/lo v1.25.0
-	github.com/wailsapp/wails/v2 v2.0.0-beta.39.2
+	github.com/samber/lo v1.26.0
+	github.com/wailsapp/wails/v2 v2.0.0-beta.42
 	github.com/yarpc/yab v0.21.1-0.20220622164035-eccc33de904e
 	go.uber.org/multierr v1.8.0
 	go.uber.org/thriftrw v1.29.2
@@ -46,7 +46,7 @@ require (
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220720214146-176da50484ac // indirect
+	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
