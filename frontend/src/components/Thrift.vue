@@ -177,7 +177,7 @@ export default defineComponent({
 
         <q-tab-panels id="formContainer" v-model="currentFormID" animated>
           <q-tab-panel :name="formID" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
-            <ThriftForm :formID="formID" :projectID="this.projectID" />
+            <ThriftForm :formID="formID" :projectID="this.projectID" :selectedFunctionID="this.selectedFunction" />
           </q-tab-panel>
         </q-tab-panels>
       </template>

@@ -15,12 +15,18 @@ export default defineComponent({
   props: {
     projectID: String,
     formID: String,
+    selectedFunctionID: String,
   },
   data() {
     return { localRequest: "", localHeaders: [] };
   },
   beforeUpdate() {
     this.localRequest = "";
+  },
+  watch: {
+    selectedFunctionID(newValue, oldValue) {
+      this.localRequest = "";
+    },
   },
   computed: {
     forms() {
