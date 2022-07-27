@@ -131,7 +131,6 @@ export namespace grpc {
 	    selectedMethodID: string;
 	    request: string;
 	    response: string;
-	    responseHeaders: {[key: string]: string};
 	
 	    static createFrom(source: any = {}) {
 	        return new StateProjectForm(source);
@@ -145,7 +144,6 @@ export namespace grpc {
 	        this.selectedMethodID = source["selectedMethodID"];
 	        this.request = source["request"];
 	        this.response = source["response"];
-	        this.responseHeaders = source["responseHeaders"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

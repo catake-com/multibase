@@ -2,9 +2,9 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/fullstorydev/grpcurl"
@@ -45,13 +45,13 @@ func (f *Form) SendRequest(
 	payload string,
 	protoDescriptorSource grpcurl.DescriptorSource,
 	headers []*StateProjectFormHeader,
-) (string, map[string]string, error) {
+) (string, error) {
 	err := f.establishConnection(address)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
-	responseHandler := &responseHandler{}
+	responseHandler := &responseHandler{protoDescriptorSource: protoDescriptorSource}
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
 
@@ -78,10 +78,10 @@ func (f *Form) SendRequest(
 		},
 	)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to make grpc request: %w", err)
+		return "", fmt.Errorf("failed to make grpc request: %w", err)
 	}
 
-	return responseHandler.response, responseHandler.headers, nil
+	return responseHandler.response, nil
 }
 
 func (f *Form) StopCurrentRequest() {
@@ -138,8 +138,8 @@ func (f *Form) establishConnection(address string) error {
 }
 
 type responseHandler struct {
-	response string
-	headers  map[string]string
+	protoDescriptorSource grpcurl.DescriptorSource
+	response              string
 }
 
 func (h *responseHandler) OnReceiveTrailers(status *status.Status, _ metadata.MD) {
@@ -147,7 +147,66 @@ func (h *responseHandler) OnReceiveTrailers(status *status.Status, _ metadata.MD
 		return
 	}
 
-	h.response = status.String()
+	formatter := grpcurl.NewJSONFormatter(
+		true,
+		grpcurl.AnyResolverFromDescriptorSourceWithFallback(h.protoDescriptorSource),
+	)
+
+	protoDetails := status.Proto().Details
+	details := make([]map[string]string, 0, len(protoDetails))
+
+	for _, detail := range protoDetails {
+		result, err := formatter(detail)
+		if err != nil {
+			continue
+		}
+
+		detailMap := map[string]string{}
+
+		err = json.Unmarshal([]byte(result), &detailMap)
+		if err != nil {
+			continue
+		}
+
+		detailMapWithoutType := make(map[string]string, len(detailMap))
+
+		for key, value := range detailMap {
+			if key == "@type" {
+				continue
+			}
+
+			detailMapWithoutType[key] = value
+		}
+
+		details = append(details, detailMapWithoutType)
+	}
+
+	responseJSON := &ResponseJSON{
+		Error: &ResponseJSONError{
+			Code:    status.Code().String(),
+			Message: status.Message(),
+			Details: details,
+		},
+	}
+
+	response, err := json.Marshal(responseJSON)
+	if err != nil {
+		h.response = err.Error()
+
+		return
+	}
+
+	h.response = string(response)
+}
+
+type ResponseJSON struct {
+	Error *ResponseJSONError `json:"error"`
+}
+
+type ResponseJSONError struct {
+	Code    string              `json:"code"`
+	Message string              `json:"message"`
+	Details []map[string]string `json:"details,omitempty"`
 }
 
 func (h *responseHandler) OnResolveMethod(_ *desc.MethodDescriptor) {
@@ -156,10 +215,7 @@ func (h *responseHandler) OnResolveMethod(_ *desc.MethodDescriptor) {
 func (h *responseHandler) OnSendHeaders(_ metadata.MD) {
 }
 
-func (h *responseHandler) OnReceiveHeaders(headers metadata.MD) {
-	h.headers = lo.MapValues(headers, func(values []string, _ string) string {
-		return strings.Join(values, ";")
-	})
+func (h *responseHandler) OnReceiveHeaders(_ metadata.MD) {
 }
 
 func (h *responseHandler) OnReceiveResponse(message proto.Message) {

@@ -43,7 +43,6 @@ type StateProjectForm struct {
 	SelectedMethodID string                    `json:"selectedMethodID"`
 	Request          string                    `json:"request"`
 	Response         string                    `json:"response"`
-	ResponseHeaders  map[string]string         `json:"responseHeaders"`
 }
 
 type Module struct {
@@ -91,7 +90,7 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 
 	project := m.projects[projectID]
 
-	response, responseHeaders, err := project.SendRequest(
+	response, err := project.SendRequest(
 		formID,
 		m.state.Projects[projectID].Forms[formID].SelectedMethodID,
 		address,
@@ -103,7 +102,6 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 	}
 
 	m.state.Projects[projectID].Forms[formID].Response = response
-	m.state.Projects[projectID].Forms[formID].ResponseHeaders = responseHeaders
 
 	err = m.saveState()
 	if err != nil {
@@ -276,7 +274,6 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 
 	m.state.Projects[projectID].Forms[formID].Request = payload
 	m.state.Projects[projectID].Forms[formID].Response = "{}"
-	m.state.Projects[projectID].Forms[formID].ResponseHeaders = nil
 	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 
 	err = m.saveState()
