@@ -72,6 +72,22 @@ export namespace project {
 
 export namespace grpc {
 	
+	export class StateProjectFormHeader {
+	    id: string;
+	    key: string;
+	    value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new StateProjectFormHeader(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.key = source["key"];
+	        this.value = source["value"];
+	    }
+	}
 	export class ProtoTreeNode {
 	    id: string;
 	    label: string;
@@ -107,22 +123,6 @@ export namespace grpc {
 		    }
 		    return a;
 		}
-	}
-	export class StateProjectFormHeader {
-	    id: string;
-	    key: string;
-	    value: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new StateProjectFormHeader(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.key = source["key"];
-	        this.value = source["value"];
-	    }
 	}
 	export class StateProjectForm {
 	    id: string;

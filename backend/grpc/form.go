@@ -20,6 +20,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type ResponseJSON struct {
+	Error *ResponseJSONError `json:"error"`
+}
+
+type ResponseJSONError struct {
+	Code    string                   `json:"code"`
+	Message string                   `json:"message"`
+	Details []map[string]interface{} `json:"details,omitempty"`
+}
+
 type Form struct {
 	id                string
 	address           string
@@ -153,7 +163,7 @@ func (h *responseHandler) OnReceiveTrailers(status *status.Status, _ metadata.MD
 	)
 
 	protoDetails := status.Proto().Details
-	details := make([]map[string]string, 0, len(protoDetails))
+	details := make([]map[string]interface{}, 0, len(protoDetails))
 
 	for _, detail := range protoDetails {
 		result, err := formatter(detail)
@@ -161,14 +171,14 @@ func (h *responseHandler) OnReceiveTrailers(status *status.Status, _ metadata.MD
 			continue
 		}
 
-		detailMap := map[string]string{}
+		detailMap := map[string]interface{}{}
 
 		err = json.Unmarshal([]byte(result), &detailMap)
 		if err != nil {
 			continue
 		}
 
-		detailMapWithoutType := make(map[string]string, len(detailMap))
+		detailMapWithoutType := make(map[string]interface{}, len(detailMap))
 
 		for key, value := range detailMap {
 			if key == "@type" {
@@ -197,16 +207,6 @@ func (h *responseHandler) OnReceiveTrailers(status *status.Status, _ metadata.MD
 	}
 
 	h.response = string(response)
-}
-
-type ResponseJSON struct {
-	Error *ResponseJSONError `json:"error"`
-}
-
-type ResponseJSONError struct {
-	Code    string              `json:"code"`
-	Message string              `json:"message"`
-	Details []map[string]string `json:"details,omitempty"`
 }
 
 func (h *responseHandler) OnResolveMethod(_ *desc.MethodDescriptor) {
