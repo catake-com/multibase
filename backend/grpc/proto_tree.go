@@ -1,11 +1,14 @@
 package grpc
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/fullstorydev/grpcurl"
 	"github.com/jhump/protoreflect/desc"
 )
+
+var errServiceDescriptor = errors.New("expected service descriptor")
 
 type ProtoTree struct {
 	files        []*ProtoTreeFile
@@ -32,7 +35,10 @@ func NewProtoTree(protoDescriptorSource grpcurl.DescriptorSource) (*ProtoTree, e
 			return nil, fmt.Errorf("failed to find service: %w", err)
 		}
 
-		serviceDesc := des.(*desc.ServiceDescriptor)
+		serviceDesc, ok := des.(*desc.ServiceDescriptor)
+		if !ok {
+			return nil, fmt.Errorf("%w, got %T instead", errServiceDescriptor, des)
+		}
 
 		protoTreeService := &ProtoTreeService{
 			id:   serviceDesc.GetFullyQualifiedName(),
@@ -107,14 +113,14 @@ func (t *ProtoTree) Method(id string) *ProtoTreeMethod {
 	return t.methodsByIDs[id]
 }
 
-func (t *ProtoTree) AddFile(id, name string) *ProtoTreeFile {
+func (t *ProtoTree) AddFile(fileID, name string) *ProtoTreeFile {
 	for _, file := range t.files {
-		if file.id == id {
+		if file.id == fileID {
 			return file
 		}
 	}
 
-	file := &ProtoTreeFile{id: id, name: name}
+	file := &ProtoTreeFile{id: fileID, name: name}
 
 	t.files = append(t.files, file)
 

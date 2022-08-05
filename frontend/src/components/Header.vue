@@ -52,6 +52,9 @@ export default defineComponent({
           <div class="col q-tab__label" v-if="projects[projectID].type === 'thrift'">
             {{ projects[projectID].name }}
           </div>
+          <div class="col q-tab__label" v-if="projects[projectID].type === 'kafka'">
+            {{ projects[projectID].name }}
+          </div>
 
           <div class="col-1">
             <q-btn

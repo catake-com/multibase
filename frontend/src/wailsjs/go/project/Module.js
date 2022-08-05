@@ -10,6 +10,10 @@ export function CreateGRPCProject(arg1) {
   return window['go']['project']['Module']['CreateGRPCProject'](arg1);
 }
 
+export function CreateKafkaProject(arg1) {
+  return window['go']['project']['Module']['CreateKafkaProject'](arg1);
+}
+
 export function CreateNewProject() {
   return window['go']['project']['Module']['CreateNewProject']();
 }

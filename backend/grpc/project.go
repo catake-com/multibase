@@ -24,13 +24,13 @@ func NewProject(id string) *Project {
 }
 
 func (p *Project) SendRequest(
-	id,
+	formID,
 	methodID,
 	address,
 	payload string,
 	headers []*StateProjectFormHeader,
 ) (string, error) {
-	form := p.forms[id]
+	form := p.forms[formID]
 
 	return form.SendRequest(methodID, address, payload, p.protoDescriptorSource, headers)
 }

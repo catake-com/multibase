@@ -15,6 +15,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const requestTimeout = 5 * time.Second
+
 type Form struct {
 	id                string
 	client            *http.Client
@@ -23,15 +25,15 @@ type Form struct {
 }
 
 func NewForm(
-	id string,
+	formID string,
 	serviceTree *ServiceTree,
 ) (*Form, error) {
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: requestTimeout,
 	}
 
 	form := &Form{
-		id:          id,
+		id:          formID,
 		client:      client,
 		serviceTree: serviceTree,
 	}
@@ -40,7 +42,7 @@ func NewForm(
 }
 
 func (f *Form) SendRequest(functionID, address, payload string, headers []*StateProjectFormHeader) (string, error) {
-	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), requestTimeout)
 	f.requestCancelFunc = cancelFunc
 
 	function := f.serviceTree.Function(functionID)
@@ -68,7 +70,7 @@ func (f *Form) SendRequest(functionID, address, payload string, headers []*State
 
 	request, err := http.NewRequestWithContext(
 		ctx,
-		"POST",
+		http.MethodPost,
 		requestURL.String(),
 		bytes.NewReader(encodedPayload),
 	)

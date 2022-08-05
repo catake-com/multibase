@@ -12,14 +12,8 @@ linters:
         - containedctx
         - exhaustivestruct
         - exhaustruct
-        - forcetypeassert
-        - godox
-        - gofumpt
-        - gomnd
-        - ifshort
-        - nonamedreturns
+        - nolintlint
         - staticcheck
-        - varnamelen
 
 linters-settings:
     goimports:

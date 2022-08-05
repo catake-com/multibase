@@ -20,6 +20,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const requestTimeout = time.Second * 5
+
 type ResponseJSON struct {
 	Error *ResponseJSONError `json:"error"`
 }
@@ -63,7 +65,7 @@ func (f *Form) SendRequest(
 
 	responseHandler := &responseHandler{protoDescriptorSource: protoDescriptorSource}
 
-	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), requestTimeout)
 
 	grpcHeaders := lo.Map(headers, func(header *StateProjectFormHeader, _ int) string {
 		return fmt.Sprintf("%s: %s", header.Key, header.Value)
@@ -108,8 +110,7 @@ func (f *Form) Close() error {
 		return nil
 	}
 
-	err := f.connection.Close()
-	if err != nil {
+	if err := f.connection.Close(); err != nil {
 		return fmt.Errorf("failed to close grpc connection: %w", err)
 	}
 
@@ -219,7 +220,12 @@ func (h *responseHandler) OnReceiveHeaders(_ metadata.MD) {
 }
 
 func (h *responseHandler) OnReceiveResponse(message proto.Message) {
-	dynamicMessage := message.(*dynamic.Message)
+	dynamicMessage, ok := message.(*dynamic.Message)
+	if !ok {
+		h.response = fmt.Sprintf("expected dynamic message, got %T instead", message)
+
+		return
+	}
 
 	responseJSON, err := dynamicMessage.MarshalJSONPB(&jsonpb.Marshaler{EmitDefaults: true, OrigName: true})
 	if err != nil {

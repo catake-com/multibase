@@ -5,16 +5,19 @@ import { mapState } from "pinia";
 import { useProjectStore } from "../stores/project";
 import { useGRPCStore } from "../stores/grpc";
 import { useThriftStore } from "../stores/thrift";
+import { useKafkaStore } from "../stores/kafka";
 import GRPC from "./GRPC.vue";
 import Thrift from "./Thrift.vue";
+import Kafka from "./Kafka.vue";
 
 export default defineComponent({
   name: "Project",
-  components: { GRPC, Thrift },
+  components: { GRPC, Thrift, Kafka },
   computed: {
     ...mapState(useProjectStore, ["projects", "currentProjectID"]),
     ...mapState(useGRPCStore, { grpcProjects: "projects" }),
     ...mapState(useThriftStore, { thriftProjects: "projects" }),
+    ...mapState(useKafkaStore, { kafkaProjects: "projects" }),
     nonNewProjects() {
       return Object.fromEntries(
         Object.entries(useProjectStore().projects).filter(([projectID, project]) => project.type !== "new")
@@ -53,6 +56,16 @@ export default defineComponent({
       await useThriftStore().deleteProject(projectID);
       await useProjectStore().deleteProject(projectID);
     },
+
+    async newKafkaProject() {
+      await useKafkaStore().createNewProject(this.currentProjectID);
+      await useProjectStore().createNewKafkaProject(this.currentProjectID);
+    },
+
+    async deleteKafkaProject(projectID) {
+      await useKafkaStore().deleteProject(projectID);
+      await useProjectStore().deleteProject(projectID);
+    },
   },
 });
 </script>
@@ -85,6 +98,7 @@ export default defineComponent({
                   <q-td key="icon" :props="props" auto-width no-hover>
                     <q-icon v-if="props.row.type === 'grpc'" name="img:grpc.jpg" size="36px" />
                     <q-icon v-if="props.row.type === 'thrift'" name="img:thrift.jpg" size="36px" />
+                    <q-icon v-if="props.row.type === 'kafka'" name="img:kafka.png" size="36px" />
                   </q-td>
 
                   <q-td key="name" :props="props" style="cursor: pointer" @click="openProject(projectID, props.row.id)">
@@ -115,6 +129,18 @@ export default defineComponent({
                       dense
                       @click="deleteThriftProject(props.row.id)"
                     />
+
+                    <q-btn
+                      v-if="props.row.type === 'kafka'"
+                      class="inline"
+                      icon="delete"
+                      size="10px"
+                      style="width: 20px"
+                      flat
+                      rounded
+                      dense
+                      @click="deleteKafkaProject(props.row.id)"
+                    />
                   </q-td>
                 </q-tr>
               </template>
@@ -136,6 +162,7 @@ export default defineComponent({
               class="block"
               @click="newGRPCProject()"
             />
+
             <q-btn
               padding="sm"
               no-caps
@@ -143,6 +170,15 @@ export default defineComponent({
               label="New Thrift project"
               class="block"
               @click="newThriftProject()"
+            />
+
+            <q-btn
+              padding="sm"
+              no-caps
+              color="primary"
+              label="New Kafka project"
+              class="block"
+              @click="newKafkaProject()"
             />
           </div>
 
@@ -156,6 +192,10 @@ export default defineComponent({
 
       <div v-if="project.type === 'thrift'" class="full-height">
         <Thrift :projectID="projectID" />
+      </div>
+
+      <div v-if="project.type === 'kafka'" class="full-height">
+        <Kafka :projectID="projectID" />
       </div>
     </q-tab-panel>
   </q-tab-panels>

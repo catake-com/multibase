@@ -9,9 +9,7 @@ import (
 	"go.uber.org/thriftrw/compile"
 )
 
-var (
-	errThriftUnknownType = errors.New("unknown type during thrift parsing")
-)
+var errThriftUnknownType = errors.New("unknown type during thrift parsing")
 
 type Project struct {
 	id          string
@@ -157,17 +155,17 @@ func parseThriftType(typ compile.TypeSpec) (interface{}, error) {
 
 		return []interface{}{v}, nil
 	case *compile.MapSpec:
-		k, err := parseThriftType(spec.KeySpec)
+		key, err := parseThriftType(spec.KeySpec)
 		if err != nil {
 			return nil, err
 		}
 
-		v, err := parseThriftType(spec.ValueSpec)
+		value, err := parseThriftType(spec.ValueSpec)
 		if err != nil {
 			return nil, err
 		}
 
-		return map[interface{}]interface{}{k: v}, nil
+		return map[interface{}]interface{}{key: value}, nil
 	default:
 		return nil, fmt.Errorf("failed to parse %v: %w", typ, errThriftUnknownType)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/multibase-io/multibase/backend/grpc"
+	"github.com/multibase-io/multibase/backend/kafka"
 	"github.com/multibase-io/multibase/backend/project"
 	"github.com/multibase-io/multibase/backend/thrift"
 )
@@ -14,6 +15,7 @@ type App struct {
 	ProjectModule *project.Module
 	GRPCModule    *grpc.Module
 	ThriftModule  *thrift.Module
+	KafkaModule   *kafka.Module
 }
 
 func NewApp() (*App, error) {
@@ -32,10 +34,16 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("failed to init a thrift module: %w", err)
 	}
 
+	kafkaModule, err := kafka.NewModule()
+	if err != nil {
+		return nil, fmt.Errorf("failed to init a kafka module: %w", err)
+	}
+
 	return &App{
 		ProjectModule: projectModule,
 		GRPCModule:    grpcModule,
 		ThriftModule:  thriftModule,
+		KafkaModule:   kafkaModule,
 	}, nil
 }
 
@@ -43,6 +51,7 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.GRPCModule.AppCtx = ctx
 	a.ThriftModule.AppCtx = ctx
+	a.KafkaModule.AppCtx = ctx
 }
 
 func (a *App) domReady(ctx context.Context) {

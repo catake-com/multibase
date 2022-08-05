@@ -15,6 +15,8 @@ import (
 	"go.uber.org/multierr"
 )
 
+const defaultProjectSplitterWidth = 30
+
 type State struct {
 	Projects map[string]*StateProject `json:"projects"`
 }
@@ -103,8 +105,7 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 
 	m.state.Projects[projectID].Forms[formID].Response = response
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -132,8 +133,7 @@ func (m *Module) RemoveImportPath(projectID, importPath string) (*State, error) 
 		},
 	)
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -182,8 +182,7 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 	m.state.Projects[projectID].ImportPathList = importPathList
 	m.state.Projects[projectID].ProtoFileList = protoFileList
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -226,8 +225,7 @@ func (m *Module) DeleteAllProtoFiles(projectID string) (*State, error) {
 
 	m.state.Projects[projectID].Forms = map[string]*StateProjectForm{form.ID: form}
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -253,8 +251,7 @@ func (m *Module) OpenImportPath(projectID string) (*State, error) {
 
 	m.state.Projects[projectID].ImportPathList = append(m.state.Projects[projectID].ImportPathList, importPath)
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -276,8 +273,7 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 	m.state.Projects[projectID].Forms[formID].Response = "{}"
 	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -290,8 +286,7 @@ func (m *Module) SaveCurrentFormID(projectID, currentFormID string) (*State, err
 
 	m.state.Projects[projectID].CurrentFormID = currentFormID
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -304,8 +299,7 @@ func (m *Module) SaveAddress(projectID, formID, address string) (*State, error) 
 
 	m.state.Projects[projectID].Forms[formID].Address = address
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -325,8 +319,7 @@ func (m *Module) AddHeader(projectID, formID string) (*State, error) {
 		},
 	)
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -339,8 +332,7 @@ func (m *Module) SaveHeaders(projectID, formID string, headers []*StateProjectFo
 
 	m.state.Projects[projectID].Forms[formID].Headers = headers
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -358,8 +350,7 @@ func (m *Module) DeleteHeader(projectID, formID, headerID string) (*State, error
 		},
 	)
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -372,8 +363,7 @@ func (m *Module) SaveSplitterWidth(projectID string, splitterWidth float64) (*St
 
 	m.state.Projects[projectID].SplitterWidth = splitterWidth
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -386,8 +376,7 @@ func (m *Module) SaveRequestPayload(projectID, formID, requestPayload string) (*
 
 	m.state.Projects[projectID].Forms[formID].Request = requestPayload
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -403,7 +392,7 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 
 	m.state.Projects[projectID] = &StateProject{
 		ID:            projectID,
-		SplitterWidth: 30,
+		SplitterWidth: defaultProjectSplitterWidth,
 		Forms: map[string]*StateProjectForm{
 			formID: {
 				ID:       formID,
@@ -425,8 +414,7 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 
 	m.projects[projectID] = project
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -462,8 +450,7 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 		return nil, err
 	}
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -486,8 +473,7 @@ func (m *Module) DeleteProject(projectID string) (*State, error) {
 		delete(m.projects, projectID)
 	}
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -519,8 +505,7 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 		return nil, err
 	}
 
-	err = m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 

@@ -6,6 +6,8 @@ export function CloseProject(arg1:string):Promise<project.State>;
 
 export function CreateGRPCProject(arg1:string):Promise<project.State>;
 
+export function CreateKafkaProject(arg1:string):Promise<project.State>;
+
 export function CreateNewProject():Promise<project.State>;
 
 export function CreateThriftProject(arg1:string):Promise<project.State>;

@@ -28,6 +28,7 @@ type StateProject struct {
 type StateStats struct {
 	GRPCProjectCount   int `json:"grpcProjectCount"`
 	ThriftProjectCount int `json:"thriftProjectCount"`
+	KafkaProjectCount  int `json:"kafkaProjectCount"`
 }
 
 type Module struct {
@@ -70,8 +71,7 @@ func (m *Module) OpenProject(newProjectID, projectToOpenID string) (*State, erro
 	m.state.CurrentProjectID = projectToOpenID
 	delete(m.state.Projects, newProjectID)
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -92,8 +92,7 @@ func (m *Module) CreateGRPCProject(projectID string) (*State, error) {
 		Name: projectName,
 	}
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -114,8 +113,28 @@ func (m *Module) CreateThriftProject(projectID string) (*State, error) {
 		Name: projectName,
 	}
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
+		return nil, err
+	}
+
+	return m.state, nil
+}
+
+func (m *Module) CreateKafkaProject(projectID string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Stats.KafkaProjectCount++
+
+	projectName := fmt.Sprintf("Kafka Project %d", m.state.Stats.KafkaProjectCount)
+
+	m.state.Projects[projectID] = &StateProject{
+		ID:   projectID,
+		Type: "kafka",
+		Name: projectName,
+	}
+
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -136,8 +155,7 @@ func (m *Module) DeleteProject(projectID string) (*State, error) {
 		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
 	}
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -150,8 +168,7 @@ func (m *Module) RenameProject(projectID, name string) (*State, error) {
 
 	m.state.Projects[projectID].Name = name
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -172,8 +189,7 @@ func (m *Module) CreateNewProject() (*State, error) {
 	m.state.OpenedProjectIDs = append(m.state.OpenedProjectIDs, projectID)
 	m.state.CurrentProjectID = projectID
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -200,8 +216,7 @@ func (m *Module) CloseProject(projectID string) (*State, error) {
 		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
 	}
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
@@ -214,8 +229,7 @@ func (m *Module) SaveCurrentProjectID(projectID string) (*State, error) {
 
 	m.state.CurrentProjectID = projectID
 
-	err := m.saveState()
-	if err != nil {
+	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
