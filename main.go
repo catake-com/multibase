@@ -76,8 +76,8 @@ func main() {
 			// WebviewIsTransparent: true,
 			// WindowIsTranslucent:  true,
 			About: &mac.AboutInfo{
-				Title:   "Vanilla Template",
-				Message: "Part of the Wails projects",
+				Title:   "Multibase",
+				Message: "Fast and lightweight GUI client for interacting with gRPC and Thrift servers.",
 				Icon:    icon,
 			},
 		},
