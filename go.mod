@@ -10,7 +10,7 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/jhump/protoreflect v1.12.0
-	github.com/samber/lo v1.26.0
+	github.com/samber/lo v1.27.0
 	github.com/twmb/franz-go v1.6.0
 	github.com/twmb/franz-go/pkg/kadm v1.1.1
 	github.com/wailsapp/wails/v2 v2.0.0-beta.42
@@ -30,7 +30,7 @@ require (
 	github.com/klauspost/compress v1.15.4 // indirect
 	github.com/labstack/echo/v4 v4.7.2 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
-	github.com/leaanthony/go-ansi-parser v1.5.0 // indirect
+	github.com/leaanthony/go-ansi-parser v1.6.0 // indirect
 	github.com/leaanthony/gosod v1.0.3 // indirect
 	github.com/leaanthony/slicer v1.6.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/tkrajina/go-reflector v0.5.6 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.1.0 // indirect
@@ -49,10 +49,10 @@ require (
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/net v0.0.0-20220805013720-a33c5aa5df48 // indirect
+	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/genproto v0.0.0-20220805133916-01dd62135a58 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
