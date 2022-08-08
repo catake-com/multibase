@@ -1,0 +1,11 @@
+{
+  "notarize": [{
+    "path": "./build/bin/multibase.dmg",
+    "bundle_id": "io.Multibase",
+    "staple": true
+  }],
+  "apple_id": {
+    "username": "$APPLE_USERNAME",
+    "password": "@env:APPLE_PASSWORD"
+  }
+}

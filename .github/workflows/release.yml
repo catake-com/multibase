@@ -22,10 +22,37 @@ jobs:
                 uses: actions/checkout@v2
             -   name: Install Wails
                 run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+            -   name: Import Code-Signing Certificates
+                uses: Apple-Actions/import-codesign-certs@v1
+                with:
+                    keychain-password: ${{ secrets.APPLE_PASSWORD }}
+                    p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+                    p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+            -   name: Install macOS Wails deps
+                run: brew install mitchellh/gon/gon
             -   name: Build for Mac OS
                 run: wails build -platform darwin/universal -o Multibase
-            -   name: Archive Mac OS app
-                run: ditto -c -k --keepParent ./build/bin/Multibase.app ./build/bin/Multibase_macos_universal.zip
+            -   name: Sign for Mac OS
+                env:
+                    APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
+                    APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+                    APPLICATION_IDENTITY: ${{ secrets.APPLICATION_IDENTITY }}
+                run: |
+                    export SECRETVARS='$APPLICATION_IDENTITY:$APPLE_USERNAME' && \
+                    envsubst "$SECRETVARS" < ./build/darwin/gon-sign.template.json > ./build/darwin/gon-sign.json && \
+                    gon -log-level=info ./build/darwin/gon-sign.json
+            -   name: Package for Mac OS
+                run: |
+                    npx create-dmg ./build/bin/Multibase.app --dmg-title=Multibase --overwrite ./build/bin && \
+                    mv ./build/bin/Multibase*.dmg ./build/bin/multibase.dmg
+            -   name: Notarize for Mac OS
+                env:
+                    APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
+                    APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+                run: |
+                    export SECRETVARS='$APPLE_USERNAME' && \
+                    envsubst "$SECRETVARS" < ./build/darwin/gon-notarize.template.json > ./build/darwin/gon-notarize.json && \
+                    gon -log-level=info ./build/darwin/gon-notarize.json
             -   name: Build for Windows x86
                 run: wails build -platform windows/amd64 -o Multibase_win_x86.exe
             -   name: Build for Windows ARM
@@ -46,7 +73,9 @@ jobs:
                 with:
                     node-version: 16
             -   name: Install packages
-                run: sudo apt-get update && sudo apt-get install build-essential pkg-config libgtk-3-dev libgtk-3-0 libwebkit2gtk-4.0-dev
+                run: |
+                    sudo apt-get update && \
+                    sudo apt-get install build-essential pkg-config libgtk-3-dev libgtk-3-0 libwebkit2gtk-4.0-dev
             -   name: Checkout
                 uses: actions/checkout@v2
             -   name: Install Wails

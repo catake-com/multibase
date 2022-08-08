@@ -1,0 +1,12 @@
+{
+  "source" : ["./build/bin/Multibase.app"],
+  "bundle_id" : "io.Multibase",
+  "apple_id": {
+    "username": "$APPLE_USERNAME",
+    "password": "@env:APPLE_PASSWORD"
+  },
+  "sign" :{
+    "application_identity" : "$APPLICATION_IDENTITY",
+    "entitlements_file": "./build/darwin/entitlements.plist"
+  }
+}
