@@ -6,4 +6,14 @@ export function CreateNewProject(arg1:string):Promise<kafka.State>;
 
 export function DeleteProject(arg1:string):Promise<kafka.State>;
 
+export function SaveAddress(arg1:string,arg2:string):Promise<kafka.State>;
+
+export function SaveAuthMethod(arg1:string,arg2:string):Promise<kafka.State>;
+
+export function SaveAuthPassword(arg1:string,arg2:string):Promise<kafka.State>;
+
+export function SaveAuthUsername(arg1:string,arg2:string):Promise<kafka.State>;
+
+export function SaveCurrentTab(arg1:string,arg2:string):Promise<kafka.State>;
+
 export function State():Promise<kafka.State>;

@@ -10,6 +10,26 @@ export function DeleteProject(arg1) {
   return window['go']['kafka']['Module']['DeleteProject'](arg1);
 }
 
+export function SaveAddress(arg1, arg2) {
+  return window['go']['kafka']['Module']['SaveAddress'](arg1, arg2);
+}
+
+export function SaveAuthMethod(arg1, arg2) {
+  return window['go']['kafka']['Module']['SaveAuthMethod'](arg1, arg2);
+}
+
+export function SaveAuthPassword(arg1, arg2) {
+  return window['go']['kafka']['Module']['SaveAuthPassword'](arg1, arg2);
+}
+
+export function SaveAuthUsername(arg1, arg2) {
+  return window['go']['kafka']['Module']['SaveAuthUsername'](arg1, arg2);
+}
+
+export function SaveCurrentTab(arg1, arg2) {
+  return window['go']['kafka']['Module']['SaveCurrentTab'](arg1, arg2);
+}
+
 export function State() {
   return window['go']['kafka']['Module']['State']();
 }
