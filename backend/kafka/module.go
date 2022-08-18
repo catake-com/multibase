@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"reflect"
 	"sync"
 
 	"github.com/99designs/keyring"
@@ -25,7 +24,7 @@ type StateProject struct {
 	Address      string `json:"address"`
 	AuthMethod   string `json:"authMethod"`
 	AuthUsername string `json:"authUsername"`
-	AuthPassword string `json:"authPassword" storage:"keyring" copier:"-"`
+	AuthPassword string `json:"authPassword" copier:"-"`
 }
 
 type Module struct {
@@ -130,6 +129,9 @@ func (m *Module) SaveAuthMethod(projectID, authMethod string) (*State, error) {
 	m.state.Projects[projectID].AuthMethod = authMethod
 
 	if authMethod == "plaintext" {
+		passwordKey := fmt.Sprintf("%s_AuthPassword", projectID)
+		_ = m.ring.Remove(passwordKey)
+
 		m.state.Projects[projectID].AuthUsername = ""
 		m.state.Projects[projectID].AuthPassword = ""
 	}
@@ -159,6 +161,20 @@ func (m *Module) SaveAuthPassword(projectID, authPassword string) (*State, error
 	defer m.stateMutex.Unlock()
 
 	m.state.Projects[projectID].AuthPassword = authPassword
+
+	passwordKey := fmt.Sprintf("%s_AuthPassword", projectID)
+
+	if authPassword == "" {
+		_ = m.ring.Remove(passwordKey)
+	} else {
+		err := m.ring.Set(keyring.Item{
+			Key:  passwordKey,
+			Data: []byte(authPassword),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to set a kafka keyring key: %w", err)
+		}
+	}
 
 	if err := m.saveState(); err != nil {
 		return nil, err
@@ -230,7 +246,6 @@ func (m *Module) readState() (rerr error) {
 		return fmt.Errorf("failed to decode a kafka state: %w", err)
 	}
 
-	// TODO: make a recursive general-purpose solution (state + copier + keyring)
 	for _, project := range m.state.Projects {
 		item, err := m.ring.Get(fmt.Sprintf("%s_AuthPassword", project.ID))
 		if err != nil {
@@ -260,31 +275,8 @@ func (m *Module) saveState() (rerr error) {
 		}
 	}()
 
-	// TODO: make a recursive general-purpose solution (state + copier + keyring)
-	for _, project := range m.state.Projects {
-		projectValue := reflect.ValueOf(project).Elem()
-		projectType := projectValue.Type()
-
-		for i := 0; i < projectType.NumField(); i++ {
-			if projectType.Field(i).Tag.Get("storage") == "keyring" {
-				value := projectValue.Field(i).String()
-
-				if value == "" {
-					continue
-				}
-
-				err := m.ring.Set(keyring.Item{
-					Key:  fmt.Sprintf("%s_%s", project.ID, projectType.Field(i).Name),
-					Data: []byte(value),
-				})
-				if err != nil {
-					return fmt.Errorf("failed to set a kafka keyring key: %w", err)
-				}
-			}
-		}
-	}
-
 	state := &State{}
+
 	err = copier.CopyWithOption(state, m.state, copier.Option{IgnoreEmpty: true, DeepCopy: true})
 	if err != nil {
 		return fmt.Errorf("failed to copy a kafka state: %w", err)
