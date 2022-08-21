@@ -42,7 +42,8 @@ func NewModule() (*Module, error) {
 	}
 
 	ring, err := keyring.Open(keyring.Config{
-		ServiceName: "multibase_kafka",
+		ServiceName:              "multibase_kafka",
+		KeychainTrustApplication: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open kafka keyring: %w", err)
@@ -88,6 +89,9 @@ func (m *Module) DeleteProject(projectID string) (*State, error) {
 	defer m.stateMutex.Unlock()
 
 	delete(m.state.Projects, projectID)
+
+	passwordKey := fmt.Sprintf("%s_AuthPassword", projectID)
+	_ = m.ring.Remove(passwordKey)
 
 	if err := m.saveState(); err != nil {
 		return nil, err
