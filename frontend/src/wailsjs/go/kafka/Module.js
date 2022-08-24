@@ -30,6 +30,10 @@ export function SaveCurrentTab(arg1, arg2) {
   return window['go']['kafka']['Module']['SaveCurrentTab'](arg1, arg2);
 }
 
+export function SaveState() {
+  return window['go']['kafka']['Module']['SaveState']();
+}
+
 export function State() {
   return window['go']['kafka']['Module']['State']();
 }

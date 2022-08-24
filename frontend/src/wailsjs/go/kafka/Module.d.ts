@@ -16,4 +16,6 @@ export function SaveAuthUsername(arg1:string,arg2:string):Promise<kafka.State>;
 
 export function SaveCurrentTab(arg1:string,arg2:string):Promise<kafka.State>;
 
+export function SaveState():Promise<Error>;
+
 export function State():Promise<kafka.State>;

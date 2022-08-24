@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/multibase-io/multibase/backend/grpc"
 	"github.com/multibase-io/multibase/backend/kafka"
@@ -54,12 +55,17 @@ func (a *App) startup(ctx context.Context) {
 	a.KafkaModule.AppCtx = ctx
 }
 
-func (a *App) domReady(ctx context.Context) {
+func (a *App) domReady(_ context.Context) {
 }
 
-func (a *App) beforeClose(ctx context.Context) bool {
+func (a *App) beforeClose(_ context.Context) bool {
+	err := a.KafkaModule.SaveState()
+	if err != nil {
+		log.Println(fmt.Errorf("failed to save kafka state: %w", err))
+	}
+
 	return false
 }
 
-func (a *App) shutdown(ctx context.Context) {
+func (a *App) shutdown(_ context.Context) {
 }
