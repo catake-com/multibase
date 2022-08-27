@@ -4,15 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path"
 	"sync"
+	"time"
 
 	"github.com/adrg/xdg"
 	"github.com/gofrs/uuid"
+	"github.com/jinzhu/copier"
 	"github.com/samber/lo"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"go.uber.org/multierr"
+
+	"github.com/multibase-io/multibase/backend/pkg/storage"
 )
 
 const defaultProjectSplitterWidth = 30
@@ -52,11 +58,12 @@ type Module struct {
 	configFilePath string
 	state          *State
 	stateMutex     *sync.RWMutex
+	stateTimer     *time.Timer
 	projects       map[string]*Project
 }
 
 func NewModule() (*Module, error) {
-	configFilePath, err := xdg.ConfigFile("multibase/grpc.json")
+	configFilePath, err := xdg.ConfigFile("multibase/grpc")
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve grpc config path: %w", err)
 	}
@@ -83,6 +90,21 @@ func NewModule() (*Module, error) {
 	return module, nil
 }
 
+func (m *Module) SaveState() error {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	if m.stateTimer != nil {
+		_ = m.stateTimer.Stop()
+	}
+
+	if err := m.saveStateToFile(); err != nil {
+		return fmt.Errorf("failed to save state to file: %w", err)
+	}
+
+	return nil
+}
+
 func (m *Module) SendRequest(projectID, formID string, address, payload string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -105,9 +127,7 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 
 	m.state.Projects[projectID].Forms[formID].Response = response
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -133,9 +153,7 @@ func (m *Module) RemoveImportPath(projectID, importPath string) (*State, error) 
 		},
 	)
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -182,9 +200,7 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 	m.state.Projects[projectID].ImportPathList = importPathList
 	m.state.Projects[projectID].ProtoFileList = protoFileList
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -225,9 +241,7 @@ func (m *Module) DeleteAllProtoFiles(projectID string) (*State, error) {
 
 	m.state.Projects[projectID].Forms = map[string]*StateProjectForm{form.ID: form}
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -251,9 +265,7 @@ func (m *Module) OpenImportPath(projectID string) (*State, error) {
 
 	m.state.Projects[projectID].ImportPathList = append(m.state.Projects[projectID].ImportPathList, importPath)
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -273,9 +285,7 @@ func (m *Module) SelectMethod(projectID, formID, methodID string) (*State, error
 	m.state.Projects[projectID].Forms[formID].Response = "{}"
 	m.state.Projects[projectID].Forms[formID].SelectedMethodID = methodID
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -286,9 +296,7 @@ func (m *Module) SaveCurrentFormID(projectID, currentFormID string) (*State, err
 
 	m.state.Projects[projectID].CurrentFormID = currentFormID
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -299,9 +307,7 @@ func (m *Module) SaveAddress(projectID, formID, address string) (*State, error) 
 
 	m.state.Projects[projectID].Forms[formID].Address = address
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -319,9 +325,7 @@ func (m *Module) AddHeader(projectID, formID string) (*State, error) {
 		},
 	)
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -332,9 +336,7 @@ func (m *Module) SaveHeaders(projectID, formID string, headers []*StateProjectFo
 
 	m.state.Projects[projectID].Forms[formID].Headers = headers
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -350,9 +352,7 @@ func (m *Module) DeleteHeader(projectID, formID, headerID string) (*State, error
 		},
 	)
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -363,9 +363,7 @@ func (m *Module) SaveSplitterWidth(projectID string, splitterWidth float64) (*St
 
 	m.state.Projects[projectID].SplitterWidth = splitterWidth
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -376,9 +374,7 @@ func (m *Module) SaveRequestPayload(projectID, formID, requestPayload string) (*
 
 	m.state.Projects[projectID].Forms[formID].Request = requestPayload
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -414,8 +410,8 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 
 	m.projects[projectID] = project
 
-	if err := m.saveState(); err != nil {
-		return nil, err
+	if err := m.saveStateToFile(); err != nil {
+		return nil, fmt.Errorf("failed to save state to file: %w", err)
 	}
 
 	return m.state, nil
@@ -450,9 +446,7 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 		return nil, err
 	}
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -473,9 +467,7 @@ func (m *Module) DeleteProject(projectID string) (*State, error) {
 		delete(m.projects, projectID)
 	}
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -505,9 +497,7 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 		return nil, err
 	}
 
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
+	m.saveState()
 
 	return m.state, nil
 }
@@ -545,11 +535,19 @@ func (m *Module) initializeState() (rerr error) {
 		}
 	}()
 
-	encoder := json.NewEncoder(file)
-
-	err = encoder.Encode(m.state)
+	data, err := json.Marshal(m.state)
 	if err != nil {
-		return fmt.Errorf("failed to encode a grpc state: %w", err)
+		return fmt.Errorf("failed to marshal state: %w", err)
+	}
+
+	encryptedState, err := storage.Encrypt(storage.DefaultPassword, data)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt state: %w", err)
+	}
+
+	_, err = file.Write(encryptedState)
+	if err != nil {
+		return fmt.Errorf("failed to write state: %w", err)
 	}
 
 	return nil
@@ -568,17 +566,38 @@ func (m *Module) readState() (rerr error) {
 		}
 	}()
 
-	decoder := json.NewDecoder(file)
-
-	err = decoder.Decode(&m.state)
+	data, err := io.ReadAll(file)
 	if err != nil {
-		return fmt.Errorf("failed to decode a grpc state: %w", err)
+		return fmt.Errorf("failed to read state from file: %w", err)
+	}
+
+	decryptedData, err := storage.Decrypt(storage.DefaultPassword, data)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt state: %w", err)
+	}
+
+	err = json.Unmarshal(decryptedData, m.state)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal state: %w", err)
 	}
 
 	return nil
 }
 
-func (m *Module) saveState() (rerr error) {
+func (m *Module) saveState() {
+	if m.stateTimer != nil {
+		_ = m.stateTimer.Stop()
+	}
+
+	m.stateTimer = time.AfterFunc(storage.DefaultStatePersistenceDelay, func() {
+		err := m.saveStateToFile()
+		if err != nil {
+			log.Println(fmt.Errorf("failed to save state to a file: %w", err))
+		}
+	})
+}
+
+func (m *Module) saveStateToFile() (rerr error) {
 	file, err := os.Create(m.configFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to create/truncate a grpc config file: %w", err)
@@ -591,11 +610,26 @@ func (m *Module) saveState() (rerr error) {
 		}
 	}()
 
-	encoder := json.NewEncoder(file)
+	state := &State{}
 
-	err = encoder.Encode(m.state)
+	err = copier.CopyWithOption(state, m.state, copier.Option{IgnoreEmpty: true, DeepCopy: true})
 	if err != nil {
-		return fmt.Errorf("failed to encode a grpc state: %w", err)
+		return fmt.Errorf("failed to copy a grpc state: %w", err)
+	}
+
+	data, err := json.Marshal(state)
+	if err != nil {
+		return fmt.Errorf("failed to marshal state: %w", err)
+	}
+
+	encryptedData, err := storage.Encrypt(storage.DefaultPassword, data)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt state: %w", err)
+	}
+
+	_, err = file.Write(encryptedData)
+	if err != nil {
+		return fmt.Errorf("failed to write state: %w", err)
 	}
 
 	return nil

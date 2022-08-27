@@ -64,6 +64,16 @@ func (a *App) beforeClose(_ context.Context) bool {
 		log.Println(fmt.Errorf("failed to save kafka state: %w", err))
 	}
 
+	err = a.GRPCModule.SaveState()
+	if err != nil {
+		log.Println(fmt.Errorf("failed to save grpc state: %w", err))
+	}
+
+	err = a.ThriftModule.SaveState()
+	if err != nil {
+		log.Println(fmt.Errorf("failed to save thrift state: %w", err))
+	}
+
 	return false
 }
 

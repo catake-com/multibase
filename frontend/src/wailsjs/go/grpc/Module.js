@@ -62,6 +62,10 @@ export function SaveSplitterWidth(arg1, arg2) {
   return window['go']['grpc']['Module']['SaveSplitterWidth'](arg1, arg2);
 }
 
+export function SaveState() {
+  return window['go']['grpc']['Module']['SaveState']();
+}
+
 export function SelectMethod(arg1, arg2, arg3) {
   return window['go']['grpc']['Module']['SelectMethod'](arg1, arg2, arg3);
 }

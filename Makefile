@@ -17,15 +17,15 @@ update-wails:
 .PHONY: cleanup-state
 cleanup-state:
 	@rm ~/Library/Application\ Support/multibase/project.json
-	@rm ~/Library/Application\ Support/multibase/grpc.json
-	@rm ~/Library/Application\ Support/multibase/thrift.json
+	@rm ~/Library/Application\ Support/multibase/grpc
+	@rm ~/Library/Application\ Support/multibase/thrift
 	@rm ~/Library/Application\ Support/multibase/kafka
 
 .PHONY: show-state
 show-state:
 	@jq . ~/Library/Application\ Support/multibase/project.json
-	@jq . ~/Library/Application\ Support/multibase/grpc.json
-	@jq . ~/Library/Application\ Support/multibase/thrift.json
+	@jq . ~/Library/Application\ Support/multibase/grpc
+	@jq . ~/Library/Application\ Support/multibase/thrift
 	@jq . ~/Library/Application\ Support/multibase/kafka
 
 .PHONY: release

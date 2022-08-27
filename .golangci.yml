@@ -16,6 +16,8 @@ linters:
         - staticcheck
 
 linters-settings:
+    gci:
+        local-prefixes: github.com/multibase-io/multibase
     goimports:
         local-prefixes: github.com/multibase-io/multibase
     exhaustive:

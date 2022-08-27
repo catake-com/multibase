@@ -2,9 +2,6 @@ package kafka
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,13 +15,8 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/jinzhu/copier"
 	"go.uber.org/multierr"
-	"golang.org/x/crypto/scrypt"
-)
 
-var defaultPassword = []byte("###multibase_storage_password###") // nolint: gochecknoglobals
-
-const (
-	defaultStatePersistenceDelay = time.Second * 3
+	"github.com/multibase-io/multibase/backend/pkg/storage"
 )
 
 type State struct {
@@ -258,7 +250,7 @@ func (m *Module) initializeState() (rerr error) {
 		return fmt.Errorf("failed to marshal state: %w", err)
 	}
 
-	encryptedState, err := encrypt(defaultPassword, data)
+	encryptedState, err := storage.Encrypt(storage.DefaultPassword, data)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt state: %w", err)
 	}
@@ -290,7 +282,7 @@ func (m *Module) readState() (rerr error) {
 		return fmt.Errorf("failed to read state from file: %w", err)
 	}
 
-	decryptedData, err := decrypt(defaultPassword, data)
+	decryptedData, err := storage.Decrypt(storage.DefaultPassword, data)
 	if err != nil {
 		return fmt.Errorf("failed to decrypt state: %w", err)
 	}
@@ -328,7 +320,7 @@ func (m *Module) saveState() {
 		_ = m.stateTimer.Stop()
 	}
 
-	m.stateTimer = time.AfterFunc(defaultStatePersistenceDelay, func() {
+	m.stateTimer = time.AfterFunc(storage.DefaultStatePersistenceDelay, func() {
 		err := m.saveStateToFile()
 		if err != nil {
 			log.Println(fmt.Errorf("failed to save state to a file: %w", err))
@@ -361,7 +353,7 @@ func (m *Module) saveStateToFile() (rerr error) {
 		return fmt.Errorf("failed to marshal state: %w", err)
 	}
 
-	encryptedData, err := encrypt(defaultPassword, data)
+	encryptedData, err := storage.Encrypt(storage.DefaultPassword, data)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt state: %w", err)
 	}
@@ -372,86 +364,4 @@ func (m *Module) saveStateToFile() (rerr error) {
 	}
 
 	return nil
-}
-
-func encrypt(key, data []byte) ([]byte, error) {
-	key, salt, err := deriveKey(key, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive key: %w", err)
-	}
-
-	blockCipher, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a new cipher: %w", err)
-	}
-
-	gcm, err := cipher.NewGCM(blockCipher)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a new gcm: %w", err)
-	}
-
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err = rand.Read(nonce); err != nil {
-		return nil, fmt.Errorf("failed to prepare nonce: %w", err)
-	}
-
-	ciphertext := gcm.Seal(nonce, nonce, data, nil)
-
-	ciphertext = append(ciphertext, salt...)
-
-	return ciphertext, nil
-}
-
-func decrypt(key, data []byte) ([]byte, error) {
-	salt, data := data[len(data)-32:], data[:len(data)-32]
-
-	key, _, err := deriveKey(key, salt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive key: %w", err)
-	}
-
-	blockCipher, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a new cipher: %w", err)
-	}
-
-	gcm, err := cipher.NewGCM(blockCipher)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a new gcm: %w", err)
-	}
-
-	nonce, ciphertext := data[:gcm.NonceSize()], data[gcm.NonceSize():]
-
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open gcm: %w", err)
-	}
-
-	return plaintext, nil
-}
-
-func deriveKey(password, salt []byte) ([]byte, []byte, error) {
-	if salt == nil {
-		const defaultSaltLen = 32
-
-		salt = make([]byte, defaultSaltLen)
-		if _, err := rand.Read(salt); err != nil {
-			return nil, nil, fmt.Errorf("failed to prepate salt: %w", err)
-		}
-	}
-
-	// nolint: varnamelen
-	const (
-		n      = 4096
-		r      = 8
-		p      = 1
-		keyLen = 32
-	)
-
-	key, err := scrypt.Key(password, salt, n, r, p, keyLen)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate scrypt key: %w", err)
-	}
-
-	return key, salt, nil
 }
