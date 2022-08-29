@@ -108,7 +108,7 @@ export default defineComponent({
 <template>
   <div class="full-height">
     <q-form class="q-gutter-md full-height">
-      <q-input v-model="address" label="Address" debounce="1000" />
+      <q-input v-model="address" label="Address" debounce="500" />
 
       <q-btn outline label="Add Header" size="xs" @click="addHeader" />
 

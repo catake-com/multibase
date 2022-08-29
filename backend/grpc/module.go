@@ -122,6 +122,8 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 		m.state.Projects[projectID].Forms[formID].Headers,
 	)
 	if err != nil {
+		m.state.Projects[projectID].Forms[formID].Response = "{}"
+
 		return nil, err
 	}
 

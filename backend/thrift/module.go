@@ -41,6 +41,7 @@ type StateProjectForm struct {
 	Address            string                    `json:"address"`
 	Headers            []*StateProjectFormHeader `json:"headers"`
 	SelectedFunctionID string                    `json:"selectedFunctionID"`
+	IsMultiplexed      bool                      `json:"isMultiplexed"`
 	Request            string                    `json:"request"`
 	Response           string                    `json:"response"`
 }
@@ -117,9 +118,12 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 		address,
 		m.state.Projects[projectID].Forms[formID].SelectedFunctionID,
 		payload,
+		m.state.Projects[projectID].Forms[formID].IsMultiplexed,
 		m.state.Projects[projectID].Forms[formID].Headers,
 	)
 	if err != nil {
+		m.state.Projects[projectID].Forms[formID].Response = "{}"
+
 		return nil, err
 	}
 
@@ -234,6 +238,17 @@ func (m *Module) SaveAddress(projectID, formID, address string) (*State, error) 
 	return m.state, nil
 }
 
+func (m *Module) SaveIsMultiplexed(projectID, formID string, isMultiplexed bool) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.state.Projects[projectID].Forms[formID].IsMultiplexed = isMultiplexed
+
+	m.saveState()
+
+	return m.state, nil
+}
+
 func (m *Module) AddHeader(projectID, formID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -312,10 +327,11 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 		SplitterWidth: defaultProjectSplitterWidth,
 		Forms: map[string]*StateProjectForm{
 			formID: {
-				ID:       formID,
-				Address:  "0.0.0.0:9090",
-				Request:  "{}",
-				Response: "{}",
+				ID:            formID,
+				Address:       "0.0.0.0:9090",
+				IsMultiplexed: true,
+				Request:       "{}",
+				Response:      "{}",
 			},
 		},
 		CurrentFormID: formID,

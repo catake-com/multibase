@@ -10,6 +10,7 @@ import {
   OpenFilePath,
   SaveCurrentFormID,
   SaveAddress,
+  SaveIsMultiplexed,
   SaveSplitterWidth,
   SaveRequestPayload,
   State,
@@ -29,6 +30,7 @@ export const useThriftStore = defineStore({
           "aba7bb0d-77f5-404c-a293-e133975ea67d": {
             address: "0.0.0.0:9090",
             selectedFunctionID: "",
+            isMultiplexed: false,
             request: "",
             response: "",
             requestInProgress: false,
@@ -137,6 +139,14 @@ export const useThriftStore = defineStore({
     async saveAddress(projectID, formID, address) {
       try {
         this.$state = await SaveAddress(projectID, formID, address);
+      } catch (error) {
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+      }
+    },
+
+    async saveIsMultiplexed(projectID, formID, isMultiplexed) {
+      try {
+        this.$state = await SaveIsMultiplexed(projectID, formID, isMultiplexed);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }

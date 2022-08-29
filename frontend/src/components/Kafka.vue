@@ -92,7 +92,7 @@ export default defineComponent({
         <q-tab-panels v-model="currentTab" animated vertical>
           <q-tab-panel name="overview">
             <q-form class="q-gutter-md full-height">
-              <q-input v-model="address" label="Address" debounce="1000" />
+              <q-input v-model="address" label="Address" debounce="500" />
 
               <div>
                 <q-radio v-model="authMethod" val="plaintext" label="Plaintext" dense />
@@ -100,8 +100,8 @@ export default defineComponent({
               </div>
 
               <div v-if="authMethod === 'saslssl'">
-                <q-input v-model="authUsername" label="Username" debounce="1000" />
-                <q-input v-model="authPassword" label="Password" debounce="1000" />
+                <q-input v-model="authUsername" label="Username" debounce="500" />
+                <q-input v-model="authPassword" label="Password" debounce="500" />
               </div>
 
               <q-btn label="Connect" color="secondary" @click="connect" />

@@ -50,6 +50,14 @@ export default defineComponent({
         await useThriftStore().saveAddress(this.projectID, this.formID, address);
       },
     },
+    isMultiplexed: {
+      get() {
+        return !!useThriftStore().projects[this.projectID].forms[this.formID].isMultiplexed;
+      },
+      async set(isMultiplexed) {
+        await useThriftStore().saveIsMultiplexed(this.projectID, this.formID, isMultiplexed);
+      },
+    },
     request: {
       get() {
         if (this.localRequest !== "") {
@@ -108,7 +116,11 @@ export default defineComponent({
 <template>
   <div class="full-height">
     <q-form class="q-gutter-md full-height">
-      <q-input v-model="address" label="Address" debounce="1000" />
+      <q-input v-model="address" label="Address" debounce="500" />
+
+      <div>
+        <q-checkbox v-model="isMultiplexed" label="Enable multiplexed protocol" dense />
+      </div>
 
       <q-btn outline label="Add Header" size="xs" @click="addHeader" />
 

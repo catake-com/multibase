@@ -29,11 +29,12 @@ func (p *Project) SendRequest(
 	address,
 	functionID,
 	payload string,
+	isMultiplexed bool,
 	headers []*StateProjectFormHeader,
 ) (string, error) {
 	form := p.forms[formID]
 
-	return form.SendRequest(functionID, address, payload, headers)
+	return form.SendRequest(functionID, address, payload, isMultiplexed, headers)
 }
 
 func (p *Project) StopRequest(formID string) {

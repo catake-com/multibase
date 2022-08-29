@@ -22,6 +22,8 @@ export function SaveCurrentFormID(arg1:string,arg2:string):Promise<thrift.State>
 
 export function SaveHeaders(arg1:string,arg2:string,arg3:Array<thrift.StateProjectFormHeader>):Promise<thrift.State>;
 
+export function SaveIsMultiplexed(arg1:string,arg2:string,arg3:boolean):Promise<thrift.State>;
+
 export function SaveRequestPayload(arg1:string,arg2:string,arg3:string):Promise<thrift.State>;
 
 export function SaveSplitterWidth(arg1:string,arg2:number):Promise<thrift.State>;

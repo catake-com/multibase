@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -41,7 +41,14 @@ func NewForm(
 	return form, nil
 }
 
-func (f *Form) SendRequest(functionID, address, payload string, headers []*StateProjectFormHeader) (string, error) {
+// nolint: funlen
+func (f *Form) SendRequest(
+	functionID,
+	address,
+	payload string,
+	isMultiplexed bool,
+	headers []*StateProjectFormHeader,
+) (string, error) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), requestTimeout)
 	f.requestCancelFunc = cancelFunc
 
@@ -54,14 +61,13 @@ func (f *Form) SendRequest(functionID, address, payload string, headers []*State
 		return "", fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	encodedPayload, err := thrift.RequestToBytes(
-		function.Spec(),
-		requestPayload,
-		thrift.Options{
-			UseEnvelopes:         true,
-			EnvelopeMethodPrefix: fmt.Sprintf("%s:", function.ServiceName()),
-		},
-	)
+	thriftOptions := thrift.Options{UseEnvelopes: true}
+
+	if isMultiplexed {
+		thriftOptions.EnvelopeMethodPrefix = fmt.Sprintf("%s:", function.ServiceName())
+	}
+
+	encodedPayload, err := thrift.RequestToBytes(function.Spec(), requestPayload, thriftOptions)
 	if err != nil {
 		return "", fmt.Errorf("failed to build thrift encoded payload: %w", err)
 	}
@@ -136,7 +142,7 @@ func (f *Form) executeRequest(request *http.Request) (_ []byte, rerr error) {
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
 
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}

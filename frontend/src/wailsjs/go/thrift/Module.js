@@ -42,6 +42,10 @@ export function SaveHeaders(arg1, arg2, arg3) {
   return window['go']['thrift']['Module']['SaveHeaders'](arg1, arg2, arg3);
 }
 
+export function SaveIsMultiplexed(arg1, arg2, arg3) {
+  return window['go']['thrift']['Module']['SaveIsMultiplexed'](arg1, arg2, arg3);
+}
+
 export function SaveRequestPayload(arg1, arg2, arg3) {
   return window['go']['thrift']['Module']['SaveRequestPayload'](arg1, arg2, arg3);
 }
