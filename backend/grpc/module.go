@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -575,6 +576,10 @@ func (m *Module) readState() (rerr error) {
 
 	decryptedData, err := storage.Decrypt(storage.DefaultPassword, data)
 	if err != nil {
+		if errors.Is(err, storage.ErrNoData) {
+			return nil
+		}
+
 		return fmt.Errorf("failed to decrypt state: %w", err)
 	}
 

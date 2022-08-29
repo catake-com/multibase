@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"time"
 
@@ -14,7 +15,11 @@ const (
 	DefaultStatePersistenceDelay = time.Second * 5
 )
 
-var DefaultPassword = []byte("###multibase_storage_password###") // nolint: gochecknoglobals
+var (
+	DefaultPassword = []byte("###multibase_storage_password###") // nolint: gochecknoglobals
+
+	ErrNoData = errors.New("no data for decryption")
+)
 
 func Encrypt(key, data []byte) ([]byte, error) {
 	key, salt, err := deriveKey(key, nil)
@@ -45,7 +50,13 @@ func Encrypt(key, data []byte) ([]byte, error) {
 }
 
 func Decrypt(key, data []byte) ([]byte, error) {
-	salt, data := data[len(data)-32:], data[:len(data)-32]
+	const saltLen = 32
+
+	if len(data) <= saltLen {
+		return nil, ErrNoData
+	}
+
+	salt, data := data[len(data)-saltLen:], data[:len(data)-saltLen]
 
 	key, _, err := deriveKey(key, salt)
 	if err != nil {
