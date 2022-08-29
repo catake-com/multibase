@@ -40,6 +40,10 @@ func NewProtoTree(protoDescriptorSource grpcurl.DescriptorSource) (*ProtoTree, e
 			return nil, fmt.Errorf("%w, got %T instead", errServiceDescriptor, des)
 		}
 
+		if serviceDesc.GetFullyQualifiedName() == "grpc.reflection.v1alpha.ServerReflection" {
+			continue
+		}
+
 		protoTreeService := &ProtoTreeService{
 			id:   serviceDesc.GetFullyQualifiedName(),
 			name: serviceDesc.GetName(),

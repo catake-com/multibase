@@ -20,6 +20,7 @@ import {
   AddHeader,
   SaveHeaders,
   DeleteHeader,
+  ReflectProto,
 } from "../wailsjs/go/grpc/Module";
 
 export const useGRPCStore = defineStore({
@@ -82,6 +83,14 @@ export const useGRPCStore = defineStore({
     async selectMethod(projectID, formID, methodID) {
       try {
         this.$state = await SelectMethod(projectID, formID, methodID);
+      } catch (error) {
+        this.projects[projectID].forms[formID].response = error;
+      }
+    },
+
+    async reflectProto(projectID, formID) {
+      try {
+        this.$state = await ReflectProto(projectID, formID, this.projects[projectID].forms[formID].address);
       } catch (error) {
         this.projects[projectID].forms[formID].response = error;
       }

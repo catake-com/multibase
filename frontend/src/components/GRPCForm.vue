@@ -87,6 +87,10 @@ export default defineComponent({
       await useGRPCStore().stopRequest(this.projectID, this.formID);
     },
 
+    async reflectProto() {
+      await useGRPCStore().reflectProto(this.projectID, this.formID);
+    },
+
     async addHeader() {
       await useGRPCStore().addHeader(this.projectID, this.formID);
       this.localHeaders = useGRPCStore().projects[this.projectID].forms[this.formID].headers;
@@ -109,6 +113,10 @@ export default defineComponent({
   <div class="full-height">
     <q-form class="q-gutter-md full-height">
       <q-input v-model="address" label="Address" debounce="500" />
+
+      <div>
+        <q-btn outline label="Import proto from server reflection" size="xs" @click="reflectProto" />
+      </div>
 
       <q-btn outline label="Add Header" size="xs" @click="addHeader" />
 

@@ -145,6 +145,31 @@ func (m *Module) StopRequest(projectID, formID string) (*State, error) {
 	return m.state, nil
 }
 
+func (m *Module) ReflectProto(projectID, formID, address string) (*State, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	project := m.projects[projectID]
+
+	nodes, err := project.ReflectProto(formID, address)
+	if err != nil {
+		return nil, err
+	}
+
+	form := m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID]
+	form.SelectedMethodID = ""
+	form.Request = "{}"
+	form.Response = "{}"
+
+	m.state.Projects[projectID].Nodes = nodes
+	m.state.Projects[projectID].ImportPathList = nil
+	m.state.Projects[projectID].ProtoFileList = nil
+
+	m.saveState()
+
+	return m.state, nil
+}
+
 func (m *Module) RemoveImportPath(projectID, importPath string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()

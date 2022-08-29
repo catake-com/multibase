@@ -18,6 +18,8 @@ export function OpenImportPath(arg1:string):Promise<grpc.State>;
 
 export function OpenProtoFile(arg1:string):Promise<grpc.State>;
 
+export function ReflectProto(arg1:string,arg2:string,arg3:string):Promise<grpc.State>;
+
 export function RemoveForm(arg1:string,arg2:string):Promise<grpc.State>;
 
 export function RemoveImportPath(arg1:string,arg2:string):Promise<grpc.State>;

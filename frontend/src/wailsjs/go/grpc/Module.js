@@ -34,6 +34,10 @@ export function OpenProtoFile(arg1) {
   return window['go']['grpc']['Module']['OpenProtoFile'](arg1);
 }
 
+export function ReflectProto(arg1, arg2, arg3) {
+  return window['go']['grpc']['Module']['ReflectProto'](arg1, arg2, arg3);
+}
+
 export function RemoveForm(arg1, arg2) {
   return window['go']['grpc']['Module']['RemoveForm'](arg1, arg2);
 }

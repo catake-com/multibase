@@ -12,11 +12,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
+	"github.com/jhump/protoreflect/grpcreflect"
 	"github.com/samber/lo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
 )
 
@@ -94,6 +96,24 @@ func (f *Form) SendRequest(
 	}
 
 	return responseHandler.response, nil
+}
+
+// nolint: ireturn
+func (f *Form) ReflectProto(ctx context.Context, address string) (grpcurl.DescriptorSource, error) {
+	err := f.establishConnection(address)
+	if err != nil {
+		return nil, err
+	}
+
+	// nolint: nosnakecase
+	reflectionClient := grpcreflect.NewClient(
+		ctx,
+		grpc_reflection_v1alpha.NewServerReflectionClient(f.connection),
+	)
+
+	protoDescriptorSource := grpcurl.DescriptorSourceFromServer(ctx, reflectionClient)
+
+	return protoDescriptorSource, nil
 }
 
 func (f *Form) StopCurrentRequest() {

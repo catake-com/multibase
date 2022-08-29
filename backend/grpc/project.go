@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
@@ -35,6 +36,22 @@ func (p *Project) SendRequest(
 	return form.SendRequest(methodID, address, payload, p.protoDescriptorSource, headers)
 }
 
+func (p *Project) ReflectProto(formID, address string) ([]*ProtoTreeNode, error) {
+	form := p.forms[formID]
+
+	protoDescriptorSource, err := form.ReflectProto(context.Background(), address)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes, err := p.RefreshProtoNodes(protoDescriptorSource)
+	if err != nil {
+		return nil, err
+	}
+
+	return nodes, nil
+}
+
 func (p *Project) StopRequest(id string) {
 	form := p.forms[id]
 
@@ -61,6 +78,10 @@ func (p *Project) RefreshProtoDescriptors(importPathList, protoFileList []string
 		return nil, fmt.Errorf("failed to read from proto files: %w", err)
 	}
 
+	return p.RefreshProtoNodes(protoDescriptorSource)
+}
+
+func (p *Project) RefreshProtoNodes(protoDescriptorSource grpcurl.DescriptorSource) ([]*ProtoTreeNode, error) {
 	protoTree, err := NewProtoTree(protoDescriptorSource)
 	if err != nil {
 		return nil, err
