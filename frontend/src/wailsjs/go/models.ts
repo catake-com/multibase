@@ -1,12 +1,115 @@
 export namespace kafka {
 	
+	export class TabTopicsTopic {
+	    name: string;
+	    partitionCount: number;
+	    messageCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TabTopicsTopic(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.partitionCount = source["partitionCount"];
+	        this.messageCount = source["messageCount"];
+	    }
+	}
+	export class TabTopics {
+	    isConnected: boolean;
+	    count: number;
+	    list: TabTopicsTopic[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TabTopics(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isConnected = source["isConnected"];
+	        this.count = source["count"];
+	        this.list = this.convertValues(source["list"], TabTopicsTopic);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TabBrokersBroker {
+	    id: number;
+	    rack: string;
+	    host: string;
+	    port: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TabBrokersBroker(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.rack = source["rack"];
+	        this.host = source["host"];
+	        this.port = source["port"];
+	    }
+	}
+	export class TabBrokers {
+	    isConnected: boolean;
+	    count: number;
+	    list: TabBrokersBroker[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TabBrokers(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isConnected = source["isConnected"];
+	        this.count = source["count"];
+	        this.list = this.convertValues(source["list"], TabBrokersBroker);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class StateProject {
 	    id: string;
-	    currentTab: string;
 	    address: string;
 	    authMethod: string;
 	    authUsername: string;
 	    authPassword: string;
+	    isConnected: boolean;
+	    currentTab: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new StateProject(source);
@@ -15,11 +118,12 @@ export namespace kafka {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.currentTab = source["currentTab"];
 	        this.address = source["address"];
 	        this.authMethod = source["authMethod"];
 	        this.authUsername = source["authUsername"];
 	        this.authPassword = source["authPassword"];
+	        this.isConnected = source["isConnected"];
+	        this.currentTab = source["currentTab"];
 	    }
 	}
 	export class State {
@@ -33,6 +137,108 @@ export namespace kafka {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projects = source["projects"];
 	    }
+	}
+	export class TabConsumersConsumer {
+	    name: string;
+	    state: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TabConsumersConsumer(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.state = source["state"];
+	    }
+	}
+	export class TabConsumers {
+	    isConnected: boolean;
+	    count: number;
+	    list: TabConsumersConsumer[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TabConsumers(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isConnected = source["isConnected"];
+	        this.count = source["count"];
+	        this.list = this.convertValues(source["list"], TabConsumersConsumer);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ConsumeTopicPartition {
+	    id: number;
+	    offsetTotalStart: number;
+	    offsetTotalEnd: number;
+	    offsetCurrentStart: number;
+	    offsetCurrentEnd: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConsumeTopicPartition(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.offsetTotalStart = source["offsetTotalStart"];
+	        this.offsetTotalEnd = source["offsetTotalEnd"];
+	        this.offsetCurrentStart = source["offsetCurrentStart"];
+	        this.offsetCurrentEnd = source["offsetCurrentEnd"];
+	    }
+	}
+	export class ConsumeTopicOutput {
+	    countTotal: number;
+	    countCurrent: number;
+	    partitions: ConsumeTopicPartition[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ConsumeTopicOutput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.countTotal = source["countTotal"];
+	        this.countCurrent = source["countCurrent"];
+	        this.partitions = this.convertValues(source["partitions"], ConsumeTopicPartition);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
@@ -266,6 +472,22 @@ export namespace grpc {
 
 export namespace thrift {
 	
+	export class StateProjectFormHeader {
+	    id: string;
+	    key: string;
+	    value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new StateProjectFormHeader(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.key = source["key"];
+	        this.value = source["value"];
+	    }
+	}
 	export class ServiceTreeNode {
 	    id: string;
 	    label: string;
@@ -301,22 +523,6 @@ export namespace thrift {
 		    }
 		    return a;
 		}
-	}
-	export class StateProjectFormHeader {
-	    id: string;
-	    key: string;
-	    value: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new StateProjectFormHeader(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.key = source["key"];
-	        this.value = source["value"];
-	    }
 	}
 	export class StateProjectForm {
 	    id: string;

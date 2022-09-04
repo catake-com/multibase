@@ -15,9 +15,6 @@ export default defineComponent({
   components: { GRPC, Thrift, Kafka },
   computed: {
     ...mapState(useProjectStore, ["projects", "currentProjectID"]),
-    ...mapState(useGRPCStore, { grpcProjects: "projects" }),
-    ...mapState(useThriftStore, { thriftProjects: "projects" }),
-    ...mapState(useKafkaStore, { kafkaProjects: "projects" }),
     nonNewProjects() {
       return Object.fromEntries(
         Object.entries(useProjectStore().projects).filter(([projectID, project]) => project.type !== "new")

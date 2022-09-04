@@ -1,7 +1,5 @@
 <script>
 import { defineComponent } from "vue";
-import { mapState } from "pinia";
-
 import { useKafkaStore } from "../stores/kafka";
 
 export default defineComponent({
@@ -12,17 +10,17 @@ export default defineComponent({
   data() {
     return {
       splitterWidth: 12,
+      splitterWidthConsuming: 12,
     };
   },
   beforeCreate() {
     useKafkaStore().loadState();
   },
   computed: {
-    ...mapState(useKafkaStore, ["projects"]),
     currentTab: {
       get() {
-        if (useKafkaStore().projects[this.projectID]) {
-          return useKafkaStore().projects[this.projectID].currentTab;
+        if (useKafkaStore().main.projects[this.projectID]) {
+          return useKafkaStore().main.projects[this.projectID].currentTab;
         }
       },
       async set(currentTab) {
@@ -31,8 +29,8 @@ export default defineComponent({
     },
     address: {
       get() {
-        if (useKafkaStore().projects[this.projectID]) {
-          return useKafkaStore().projects[this.projectID].address;
+        if (useKafkaStore().main.projects[this.projectID]) {
+          return useKafkaStore().main.projects[this.projectID].address;
         }
       },
       async set(address) {
@@ -41,8 +39,8 @@ export default defineComponent({
     },
     authMethod: {
       get() {
-        if (useKafkaStore().projects[this.projectID]) {
-          return useKafkaStore().projects[this.projectID].authMethod;
+        if (useKafkaStore().main.projects[this.projectID]) {
+          return useKafkaStore().main.projects[this.projectID].authMethod;
         }
       },
       async set(authMethod) {
@@ -51,8 +49,8 @@ export default defineComponent({
     },
     authUsername: {
       get() {
-        if (useKafkaStore().projects[this.projectID]) {
-          return useKafkaStore().projects[this.projectID].authUsername;
+        if (useKafkaStore().main.projects[this.projectID]) {
+          return useKafkaStore().main.projects[this.projectID].authUsername;
         }
       },
       async set(authUsername) {
@@ -61,116 +59,253 @@ export default defineComponent({
     },
     authPassword: {
       get() {
-        if (useKafkaStore().projects[this.projectID]) {
-          return useKafkaStore().projects[this.projectID].authPassword;
+        if (useKafkaStore().main.projects[this.projectID]) {
+          return useKafkaStore().main.projects[this.projectID].authPassword;
         }
       },
       async set(authPassword) {
         await useKafkaStore().saveAuthPassword(this.projectID, authPassword);
       },
     },
+    hoursAgo: {
+      get() {
+        if (useKafkaStore().session[this.projectID]) {
+          return useKafkaStore().session[this.projectID].hoursAgo;
+        }
+      },
+      set(hoursAgo) {
+        useKafkaStore().session[this.projectID].hoursAgo = parseInt(hoursAgo);
+      },
+    },
+    currentTopic() {
+      if (useKafkaStore().session[this.projectID]) {
+        return useKafkaStore().session[this.projectID].currentTopic;
+      }
+    },
+    topics() {
+      return useKafkaStore().topics[this.projectID];
+    },
+    brokers() {
+      return useKafkaStore().brokers[this.projectID];
+    },
+    consumers() {
+      return useKafkaStore().consumers[this.projectID];
+    },
+    consumedTopic() {
+      return useKafkaStore().consumedTopic[this.projectID];
+    },
+    consumedTopicMessages() {
+      return useKafkaStore().consumedTopicMessages[this.projectID];
+    },
   },
   methods: {
-    async connect() {},
+    async connect() {
+      try {
+        await useKafkaStore().connect(this.projectID);
+        await useKafkaStore().loadTopics(this.projectID);
+        await useKafkaStore().loadBrokers(this.projectID);
+        await useKafkaStore().loadConsumers(this.projectID);
+        this.$q.notify({ type: "positive", message: "Connected" });
+      } catch (error) {
+        this.$q.notify({ type: "negative", message: error });
+      }
+    },
+
+    async startTopicConsuming(topic) {
+      try {
+        await useKafkaStore().startTopicConsuming(this.projectID, topic, 1);
+        this.$q.notify({ type: "positive", message: "Started consuming" });
+      } catch (error) {
+        this.$q.notify({ type: "negative", message: error });
+      }
+    },
+
+    async stopTopicConsuming() {
+      try {
+        await useKafkaStore().stopTopicConsuming(this.projectID);
+        this.$q.notify({ type: "positive", message: "Stopped consuming" });
+      } catch (error) {
+        this.$q.notify({ type: "negative", message: error });
+      }
+    },
+
+    async restartTopicConsuming() {
+      try {
+        await useKafkaStore().restartTopicConsuming(this.projectID);
+        this.$q.notify({ type: "positive", message: "Restarted consuming" });
+      } catch (error) {
+        this.$q.notify({ type: "negative", message: error });
+      }
+    },
   },
 });
 </script>
 
 <template>
   <div class="full-height">
-    <q-splitter v-model="splitterWidth" class="full-height" disable>
-      <template v-slot:before>
-        <q-tabs v-model="currentTab" vertical>
-          <q-tab name="overview" icon="home" label="Overview" />
-          <q-tab name="brokers" icon="lan" label="Brokers" />
-          <q-tab name="topics" icon="storage" label="Topics" />
-          <q-tab name="consumers" icon="browser_updated" label="Consumers" />
-        </q-tabs>
-      </template>
+    <div v-if="currentTopic">
+      <q-btn label="Stop" color="secondary" @click="stopTopicConsuming()" />
 
-      <template v-slot:after>
-        <q-tab-panels v-model="currentTab" animated vertical>
-          <q-tab-panel name="overview">
-            <q-form class="q-gutter-md full-height">
-              <q-input v-model="address" label="Address" debounce="500" />
+      <q-splitter v-model="splitterWidthConsuming" class="full-height" disable>
+        <template v-slot:before>
+          {{ currentTopic }}
+          Count total: {{ consumedTopic?.countTotal }}
+          Partitions:
+          <q-list>
+            <q-item v-for="partition in consumedTopic?.partitions" :key="partition.id">
+              <q-item-section>
+                <q-item-label overline>{{ partition.id }}</q-item-label>
+                <q-item-label>{{ partition.offsetTotalStart }} - {{ partition.offsetTotalEnd }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
 
-              <div>
-                <q-radio v-model="authMethod" val="plaintext" label="Plaintext" dense />
-                <q-radio v-model="authMethod" val="saslssl" label="SASL SSL" dense />
+          <q-input v-model="hoursAgo" label="Hours Ago" />
+
+          <q-btn label="Restart" color="secondary" @click="restartTopicConsuming()" />
+        </template>
+
+        <template v-slot:after>
+          <q-markup-table>
+            <thead>
+              <tr>
+                <th class="text-left">Timestamp</th>
+                <th class="text-left">Partition</th>
+                <th class="text-left">Offset</th>
+                <th class="text-left">Key</th>
+                <th class="text-left">Data</th>
+                <th class="text-left">Headers</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr v-for="message in consumedTopicMessages" :key="`${message.partitionID}_${message.offset}`">
+                <td class="text-left">{{ message.timestamp }}</td>
+                <td class="text-left">{{ message.partitionID }}</td>
+                <td class="text-left">{{ message.offset }}</td>
+                <td class="text-left">{{ message.key }}</td>
+                <td class="text-left">{{ message.data }}</td>
+                <td class="text-left"></td>
+              </tr>
+            </tbody>
+          </q-markup-table>
+        </template>
+      </q-splitter>
+    </div>
+
+    <div v-else>
+      <q-splitter v-model="splitterWidth" class="full-height" disable>
+        <template v-slot:before>
+          <q-tabs v-model="currentTab" vertical>
+            <q-tab name="overview" icon="home" label="Overview" />
+            <q-tab name="brokers" icon="lan" label="Brokers" />
+            <q-tab name="topics" icon="storage" label="Topics" />
+            <q-tab name="consumers" icon="browser_updated" label="Consumers" />
+          </q-tabs>
+        </template>
+
+        <template v-slot:after>
+          <q-tab-panels v-model="currentTab" animated vertical>
+            <q-tab-panel name="overview">
+              {{ consumedTopic }}
+              <q-form class="q-gutter-md full-height">
+                <q-input v-model="address" label="Address" debounce="500" />
+
+                <div>
+                  <q-radio v-model="authMethod" val="plaintext" label="Plaintext" dense />
+                  <q-radio v-model="authMethod" val="saslssl" label="SASL SSL" dense />
+                </div>
+
+                <div v-if="authMethod === 'saslssl'">
+                  <q-input v-model="authUsername" label="Username" debounce="500" />
+                  <q-input v-model="authPassword" label="Password" debounce="500" type="password" />
+                </div>
+
+                <q-btn label="Connect" color="secondary" @click="connect" />
+              </q-form>
+            </q-tab-panel>
+
+            <q-tab-panel name="brokers">
+              <div v-if="brokers.isConnected">
+                <q-markup-table>
+                  <thead>
+                    <tr>
+                      <th class="text-left">ID</th>
+                      <th class="text-left">Rack</th>
+                      <th class="text-left">Listener</th>
+                      <th class="text-left">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr v-for="broker in brokers.list" :key="broker.id">
+                      <td class="text-left">{{ broker.id }}</td>
+                      <td class="text-left">{{ broker.rack }}</td>
+                      <td class="text-left">{{ `${broker.host}:${broker.port}` }}</td>
+                      <td class="text-left"></td>
+                    </tr>
+                  </tbody>
+                </q-markup-table>
               </div>
 
-              <div v-if="authMethod === 'saslssl'">
-                <q-input v-model="authUsername" label="Username" debounce="500" />
-                <q-input v-model="authPassword" label="Password" debounce="500" />
+              <div v-else>Not connected to Kafka</div>
+            </q-tab-panel>
+
+            <q-tab-panel name="topics">
+              <div v-if="topics.isConnected">
+                <q-markup-table>
+                  <thead>
+                    <tr>
+                      <th class="text-left">Topic Name</th>
+                      <th class="text-left">Partitions</th>
+                      <th class="text-left">Count</th>
+                      <th class="text-left">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr v-for="topic in topics.list" :key="topic.name">
+                      <td class="text-left">{{ topic.name }}</td>
+                      <td class="text-left">{{ topic.partitionCount }}</td>
+                      <td class="text-left">{{ topic.messageCount }}</td>
+                      <td class="text-left">
+                        <q-btn label="Consume" color="secondary" @click="startTopicConsuming(topic.name)" />
+                      </td>
+                    </tr>
+                  </tbody>
+                </q-markup-table>
               </div>
 
-              <q-btn label="Connect" color="secondary" @click="connect" />
-            </q-form>
-          </q-tab-panel>
+              <div v-else>Not connected to Kafka</div>
+            </q-tab-panel>
 
-          <q-tab-panel name="brokers"> brokers </q-tab-panel>
+            <q-tab-panel name="consumers">
+              <div v-if="consumers.isConnected">
+                <q-markup-table>
+                  <thead>
+                    <tr>
+                      <th class="text-left">Name</th>
+                      <th class="text-left">State</th>
+                      <th class="text-left">Actions</th>
+                    </tr>
+                  </thead>
 
-          <q-tab-panel name="topics">
-            <q-markup-table>
-              <thead>
-                <tr>
-                  <th class="text-left">Dessert (100g serving)</th>
-                  <th class="text-right">Calories</th>
-                  <th class="text-right">Fat (g)</th>
-                  <th class="text-right">Carbs (g)</th>
-                  <th class="text-right">Protein (g)</th>
-                  <th class="text-right">Sodium (mg)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="text-left">Frozen Yogurt</td>
-                  <td class="text-right">159</td>
-                  <td class="text-right">6</td>
-                  <td class="text-right">24</td>
-                  <td class="text-right">4</td>
-                  <td class="text-right">87</td>
-                </tr>
-                <tr>
-                  <td class="text-left">Ice cream sandwich</td>
-                  <td class="text-right">237</td>
-                  <td class="text-right">9</td>
-                  <td class="text-right">37</td>
-                  <td class="text-right">4.3</td>
-                  <td class="text-right">129</td>
-                </tr>
-                <tr>
-                  <td class="text-left">Eclair</td>
-                  <td class="text-right">262</td>
-                  <td class="text-right">16</td>
-                  <td class="text-right">23</td>
-                  <td class="text-right">6</td>
-                  <td class="text-right">337</td>
-                </tr>
-                <tr>
-                  <td class="text-left">Cupcake</td>
-                  <td class="text-right">305</td>
-                  <td class="text-right">3.7</td>
-                  <td class="text-right">67</td>
-                  <td class="text-right">4.3</td>
-                  <td class="text-right">413</td>
-                </tr>
-                <tr>
-                  <td class="text-left">Gingerbread</td>
-                  <td class="text-right">356</td>
-                  <td class="text-right">16</td>
-                  <td class="text-right">49</td>
-                  <td class="text-right">3.9</td>
-                  <td class="text-right">327</td>
-                </tr>
-              </tbody>
-            </q-markup-table>
-          </q-tab-panel>
+                  <tbody>
+                    <tr v-for="consumer in consumers.list" :key="consumer.id">
+                      <td class="text-left">{{ consumer.name }}</td>
+                      <td class="text-left">{{ consumer.state }}</td>
+                      <td class="text-left"></td>
+                    </tr>
+                  </tbody>
+                </q-markup-table>
+              </div>
 
-          <q-tab-panel name="consumers"> </q-tab-panel>
-        </q-tab-panels>
-      </template>
-    </q-splitter>
+              <div v-else>Not connected to Kafka</div>
+            </q-tab-panel>
+          </q-tab-panels>
+        </template>
+      </q-splitter>
+    </div>
   </div>
 </template>
 

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DefaultStatePersistenceDelay = time.Second * 5
+	DefaultStatePersistenceDelay = time.Second * 1
 )
 
 var (
