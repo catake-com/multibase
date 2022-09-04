@@ -28,8 +28,6 @@ export function SaveRequestPayload(arg1:string,arg2:string,arg3:string):Promise<
 
 export function SaveSplitterWidth(arg1:string,arg2:number):Promise<thrift.State>;
 
-export function SaveState():Promise<Error>;
-
 export function SelectFunction(arg1:string,arg2:string,arg3:string):Promise<thrift.State>;
 
 export function SendRequest(arg1:string,arg2:string,arg3:string,arg4:string):Promise<thrift.State>;

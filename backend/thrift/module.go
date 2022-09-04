@@ -90,21 +90,6 @@ func NewModule() (*Module, error) {
 	return module, nil
 }
 
-func (m *Module) SaveState() error {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	if m.stateTimer != nil {
-		_ = m.stateTimer.Stop()
-	}
-
-	if err := m.saveStateToFile(); err != nil {
-		return fmt.Errorf("failed to save state to file: %w", err)
-	}
-
-	return nil
-}
-
 func (m *Module) SendRequest(projectID, formID string, address, payload string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -540,21 +525,9 @@ func (m *Module) saveState() {
 }
 
 func (m *Module) saveStateToFile() (rerr error) {
-	file, err := os.Create(m.configFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to create/truncate a thrift config file: %w", err)
-	}
-
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			rerr = multierr.Combine(rerr, fmt.Errorf("failed to close a config file: %w", err))
-		}
-	}()
-
 	state := &State{}
 
-	err = copier.CopyWithOption(state, m.state, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+	err := copier.CopyWithOption(state, m.state, copier.Option{IgnoreEmpty: true, DeepCopy: true})
 	if err != nil {
 		return fmt.Errorf("failed to copy a thrift state: %w", err)
 	}
@@ -568,6 +541,18 @@ func (m *Module) saveStateToFile() (rerr error) {
 	if err != nil {
 		return fmt.Errorf("failed to encrypt state: %w", err)
 	}
+
+	file, err := os.Create(m.configFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create/truncate a thrift config file: %w", err)
+	}
+
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			rerr = multierr.Combine(rerr, fmt.Errorf("failed to close a config file: %w", err))
+		}
+	}()
 
 	_, err = file.Write(encryptedData)
 	if err != nil {

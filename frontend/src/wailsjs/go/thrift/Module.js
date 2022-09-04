@@ -54,10 +54,6 @@ export function SaveSplitterWidth(arg1, arg2) {
   return window['go']['thrift']['Module']['SaveSplitterWidth'](arg1, arg2);
 }
 
-export function SaveState() {
-  return window['go']['thrift']['Module']['SaveState']();
-}
-
 export function SelectFunction(arg1, arg2, arg3) {
   return window['go']['thrift']['Module']['SelectFunction'](arg1, arg2, arg3);
 }

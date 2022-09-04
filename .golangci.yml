@@ -29,3 +29,9 @@ linters-settings:
             use-field-name: true
             rules:
                 json: goCamel
+    varnamelen:
+        ignore-type-assert-ok: true
+        ignore-map-index-ok: true
+        ignore-chan-recv-ok: true
+        ignore-names:
+            - ok

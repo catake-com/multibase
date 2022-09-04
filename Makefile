@@ -24,9 +24,12 @@ cleanup-state:
 .PHONY: show-state
 show-state:
 	@jq . ~/Library/Application\ Support/multibase/project.json
-	@jq . ~/Library/Application\ Support/multibase/grpc
-	@jq . ~/Library/Application\ Support/multibase/thrift
-	@jq . ~/Library/Application\ Support/multibase/kafka
+	@echo "\ngrpc\n"
+	@cat ~/Library/Application\ Support/multibase/grpc
+	@echo "\nthrift\n"
+	@cat ~/Library/Application\ Support/multibase/thrift
+	@echo "\nkafka\n"
+	@cat ~/Library/Application\ Support/multibase/kafka
 
 .PHONY: release
 release:

@@ -34,8 +34,6 @@ export function SaveRequestPayload(arg1:string,arg2:string,arg3:string):Promise<
 
 export function SaveSplitterWidth(arg1:string,arg2:number):Promise<grpc.State>;
 
-export function SaveState():Promise<Error>;
-
 export function SelectMethod(arg1:string,arg2:string,arg3:string):Promise<grpc.State>;
 
 export function SendRequest(arg1:string,arg2:string,arg3:string,arg4:string):Promise<grpc.State>;
