@@ -149,20 +149,21 @@ export default defineComponent({
       <q-splitter v-model="splitterWidthConsuming" class="full-height" disable>
         <template v-slot:before>
           {{ currentTopic }}
-          Count total: {{ consumedTopic?.countTotal }}
-          Partitions:
-          <q-list>
-            <q-item v-for="partition in consumedTopic?.partitions" :key="partition.id">
-              <q-item-section>
-                <q-item-label overline>{{ partition.id }}</q-item-label>
-                <q-item-label>{{ partition.offsetTotalStart }} - {{ partition.offsetTotalEnd }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
 
-          <q-input v-model="hoursAgo" label="Hours Ago" />
+          <q-input v-model="hoursAgo" label="Show messages for last X hours" />
 
-          <q-btn label="Restart" color="secondary" @click="restartTopicConsuming()" />
+          <!--          <div>Count total: {{ consumedTopic?.countTotal }}</div>-->
+          <!--          Partitions:-->
+          <!--          <q-list>-->
+          <!--            <q-item v-for="partition in consumedTopic?.partitions" :key="partition.id">-->
+          <!--              <q-item-section>-->
+          <!--                <q-item-label overline>{{ partition.id }}</q-item-label>-->
+          <!--                <q-item-label>{{ partition.offsetTotalStart }} - {{ partition.offsetTotalEnd }}</q-item-label>-->
+          <!--              </q-item-section>-->
+          <!--            </q-item>-->
+          <!--          </q-list>-->
+
+          <q-btn label="Refresh" color="secondary" @click="restartTopicConsuming()" />
         </template>
 
         <template v-slot:after>
@@ -207,7 +208,6 @@ export default defineComponent({
         <template v-slot:after>
           <q-tab-panels v-model="currentTab" animated vertical>
             <q-tab-panel name="overview">
-              {{ consumedTopic }}
               <q-form class="q-gutter-md full-height">
                 <q-input v-model="address" label="Address" debounce="500" />
 

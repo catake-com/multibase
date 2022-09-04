@@ -24,7 +24,7 @@ export function SaveAuthUsername(arg1:string,arg2:string):Promise<kafka.State>;
 
 export function SaveCurrentTab(arg1:string,arg2:string):Promise<kafka.State>;
 
-export function StartTopicConsuming(arg1:string,arg2:string,arg3:number):Promise<kafka.ConsumeTopicOutput>;
+export function StartTopicConsuming(arg1:string,arg2:string,arg3:number):Promise<kafka.TopicOutput>;
 
 export function State():Promise<kafka.State>;
 

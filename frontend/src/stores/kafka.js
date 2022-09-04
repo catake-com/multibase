@@ -179,7 +179,7 @@ export const useKafkaStore = defineStore({
         this.$state.consumedTopicMessages[projectID].push(data);
       });
 
-      this.$state.consumedTopic[projectID] = await ConsumeTopic(
+      this.$state.consumedTopic[projectID] = await StartTopicConsuming(
         projectID,
         this.$state.session[projectID].currentTopic,
         this.$state.session[projectID].hoursAgo
