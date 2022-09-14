@@ -6,7 +6,6 @@
     "password": "@env:APPLE_PASSWORD"
   },
   "sign" :{
-    "application_identity" : "$APPLICATION_IDENTITY",
-    "entitlements_file": "./build/darwin/entitlements.plist"
+    "application_identity" : "$APPLICATION_IDENTITY"
   }
 }
