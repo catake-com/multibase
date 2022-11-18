@@ -101,7 +101,7 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 
 	project := m.projects[projectID]
 
-	if m.state.Projects[projectID].IsReflected {
+	if m.state.Projects[projectID].IsReflected && !project.IsProtoDescriptorSourceInitialized() {
 		_, err := project.ReflectProto(formID, address)
 		if err != nil {
 			return nil, err

@@ -24,6 +24,10 @@ func NewProject(id string) *Project {
 	}
 }
 
+func (p *Project) IsProtoDescriptorSourceInitialized() bool {
+	return p.protoDescriptorSource != nil
+}
+
 func (p *Project) SendRequest(
 	formID,
 	methodID,
