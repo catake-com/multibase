@@ -34,6 +34,7 @@ type StateProject struct {
 	Forms          map[string]*StateProjectForm `json:"forms"`
 	FormIDs        []string                     `json:"formIDs"`
 	CurrentFormID  string                       `json:"currentFormID"`
+	IsReflected    bool                         `json:"isReflected"`
 	ImportPathList []string                     `json:"importPathList"`
 	ProtoFileList  []string                     `json:"protoFileList"`
 	Nodes          []*ProtoTreeNode             `json:"nodes"`
@@ -100,6 +101,13 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 
 	project := m.projects[projectID]
 
+	if m.state.Projects[projectID].IsReflected {
+		_, err := project.ReflectProto(formID, address)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	response, err := project.SendRequest(
 		formID,
 		m.state.Projects[projectID].Forms[formID].SelectedMethodID,
@@ -146,6 +154,7 @@ func (m *Module) ReflectProto(projectID, formID, address string) (*State, error)
 	form.Request = "{}"
 	form.Response = "{}"
 
+	m.state.Projects[projectID].IsReflected = true
 	m.state.Projects[projectID].Nodes = nodes
 	m.state.Projects[projectID].ImportPathList = nil
 	m.state.Projects[projectID].ProtoFileList = nil
@@ -209,6 +218,7 @@ func (m *Module) OpenProtoFile(projectID string) (*State, error) {
 		return nil, err
 	}
 
+	m.state.Projects[projectID].IsReflected = false
 	m.state.Projects[projectID].Nodes = nodes
 	m.state.Projects[projectID].ImportPathList = importPathList
 	m.state.Projects[projectID].ProtoFileList = protoFileList
@@ -224,6 +234,7 @@ func (m *Module) DeleteAllProtoFiles(projectID string) (*State, error) {
 
 	project := m.projects[projectID]
 
+	m.state.Projects[projectID].IsReflected = false
 	m.state.Projects[projectID].ProtoFileList = nil
 
 	nodes, err := project.RefreshProtoDescriptors(

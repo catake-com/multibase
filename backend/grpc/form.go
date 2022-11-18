@@ -60,7 +60,7 @@ func (f *Form) SendRequest(
 	protoDescriptorSource grpcurl.DescriptorSource,
 	headers []*StateProjectFormHeader,
 ) (string, error) {
-	err := f.establishConnection(address)
+	err := f.establishConnection(context.Background(), address)
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +100,7 @@ func (f *Form) SendRequest(
 
 // nolint: ireturn
 func (f *Form) ReflectProto(ctx context.Context, address string) (grpcurl.DescriptorSource, error) {
-	err := f.establishConnection(address)
+	err := f.establishConnection(ctx, address)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (f *Form) Close() error {
 	return nil
 }
 
-func (f *Form) establishConnection(address string) error {
+func (f *Form) establishConnection(ctx context.Context, address string) error {
 	if address == f.address && f.connection != nil {
 		return nil
 	}
@@ -151,7 +151,7 @@ func (f *Form) establishConnection(address string) error {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
 	connection, err := grpc.DialContext(
