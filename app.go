@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/multibase-io/multibase/backend/grpc"
 	"github.com/multibase-io/multibase/backend/kafka"
+	"github.com/multibase-io/multibase/backend/pkg/state"
 	"github.com/multibase-io/multibase/backend/project"
 	"github.com/multibase-io/multibase/backend/thrift"
 )
 
 type App struct {
 	ctx           context.Context
+	stateStorage  *state.Storage
 	ProjectModule *project.Module
 	GRPCModule    *grpc.Module
 	ThriftModule  *thrift.Module
@@ -19,27 +22,33 @@ type App struct {
 }
 
 func NewApp() (*App, error) {
-	projectModule, err := project.NewModule()
+	stateStorage, err := state.NewStorage()
+	if err != nil {
+		return nil, fmt.Errorf("failed to init a storage: %w", err)
+	}
+
+	projectModule, err := project.NewModule(stateStorage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init a project module: %w", err)
 	}
 
-	grpcModule, err := grpc.NewModule()
+	grpcModule, err := grpc.NewModule(stateStorage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init a grpc module: %w", err)
 	}
 
-	thriftModule, err := thrift.NewModule()
+	thriftModule, err := thrift.NewModule(stateStorage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init a thrift module: %w", err)
 	}
 
-	kafkaModule, err := kafka.NewModule()
+	kafkaModule, err := kafka.NewModule(stateStorage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init a kafka module: %w", err)
 	}
 
 	return &App{
+		stateStorage:  stateStorage,
 		ProjectModule: projectModule,
 		GRPCModule:    grpcModule,
 		ThriftModule:  thriftModule,
@@ -58,6 +67,10 @@ func (a *App) domReady(_ context.Context) {
 }
 
 func (a *App) beforeClose(_ context.Context) bool {
+	if err := a.stateStorage.Close(); err != nil {
+		log.Println(err)
+	}
+
 	a.KafkaModule.Close()
 
 	return false

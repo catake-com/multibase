@@ -1,15 +1,13 @@
 package project
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
-	"github.com/adrg/xdg"
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
-	"go.uber.org/multierr"
+
+	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
 type State struct {
@@ -32,23 +30,21 @@ type StateStats struct {
 }
 
 type Module struct {
-	configFilePath string
-	stateMutex     *sync.RWMutex
-	state          *State
+	stateStorage *state.Storage
+	stateMutex   *sync.RWMutex
+	state        *State
 }
 
-func NewModule() (*Module, error) {
-	configFilePath, err := xdg.ConfigFile("multibase/project.json")
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve project config path: %w", err)
-	}
-
+func NewModule(stateStorage *state.Storage) (*Module, error) {
 	module := &Module{
-		configFilePath: configFilePath,
-		stateMutex:     &sync.RWMutex{},
+		state: &State{
+			Projects: make(map[string]*StateProject),
+		},
+		stateStorage: stateStorage,
+		stateMutex:   &sync.RWMutex{},
 	}
 
-	err = module.readOrInitializeState()
+	err := module.readOrInitializeState()
 	if err != nil {
 		return nil, err
 	}
@@ -244,23 +240,20 @@ func (m *Module) State() (*State, error) {
 }
 
 func (m *Module) readOrInitializeState() error {
-	_, err := os.Stat(m.configFilePath)
+	isLoaded, err := m.stateStorage.Load("project", m.state)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return fmt.Errorf("failed to describe a project config file: %w", err)
-		}
-
-		return m.initializeState()
+		return fmt.Errorf("failed to load a state: %w", err)
 	}
 
-	return m.readState()
-}
+	if isLoaded {
+		return nil
+	}
 
-func (m *Module) initializeState() (rerr error) {
 	m.state = &State{
 		Stats: &StateStats{
 			GRPCProjectCount:   0,
 			ThriftProjectCount: 0,
+			KafkaProjectCount:  0,
 		},
 		Projects: map[string]*StateProject{
 			"404f5702-6179-4861-9533-b5ee16161c78": {
@@ -272,69 +265,18 @@ func (m *Module) initializeState() (rerr error) {
 		CurrentProjectID: "404f5702-6179-4861-9533-b5ee16161c78",
 	}
 
-	file, err := os.Create(m.configFilePath)
+	err = m.stateStorage.Save("project", m.state)
 	if err != nil {
-		return fmt.Errorf("failed to create a project config file: %w", err)
-	}
-
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			rerr = multierr.Combine(rerr, fmt.Errorf("failed to close a config file: %w", err))
-		}
-	}()
-
-	encoder := json.NewEncoder(file)
-
-	err = encoder.Encode(m.state)
-	if err != nil {
-		return fmt.Errorf("failed to encode a project state: %w", err)
+		return fmt.Errorf("failed to store a state: %w", err)
 	}
 
 	return nil
 }
 
-func (m *Module) readState() (rerr error) {
-	file, err := os.Open(m.configFilePath)
+func (m *Module) saveState() error {
+	err := m.stateStorage.Save("project", m.state)
 	if err != nil {
-		return fmt.Errorf("failed to open a project config file: %w", err)
-	}
-
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			rerr = multierr.Combine(rerr, fmt.Errorf("failed to close a config file: %w", err))
-		}
-	}()
-
-	decoder := json.NewDecoder(file)
-
-	err = decoder.Decode(&m.state)
-	if err != nil {
-		return fmt.Errorf("failed to decode a project state: %w", err)
-	}
-
-	return nil
-}
-
-func (m *Module) saveState() (rerr error) {
-	file, err := os.Create(m.configFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to create/truncate a project config file: %w", err)
-	}
-
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			rerr = multierr.Combine(rerr, fmt.Errorf("failed to close a config file: %w", err))
-		}
-	}()
-
-	encoder := json.NewEncoder(file)
-
-	err = encoder.Encode(m.state)
-	if err != nil {
-		return fmt.Errorf("failed to encode a project state: %w", err)
+		return fmt.Errorf("failed to store a state: %w", err)
 	}
 
 	return nil
