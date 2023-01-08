@@ -18,27 +18,17 @@ import (
 const requestTimeout = 5 * time.Second
 
 type Form struct {
-	id                string
+	ID                 string    `json:"id"`
+	Address            string    `json:"address"`
+	Headers            []*Header `json:"headers"`
+	SelectedFunctionID string    `json:"selectedFunctionID"`
+	IsMultiplexed      bool      `json:"isMultiplexed"`
+	Request            string    `json:"request"`
+	Response           string    `json:"response"`
+
 	client            *http.Client
 	serviceTree       *ServiceTree
 	requestCancelFunc context.CancelFunc
-}
-
-func NewForm(
-	formID string,
-	serviceTree *ServiceTree,
-) (*Form, error) {
-	client := &http.Client{
-		Timeout: requestTimeout,
-	}
-
-	form := &Form{
-		id:          formID,
-		client:      client,
-		serviceTree: serviceTree,
-	}
-
-	return form, nil
 }
 
 // nolint: funlen
@@ -47,7 +37,7 @@ func (f *Form) SendRequest(
 	address,
 	payload string,
 	isMultiplexed bool,
-	headers []*StateProjectFormHeader,
+	headers []*Header,
 ) (string, error) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), requestTimeout)
 	f.requestCancelFunc = cancelFunc
@@ -120,12 +110,20 @@ func (f *Form) StopCurrentRequest() {
 }
 
 func (f *Form) Close() error {
-	f.client.CloseIdleConnections()
+	if f.client != nil {
+		f.client.CloseIdleConnections()
+	}
 
 	return nil
 }
 
 func (f *Form) executeRequest(request *http.Request) (_ []byte, rerr error) {
+	if f.client == nil {
+		f.client = &http.Client{
+			Timeout: requestTimeout,
+		}
+	}
+
 	response, err := f.client.Do(request)
 	defer func() {
 		if response == nil {

@@ -12,16 +12,15 @@ import (
 var errThriftUnknownType = errors.New("unknown type during thrift parsing")
 
 type Project struct {
-	id          string
-	forms       map[string]*Form
-	serviceTree *ServiceTree
-}
+	ID            string             `json:"id"`
+	SplitterWidth float64            `json:"splitterWidth"`
+	Forms         map[string]*Form   `json:"forms"`
+	FormIDs       []string           `json:"formIDs"`
+	CurrentFormID string             `json:"currentFormID"`
+	FilePath      string             `json:"filePath"`
+	Nodes         []*ServiceTreeNode `json:"nodes"`
 
-func NewProject(id string) *Project {
-	return &Project{
-		id:    id,
-		forms: make(map[string]*Form),
-	}
+	serviceTree *ServiceTree
 }
 
 func (p *Project) SendRequest(
@@ -30,28 +29,17 @@ func (p *Project) SendRequest(
 	functionID,
 	payload string,
 	isMultiplexed bool,
-	headers []*StateProjectFormHeader,
+	headers []*Header,
 ) (string, error) {
-	form := p.forms[formID]
+	form := p.Forms[formID]
 
 	return form.SendRequest(functionID, address, payload, isMultiplexed, headers)
 }
 
 func (p *Project) StopRequest(formID string) {
-	form := p.forms[formID]
+	form := p.Forms[formID]
 
 	form.StopCurrentRequest()
-}
-
-func (p *Project) InitializeForm(formID string) error {
-	form, err := NewForm(formID, p.serviceTree)
-	if err != nil {
-		return err
-	}
-
-	p.forms[formID] = form
-
-	return nil
 }
 
 func (p *Project) GenerateServiceTreeNodes(filePath string) ([]*ServiceTreeNode, error) {
@@ -67,7 +55,7 @@ func (p *Project) GenerateServiceTreeNodes(filePath string) ([]*ServiceTreeNode,
 
 	p.serviceTree = serviceTree
 
-	for _, form := range p.forms {
+	for _, form := range p.Forms {
 		form.serviceTree = serviceTree
 	}
 
@@ -103,7 +91,7 @@ func (p *Project) SelectFunction(functionID string) (string, error) {
 }
 
 func (p *Project) Close() error {
-	for _, client := range p.forms {
+	for _, client := range p.Forms {
 		err := client.Close()
 		if err != nil {
 			return err

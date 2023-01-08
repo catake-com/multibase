@@ -28,7 +28,7 @@ export function SaveAddress(arg1:string,arg2:string,arg3:string):Promise<grpc.St
 
 export function SaveCurrentFormID(arg1:string,arg2:string):Promise<grpc.State>;
 
-export function SaveHeaders(arg1:string,arg2:string,arg3:Array<grpc.StateProjectFormHeader>):Promise<grpc.State>;
+export function SaveHeaders(arg1:string,arg2:string,arg3:Array<grpc.Header>):Promise<grpc.State>;
 
 export function SaveRequestPayload(arg1:string,arg2:string,arg3:string):Promise<grpc.State>;
 

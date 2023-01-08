@@ -11,17 +11,18 @@ import (
 )
 
 type Project struct {
-	id                    string
-	forms                 map[string]*Form
+	ID             string           `json:"id"`
+	SplitterWidth  float64          `json:"splitterWidth"`
+	Forms          map[string]*Form `json:"forms"`
+	FormIDs        []string         `json:"formIDs"`
+	CurrentFormID  string           `json:"currentFormID"`
+	IsReflected    bool             `json:"isReflected"`
+	ImportPathList []string         `json:"importPathList"`
+	ProtoFileList  []string         `json:"protoFileList"`
+	Nodes          []*ProtoTreeNode `json:"nodes"`
+
 	protoTree             *ProtoTree
 	protoDescriptorSource grpcurl.DescriptorSource
-}
-
-func NewProject(id string) *Project {
-	return &Project{
-		id:    id,
-		forms: make(map[string]*Form),
-	}
 }
 
 func (p *Project) IsProtoDescriptorSourceInitialized() bool {
@@ -33,15 +34,15 @@ func (p *Project) SendRequest(
 	methodID,
 	address,
 	payload string,
-	headers []*StateProjectFormHeader,
+	headers []*Header,
 ) (string, error) {
-	form := p.forms[formID]
+	form := p.Forms[formID]
 
 	return form.SendRequest(methodID, address, payload, p.protoDescriptorSource, headers)
 }
 
 func (p *Project) ReflectProto(formID, address string) ([]*ProtoTreeNode, error) {
-	form := p.forms[formID]
+	form := p.Forms[formID]
 
 	protoDescriptorSource, err := form.ReflectProto(context.Background(), address)
 	if err != nil {
@@ -57,20 +58,9 @@ func (p *Project) ReflectProto(formID, address string) ([]*ProtoTreeNode, error)
 }
 
 func (p *Project) StopRequest(id string) {
-	form := p.forms[id]
+	form := p.Forms[id]
 
 	form.StopCurrentRequest()
-}
-
-func (p *Project) InitializeForm(formID, address string) error {
-	form, err := NewForm(formID, address)
-	if err != nil {
-		return err
-	}
-
-	p.forms[formID] = form
-
-	return nil
 }
 
 func (p *Project) RefreshProtoDescriptors(importPathList, protoFileList []string) ([]*ProtoTreeNode, error) {
@@ -117,7 +107,7 @@ func (p *Project) SelectMethod(methodID string) (string, error) {
 }
 
 func (p *Project) Close() error {
-	for _, form := range p.forms {
+	for _, form := range p.Forms {
 		err := form.Close()
 		if err != nil {
 			return err

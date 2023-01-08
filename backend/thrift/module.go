@@ -15,51 +15,24 @@ import (
 const defaultProjectSplitterWidth = 30
 
 type State struct {
-	Projects map[string]*StateProject `json:"projects"`
-}
-
-type StateProject struct {
-	ID            string                       `json:"id"`
-	SplitterWidth float64                      `json:"splitterWidth"`
-	Forms         map[string]*StateProjectForm `json:"forms"`
-	FormIDs       []string                     `json:"formIDs"`
-	CurrentFormID string                       `json:"currentFormID"`
-	FilePath      string                       `json:"filePath"`
-	Nodes         []*ServiceTreeNode           `json:"nodes"`
-}
-
-type StateProjectForm struct {
-	ID                 string                    `json:"id"`
-	Address            string                    `json:"address"`
-	Headers            []*StateProjectFormHeader `json:"headers"`
-	SelectedFunctionID string                    `json:"selectedFunctionID"`
-	IsMultiplexed      bool                      `json:"isMultiplexed"`
-	Request            string                    `json:"request"`
-	Response           string                    `json:"response"`
-}
-
-type StateProjectFormHeader struct {
-	ID    string `json:"id"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Projects map[string]*Project `json:"projects"`
 }
 
 type Module struct {
-	AppCtx       context.Context
-	stateStorage *state.Storage
+	AppCtx context.Context
+
 	state        *State
+	stateStorage *state.Storage
 	stateMutex   *sync.RWMutex
-	projects     map[string]*Project
 }
 
 func NewModule(stateStorage *state.Storage) (*Module, error) {
 	module := &Module{
-		stateStorage: stateStorage,
 		state: &State{
-			Projects: make(map[string]*StateProject),
+			Projects: make(map[string]*Project),
 		},
-		stateMutex: &sync.RWMutex{},
-		projects:   map[string]*Project{},
+		stateStorage: stateStorage,
+		stateMutex:   &sync.RWMutex{},
 	}
 
 	err := module.readOrInitializeState()
@@ -82,7 +55,7 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 	m.state.Projects[projectID].Forms[formID].Address = address
 	m.state.Projects[projectID].Forms[formID].Request = payload
 
-	project := m.projects[projectID]
+	project := m.state.Projects[projectID]
 
 	response, err := project.SendRequest(
 		formID,
@@ -111,7 +84,7 @@ func (m *Module) StopRequest(projectID, formID string) (*State, error) {
 	m.stateMutex.RLock()
 	defer m.stateMutex.RUnlock()
 
-	project := m.projects[projectID]
+	project := m.state.Projects[projectID]
 	project.StopRequest(formID)
 
 	return m.state, nil
@@ -134,7 +107,7 @@ func (m *Module) OpenFilePath(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	project := m.projects[projectID]
+	project := m.state.Projects[projectID]
 
 	nodes, err := project.GenerateServiceTreeNodes(filePath)
 	if err != nil {
@@ -142,8 +115,8 @@ func (m *Module) OpenFilePath(projectID string) (*State, error) {
 	}
 
 	if m.state.Projects[projectID].FilePath != "" {
-		for _, form := range project.forms {
-			if form.id == m.state.Projects[projectID].CurrentFormID {
+		for _, form := range project.Forms {
+			if form.ID == m.state.Projects[projectID].CurrentFormID {
 				continue
 			}
 
@@ -158,7 +131,7 @@ func (m *Module) OpenFilePath(projectID string) (*State, error) {
 		form.Request = "{}"
 		form.Response = "{}"
 
-		m.state.Projects[projectID].Forms = map[string]*StateProjectForm{form.ID: form}
+		m.state.Projects[projectID].Forms = map[string]*Form{form.ID: form}
 	}
 
 	m.state.Projects[projectID].Nodes = nodes
@@ -172,7 +145,7 @@ func (m *Module) OpenFilePath(projectID string) (*State, error) {
 }
 
 func (m *Module) SelectFunction(projectID, formID, functionID string) (*State, error) {
-	project := m.projects[projectID]
+	project := m.state.Projects[projectID]
 
 	payload, err := project.SelectFunction(functionID)
 	if err != nil {
@@ -238,7 +211,7 @@ func (m *Module) AddHeader(projectID, formID string) (*State, error) {
 
 	m.state.Projects[projectID].Forms[formID].Headers = append(
 		m.state.Projects[projectID].Forms[formID].Headers,
-		&StateProjectFormHeader{
+		&Header{
 			ID:    uuid.Must(uuid.NewV4()).String(),
 			Key:   "",
 			Value: "",
@@ -252,7 +225,7 @@ func (m *Module) AddHeader(projectID, formID string) (*State, error) {
 	return m.state, nil
 }
 
-func (m *Module) SaveHeaders(projectID, formID string, headers []*StateProjectFormHeader) (*State, error) {
+func (m *Module) SaveHeaders(projectID, formID string, headers []*Header) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
@@ -271,7 +244,7 @@ func (m *Module) DeleteHeader(projectID, formID, headerID string) (*State, error
 
 	m.state.Projects[projectID].Forms[formID].Headers = lo.Reject(
 		m.state.Projects[projectID].Forms[formID].Headers,
-		func(header *StateProjectFormHeader, _ int) bool {
+		func(header *Header, _ int) bool {
 			return header.ID == headerID
 		},
 	)
@@ -315,10 +288,10 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 
 	formID := uuid.Must(uuid.NewV4()).String()
 
-	m.state.Projects[projectID] = &StateProject{
+	m.state.Projects[projectID] = &Project{
 		ID:            projectID,
 		SplitterWidth: defaultProjectSplitterWidth,
-		Forms: map[string]*StateProjectForm{
+		Forms: map[string]*Form{
 			formID: {
 				ID:            formID,
 				Address:       "0.0.0.0:9090",
@@ -330,15 +303,6 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 		CurrentFormID: formID,
 	}
 	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
-
-	project := NewProject(projectID)
-
-	err := project.InitializeForm(formID)
-	if err != nil {
-		return nil, err
-	}
-
-	m.projects[projectID] = project
 
 	if err := m.saveState(); err != nil {
 		return nil, err
@@ -353,7 +317,7 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 
 	formID := uuid.Must(uuid.NewV4()).String()
 
-	var headers []*StateProjectFormHeader
+	var headers []*Header
 
 	address := "0.0.0.0:9090"
 	if m.state.Projects[projectID].CurrentFormID != "" {
@@ -361,7 +325,7 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 		headers = m.state.Projects[projectID].Forms[m.state.Projects[projectID].CurrentFormID].Headers
 	}
 
-	m.state.Projects[projectID].Forms[formID] = &StateProjectForm{
+	m.state.Projects[projectID].Forms[formID] = &Form{
 		ID:       formID,
 		Address:  address,
 		Request:  "{}",
@@ -370,11 +334,6 @@ func (m *Module) CreateNewForm(projectID string) (*State, error) {
 	}
 	m.state.Projects[projectID].FormIDs = append(m.state.Projects[projectID].FormIDs, formID)
 	m.state.Projects[projectID].CurrentFormID = formID
-
-	err := m.projects[projectID].InitializeForm(formID)
-	if err != nil {
-		return nil, err
-	}
 
 	if err := m.saveState(); err != nil {
 		return nil, err
@@ -389,14 +348,14 @@ func (m *Module) DeleteProject(projectID string) (*State, error) {
 
 	delete(m.state.Projects, projectID)
 
-	project, ok := m.projects[projectID]
+	project, ok := m.state.Projects[projectID]
 	if ok {
 		err := project.Close()
 		if err != nil {
 			return nil, err
 		}
 
-		delete(m.projects, projectID)
+		delete(m.state.Projects, projectID)
 	}
 
 	if err := m.saveState(); err != nil {
@@ -426,7 +385,7 @@ func (m *Module) RemoveForm(projectID, formID string) (*State, error) {
 		m.state.Projects[projectID].CurrentFormID = lo.Keys(m.state.Projects[projectID].Forms)[0]
 	}
 
-	err := m.projects[projectID].forms[formID].Close()
+	err := m.state.Projects[projectID].Forms[formID].Close()
 	if err != nil {
 		return nil, err
 	}
@@ -473,24 +432,13 @@ func (m *Module) saveState() error {
 }
 
 func (m *Module) initializeProjects() error {
-	for _, stateProject := range m.state.Projects {
-		project := NewProject(stateProject.ID)
-
-		if stateProject.FilePath != "" {
-			_, err := project.GenerateServiceTreeNodes(stateProject.FilePath)
+	for _, project := range m.state.Projects {
+		if project.FilePath != "" {
+			_, err := project.GenerateServiceTreeNodes(project.FilePath)
 			if err != nil {
 				return err
 			}
 		}
-
-		for _, form := range stateProject.Forms {
-			err := project.InitializeForm(form.ID)
-			if err != nil {
-				return err
-			}
-		}
-
-		m.projects[stateProject.ID] = project
 	}
 
 	return nil

@@ -20,7 +20,7 @@ export function SaveAddress(arg1:string,arg2:string,arg3:string):Promise<thrift.
 
 export function SaveCurrentFormID(arg1:string,arg2:string):Promise<thrift.State>;
 
-export function SaveHeaders(arg1:string,arg2:string,arg3:Array<thrift.StateProjectFormHeader>):Promise<thrift.State>;
+export function SaveHeaders(arg1:string,arg2:string,arg3:Array<thrift.Header>):Promise<thrift.State>;
 
 export function SaveIsMultiplexed(arg1:string,arg2:string,arg3:boolean):Promise<thrift.State>;
 

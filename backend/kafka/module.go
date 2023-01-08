@@ -27,23 +27,14 @@ var (
 )
 
 type State struct {
-	Projects map[string]*StateProject `json:"projects"`
-}
-
-type StateProject struct {
-	ID           string `json:"id"`
-	Address      string `json:"address"`
-	AuthMethod   string `json:"authMethod"`
-	AuthUsername string `json:"authUsername"`
-	AuthPassword string `json:"authPassword"`
-	IsConnected  bool   `json:"isConnected" copier:"-"`
-	CurrentTab   string `json:"currentTab" copier:"-"`
+	Projects map[string]*Project `json:"projects"`
 }
 
 type Module struct {
-	AppCtx                context.Context
-	stateStorage          *state.Storage
+	AppCtx context.Context
+
 	state                 *State
+	stateStorage          *state.Storage
 	stateMutex            *sync.RWMutex
 	clients               map[string]*kadm.Client
 	topicConsumingClients map[string]*kgo.Client
@@ -52,14 +43,14 @@ type Module struct {
 
 func NewModule(stateStorage *state.Storage) (*Module, error) {
 	module := &Module{
+		state: &State{
+			Projects: make(map[string]*Project),
+		},
 		stateStorage:          stateStorage,
 		clients:               make(map[string]*kadm.Client),
 		topicConsumingClients: make(map[string]*kgo.Client),
 		topicConsumingCancels: make(map[string]context.CancelFunc),
-		state: &State{
-			Projects: make(map[string]*StateProject),
-		},
-		stateMutex: &sync.RWMutex{},
+		stateMutex:            &sync.RWMutex{},
 	}
 
 	err := module.readOrInitializeState()
@@ -74,7 +65,7 @@ func (m *Module) CreateNewProject(projectID string) (*State, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	m.state.Projects[projectID] = &StateProject{
+	m.state.Projects[projectID] = &Project{
 		ID:         projectID,
 		CurrentTab: "overview",
 		Address:    "0.0.0.0:9092",

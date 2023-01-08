@@ -10,36 +10,19 @@ import (
 	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
-type State struct {
-	Stats            *StateStats              `json:"stats"`
-	Projects         map[string]*StateProject `json:"projects"`
-	OpenedProjectIDs []string                 `json:"openedProjectIDs"`
-	CurrentProjectID string                   `json:"currentProjectID"`
-}
-
-type StateProject struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
-	Name string `json:"name"`
-}
-
-type StateStats struct {
-	GRPCProjectCount   int `json:"grpcProjectCount"`
-	ThriftProjectCount int `json:"thriftProjectCount"`
-	KafkaProjectCount  int `json:"kafkaProjectCount"`
-}
-
 type Module struct {
+	Stats            *Stats              `json:"stats"`
+	Projects         map[string]*Project `json:"projects"`
+	OpenedProjectIDs []string            `json:"openedProjectIDs"`
+	CurrentProjectID string              `json:"currentProjectID"`
+
 	stateStorage *state.Storage
 	stateMutex   *sync.RWMutex
-	state        *State
 }
 
 func NewModule(stateStorage *state.Storage) (*Module, error) {
 	module := &Module{
-		state: &State{
-			Projects: make(map[string]*StateProject),
-		},
+		Projects:     make(map[string]*Project),
 		stateStorage: stateStorage,
 		stateMutex:   &sync.RWMutex{},
 	}
@@ -52,37 +35,37 @@ func NewModule(stateStorage *state.Storage) (*Module, error) {
 	return module, nil
 }
 
-func (m *Module) OpenProject(newProjectID, projectToOpenID string) (*State, error) {
+func (m *Module) OpenProject(newProjectID, projectToOpenID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	if lo.Contains(m.state.OpenedProjectIDs, projectToOpenID) {
-		m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(projectID string, _ int) bool {
+	if lo.Contains(m.OpenedProjectIDs, projectToOpenID) {
+		m.OpenedProjectIDs = lo.Reject(m.OpenedProjectIDs, func(projectID string, _ int) bool {
 			return projectID == newProjectID
 		})
 	} else {
-		m.state.OpenedProjectIDs = lo.ReplaceAll(m.state.OpenedProjectIDs, newProjectID, projectToOpenID)
+		m.OpenedProjectIDs = lo.ReplaceAll(m.OpenedProjectIDs, newProjectID, projectToOpenID)
 	}
 
-	m.state.CurrentProjectID = projectToOpenID
-	delete(m.state.Projects, newProjectID)
+	m.CurrentProjectID = projectToOpenID
+	delete(m.Projects, newProjectID)
 
 	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) CreateGRPCProject(projectID string) (*State, error) {
+func (m *Module) CreateGRPCProject(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	m.state.Stats.GRPCProjectCount++
+	m.Stats.GRPCProjectCount++
 
-	projectName := fmt.Sprintf("gRPC Project %d", m.state.Stats.GRPCProjectCount)
+	projectName := fmt.Sprintf("gRPC Project %d", m.Stats.GRPCProjectCount)
 
-	m.state.Projects[projectID] = &StateProject{
+	m.Projects[projectID] = &Project{
 		ID:   projectID,
 		Type: "grpc",
 		Name: projectName,
@@ -92,18 +75,18 @@ func (m *Module) CreateGRPCProject(projectID string) (*State, error) {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) CreateThriftProject(projectID string) (*State, error) {
+func (m *Module) CreateThriftProject(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	m.state.Stats.ThriftProjectCount++
+	m.Stats.ThriftProjectCount++
 
-	projectName := fmt.Sprintf("Thrift Project %d", m.state.Stats.ThriftProjectCount)
+	projectName := fmt.Sprintf("Thrift Project %d", m.Stats.ThriftProjectCount)
 
-	m.state.Projects[projectID] = &StateProject{
+	m.Projects[projectID] = &Project{
 		ID:   projectID,
 		Type: "thrift",
 		Name: projectName,
@@ -113,18 +96,18 @@ func (m *Module) CreateThriftProject(projectID string) (*State, error) {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) CreateKafkaProject(projectID string) (*State, error) {
+func (m *Module) CreateKafkaProject(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	m.state.Stats.KafkaProjectCount++
+	m.Stats.KafkaProjectCount++
 
-	projectName := fmt.Sprintf("Kafka Project %d", m.state.Stats.KafkaProjectCount)
+	projectName := fmt.Sprintf("Kafka Project %d", m.Stats.KafkaProjectCount)
 
-	m.state.Projects[projectID] = &StateProject{
+	m.Projects[projectID] = &Project{
 		ID:   projectID,
 		Type: "kafka",
 		Name: projectName,
@@ -134,113 +117,113 @@ func (m *Module) CreateKafkaProject(projectID string) (*State, error) {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) DeleteProject(projectID string) (*State, error) {
+func (m *Module) DeleteProject(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	delete(m.state.Projects, projectID)
+	delete(m.Projects, projectID)
 
-	m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(pID string, _ int) bool {
+	m.OpenedProjectIDs = lo.Reject(m.OpenedProjectIDs, func(pID string, _ int) bool {
 		return pID == projectID
 	})
 
-	if m.state.CurrentProjectID == projectID {
-		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
+	if m.CurrentProjectID == projectID {
+		m.CurrentProjectID = m.OpenedProjectIDs[len(m.OpenedProjectIDs)-1]
 	}
 
 	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) RenameProject(projectID, name string) (*State, error) {
+func (m *Module) RenameProject(projectID, name string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	m.state.Projects[projectID].Name = name
+	m.Projects[projectID].Name = name
 
 	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) CreateNewProject() (*State, error) {
+func (m *Module) CreateNewProject() (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
 	projectID := uuid.Must(uuid.NewV4()).String()
 
-	m.state.Projects[projectID] = &StateProject{
+	m.Projects[projectID] = &Project{
 		ID:   projectID,
 		Type: "new",
 	}
 
-	m.state.OpenedProjectIDs = append(m.state.OpenedProjectIDs, projectID)
-	m.state.CurrentProjectID = projectID
+	m.OpenedProjectIDs = append(m.OpenedProjectIDs, projectID)
+	m.CurrentProjectID = projectID
 
 	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) CloseProject(projectID string) (*State, error) {
+func (m *Module) CloseProject(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	if len(m.state.OpenedProjectIDs) <= 1 {
-		return m.state, nil
+	if len(m.OpenedProjectIDs) <= 1 {
+		return m, nil
 	}
 
-	if m.state.Projects[projectID].Type == "new" {
-		delete(m.state.Projects, projectID)
+	if m.Projects[projectID].Type == "new" {
+		delete(m.Projects, projectID)
 	}
 
-	m.state.OpenedProjectIDs = lo.Reject(m.state.OpenedProjectIDs, func(pID string, _ int) bool {
+	m.OpenedProjectIDs = lo.Reject(m.OpenedProjectIDs, func(pID string, _ int) bool {
 		return pID == projectID
 	})
 
-	if m.state.CurrentProjectID == projectID {
-		m.state.CurrentProjectID = m.state.OpenedProjectIDs[len(m.state.OpenedProjectIDs)-1]
+	if m.CurrentProjectID == projectID {
+		m.CurrentProjectID = m.OpenedProjectIDs[len(m.OpenedProjectIDs)-1]
 	}
 
 	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) SaveCurrentProjectID(projectID string) (*State, error) {
+func (m *Module) SaveCurrentProjectID(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
-	m.state.CurrentProjectID = projectID
+	m.CurrentProjectID = projectID
 
 	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	return m, nil
 }
 
-func (m *Module) State() (*State, error) {
+func (m *Module) State() (*Module, error) {
 	m.stateMutex.RLock()
 	defer m.stateMutex.RUnlock()
 
-	return m.state, nil
+	return m, nil
 }
 
 func (m *Module) readOrInitializeState() error {
-	isLoaded, err := m.stateStorage.Load("project", m.state)
+	isLoaded, err := m.stateStorage.Load("project", m)
 	if err != nil {
 		return fmt.Errorf("failed to load a state: %w", err)
 	}
@@ -249,23 +232,19 @@ func (m *Module) readOrInitializeState() error {
 		return nil
 	}
 
-	m.state = &State{
-		Stats: &StateStats{
-			GRPCProjectCount:   0,
-			ThriftProjectCount: 0,
-			KafkaProjectCount:  0,
-		},
-		Projects: map[string]*StateProject{
-			"404f5702-6179-4861-9533-b5ee16161c78": {
-				ID:   "404f5702-6179-4861-9533-b5ee16161c78",
-				Type: "new",
-			},
-		},
-		OpenedProjectIDs: []string{"404f5702-6179-4861-9533-b5ee16161c78"},
-		CurrentProjectID: "404f5702-6179-4861-9533-b5ee16161c78",
+	m.Stats = &Stats{
+		GRPCProjectCount:   0,
+		ThriftProjectCount: 0,
+		KafkaProjectCount:  0,
 	}
+	m.Projects["404f5702-6179-4861-9533-b5ee16161c78"] = &Project{
+		ID:   "404f5702-6179-4861-9533-b5ee16161c78",
+		Type: "new",
+	}
+	m.OpenedProjectIDs = []string{"404f5702-6179-4861-9533-b5ee16161c78"}
+	m.CurrentProjectID = "404f5702-6179-4861-9533-b5ee16161c78"
 
-	err = m.stateStorage.Save("project", m.state)
+	err = m.stateStorage.Save("project", m)
 	if err != nil {
 		return fmt.Errorf("failed to store a state: %w", err)
 	}
@@ -274,7 +253,7 @@ func (m *Module) readOrInitializeState() error {
 }
 
 func (m *Module) saveState() error {
-	err := m.stateStorage.Save("project", m.state)
+	err := m.stateStorage.Save("project", m)
 	if err != nil {
 		return fmt.Errorf("failed to store a state: %w", err)
 	}

@@ -35,22 +35,15 @@ type ResponseJSONError struct {
 }
 
 type Form struct {
-	id                string
-	address           string
+	ID               string    `json:"id"`
+	Address          string    `json:"address"`
+	Headers          []*Header `json:"headers"`
+	SelectedMethodID string    `json:"selectedMethodID"`
+	Request          string    `json:"request"`
+	Response         string    `json:"response"`
+
 	connection        *grpc.ClientConn
 	requestCancelFunc context.CancelFunc
-}
-
-func NewForm(
-	id string,
-	address string,
-) (*Form, error) {
-	form := &Form{
-		id:      id,
-		address: address,
-	}
-
-	return form, nil
 }
 
 func (f *Form) SendRequest(
@@ -58,7 +51,7 @@ func (f *Form) SendRequest(
 	address,
 	payload string,
 	protoDescriptorSource grpcurl.DescriptorSource,
-	headers []*StateProjectFormHeader,
+	headers []*Header,
 ) (string, error) {
 	err := f.establishConnection(context.Background(), address)
 	if err != nil {
@@ -69,7 +62,7 @@ func (f *Form) SendRequest(
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), requestTimeout)
 
-	grpcHeaders := lo.Map(headers, func(header *StateProjectFormHeader, _ int) string {
+	grpcHeaders := lo.Map(headers, func(header *Header, _ int) string {
 		return fmt.Sprintf("%s: %s", header.Key, header.Value)
 	})
 
@@ -138,11 +131,11 @@ func (f *Form) Close() error {
 }
 
 func (f *Form) establishConnection(ctx context.Context, address string) error {
-	if address == f.address && f.connection != nil {
+	if address == f.Address && f.connection != nil {
 		return nil
 	}
 
-	f.address = address
+	f.Address = address
 
 	if f.connection != nil {
 		err := f.connection.Close()
