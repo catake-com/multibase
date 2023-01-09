@@ -30,21 +30,21 @@ export default defineComponent({
   },
   computed: {
     forms() {
-      return useGRPCStore().projects[this.projectID].forms;
+      return useGRPCStore().forms;
     },
     form() {
-      return useGRPCStore().projects[this.projectID].forms[this.formID];
+      return useGRPCStore().forms[this.formID];
     },
     headers() {
       if (this.localHeaders.length > 0) {
         return this.localHeaders;
       }
 
-      return useGRPCStore().projects[this.projectID].forms[this.formID].headers;
+      return useGRPCStore().forms[this.formID].headers;
     },
     address: {
       get() {
-        return useGRPCStore().projects[this.projectID].forms[this.formID].address;
+        return useGRPCStore().forms[this.formID].address;
       },
       async set(address) {
         await useGRPCStore().saveAddress(this.projectID, this.formID, address);
@@ -56,7 +56,7 @@ export default defineComponent({
           return this.localRequest;
         }
 
-        return useGRPCStore().projects[this.projectID].forms[this.formID].request;
+        return useGRPCStore().forms[this.formID].request;
       },
       async set(requestPayload) {
         this.localRequest = requestPayload;
@@ -65,7 +65,7 @@ export default defineComponent({
     },
     response: {
       get() {
-        let response = useGRPCStore().projects[this.projectID].forms[this.formID].response;
+        let response = useGRPCStore().forms[this.formID].response;
         try {
           response = JSON.parse(response);
           response = JSON.stringify(response, null, 4);
@@ -74,7 +74,7 @@ export default defineComponent({
         return response;
       },
       set(value) {
-        return (useGRPCStore().projects[this.projectID].forms[this.formID].response = value);
+        return (useGRPCStore().forms[this.formID].response = value);
       },
     },
   },
@@ -93,12 +93,12 @@ export default defineComponent({
 
     async addHeader() {
       await useGRPCStore().addHeader(this.projectID, this.formID);
-      this.localHeaders = useGRPCStore().projects[this.projectID].forms[this.formID].headers;
+      this.localHeaders = useGRPCStore().forms[this.formID].headers;
     },
 
     async deleteHeader(headerID) {
       await useGRPCStore().deleteHeader(this.projectID, this.formID, headerID);
-      this.localHeaders = useGRPCStore().projects[this.projectID].forms[this.formID].headers;
+      this.localHeaders = useGRPCStore().forms[this.formID].headers;
     },
 
     async saveHeaders(headers) {

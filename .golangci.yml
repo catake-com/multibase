@@ -12,6 +12,7 @@ linters:
         - containedctx
         - exhaustivestruct
         - exhaustruct
+        - nilnil
         - nolintlint
         - staticcheck
 

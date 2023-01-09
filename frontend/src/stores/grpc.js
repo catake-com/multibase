@@ -15,38 +15,18 @@ import {
   SaveAddress,
   SaveSplitterWidth,
   SaveRequestPayload,
-  State,
+  Project,
   DeleteProject,
   AddHeader,
   SaveHeaders,
   DeleteHeader,
   ReflectProto,
 } from "../wailsjs/go/grpc/Module";
+import { grpc } from "../wailsjs/go/models";
 
 export const useGRPCStore = defineStore({
   id: "grpc",
-  state: () => ({
-    projects: {
-      "ae3d1fa3-09c7-4af0-a57f-65c24cbdf5f3": {
-        splitterWidth: 30,
-        forms: {
-          "b7ce6ea8-c5f1-477f-bdb1-43814c2106ed": {
-            address: "0.0.0.0:50051",
-            selectedMethodID: "",
-            request: "",
-            response: "",
-            requestInProgress: false,
-            headers: [{ id: "c135ee1a-c58d-4b55-ba21-3f4ae82e6db0", key: "", value: "" }],
-          },
-        },
-        formIDs: [],
-        currentFormID: "b7ce6ea8-c5f1-477f-bdb1-43814c2106ed",
-        importPathList: [],
-        protoFileList: [],
-        nodes: [],
-      },
-    },
-  }),
+  state: () => new grpc.Project(), // TODO: make object from class
   actions: {
     async createNewProject(projectID) {
       try {
@@ -84,50 +64,45 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await SelectMethod(projectID, formID, methodID);
       } catch (error) {
-        this.projects[projectID].forms[formID].response = error;
+        this.forms[formID].response = error;
       }
     },
 
     async reflectProto(projectID, formID) {
       try {
-        this.$state = await ReflectProto(projectID, formID, this.projects[projectID].forms[formID].address);
+        this.$state = await ReflectProto(projectID, formID, this.forms[formID].address);
       } catch (error) {
-        this.projects[projectID].forms[formID].response = error;
+        this.forms[formID].response = error;
       }
     },
 
     async sendRequest(projectID, formID) {
-      if (this.projects[projectID].forms[formID].requestInProgress) {
+      if (this.forms[formID].requestInProgress) {
         return;
       }
 
-      this.projects[projectID].forms[formID].requestInProgress = true;
+      this.forms[formID].requestInProgress = true;
 
       try {
-        this.$state = await SendRequest(
-          projectID,
-          formID,
-          this.projects[projectID].forms[formID].address,
-          this.projects[projectID].forms[formID].request
-        );
-        this.projects[projectID].forms[formID].requestInProgress = false;
+        this.$state = await SendRequest(projectID, formID, this.forms[formID].address, this.forms[formID].request);
+        this.forms[formID].requestInProgress = false;
       } catch (error) {
-        this.projects[projectID].forms[formID].requestInProgress = false;
-        this.projects[projectID].forms[formID].response = error;
+        this.forms[formID].requestInProgress = false;
+        this.forms[formID].response = error;
       }
     },
 
     async stopRequest(projectID, formID) {
-      if (!this.projects[projectID].forms[formID].requestInProgress) {
+      if (!this.forms[formID].requestInProgress) {
         return;
       }
 
       try {
         this.$state = await StopRequest(projectID, formID);
-        this.projects[projectID].forms[formID].requestInProgress = false;
+        this.forms[formID].requestInProgress = false;
       } catch (error) {
-        this.projects[projectID].forms[formID].requestInProgress = false;
-        this.projects[projectID].forms[formID].response = error;
+        this.forms[formID].requestInProgress = false;
+        this.forms[formID].response = error;
       }
     },
 
@@ -135,7 +110,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await OpenImportPath(projectID);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -143,7 +118,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await RemoveImportPath(projectID, importPath);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -151,7 +126,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await OpenProtoFile(projectID);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -159,7 +134,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await DeleteAllProtoFiles(projectID);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -167,7 +142,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await SaveCurrentFormID(projectID, currentFormID);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -175,7 +150,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await SaveAddress(projectID, formID, address);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -183,7 +158,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await AddHeader(projectID, formID);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -191,7 +166,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await SaveHeaders(projectID, formID, headers);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -199,7 +174,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await DeleteHeader(projectID, formID, headerID);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -207,7 +182,7 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await SaveSplitterWidth(projectID, splitterWidth);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
@@ -215,13 +190,13 @@ export const useGRPCStore = defineStore({
       try {
         this.$state = await SaveRequestPayload(projectID, formID, requestPayload);
       } catch (error) {
-        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.forms[this.currentFormID].response = error;
       }
     },
 
-    async loadState() {
+    async loadProject(projectID) {
       try {
-        this.$state = await State();
+        this.$state = await Project(projectID);
       } catch (error) {
         console.log(error);
       }

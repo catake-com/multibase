@@ -68,6 +68,7 @@ export default defineComponent({
 </script>
 
 <template>
+  <!--  TODO: use keep-alive-->
   <q-tab-panels v-model="currentProjectID">
     <q-tab-panel :name="projectID" v-for="(project, projectID) in projects" :key="`project-panel-${projectID}`">
       <div v-if="project.type === 'new'">

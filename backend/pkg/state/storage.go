@@ -44,8 +44,8 @@ func (s *Storage) Close() error {
 	return nil
 }
 
-func (s *Storage) Save(namespace string, jsonData any) error {
-	key := []byte(namespace)
+func (s *Storage) Save(id string, jsonData any) error {
+	key := []byte(id)
 
 	data, err := json.Marshal(jsonData)
 	if err != nil {
@@ -67,8 +67,8 @@ func (s *Storage) Save(namespace string, jsonData any) error {
 	return nil
 }
 
-func (s *Storage) Load(namespace string, destination any) (bool, error) {
-	key := []byte(namespace)
+func (s *Storage) Load(id string, destination any) (bool, error) {
+	key := []byte(id)
 
 	var data []byte
 
@@ -103,4 +103,22 @@ func (s *Storage) Load(namespace string, destination any) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (s *Storage) Delete(id string) error {
+	key := []byte(id)
+
+	err := s.badgerDB.Update(func(txn *badger.Txn) error {
+		err := txn.Delete(key)
+		if err != nil {
+			return fmt.Errorf("failed to delete state: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update state: %w", err)
+	}
+
+	return nil
 }

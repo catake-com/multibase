@@ -17,35 +17,13 @@ export default defineComponent({
     };
   },
   beforeCreate() {
-    useGRPCStore().loadState();
+    useGRPCStore().loadProject(this.projectID);
   },
   computed: {
-    ...mapState(useGRPCStore, ["projects"]),
-    importPathList() {
-      if (useGRPCStore().projects[this.projectID]) {
-        return useGRPCStore().projects[this.projectID].importPathList;
-      }
-    },
-    nodes() {
-      if (useGRPCStore().projects[this.projectID]) {
-        return useGRPCStore().projects[this.projectID].nodes;
-      }
-    },
-    forms() {
-      if (useGRPCStore().projects[this.projectID]) {
-        return useGRPCStore().projects[this.projectID].forms;
-      }
-    },
-    formIDs() {
-      if (useGRPCStore().projects[this.projectID]) {
-        return useGRPCStore().projects[this.projectID].formIDs;
-      }
-    },
+    ...mapState(useGRPCStore, ["importPathList", "nodes", "forms", "formIDs"]),
     currentFormID: {
       get() {
-        if (useGRPCStore().projects[this.projectID]) {
-          return useGRPCStore().projects[this.projectID].currentFormID;
-        }
+        return useGRPCStore().currentFormID;
       },
       async set(currentFormID) {
         await useGRPCStore().saveCurrentFormID(this.projectID, currentFormID);
@@ -53,9 +31,7 @@ export default defineComponent({
     },
     splitterWidth: {
       get() {
-        if (useGRPCStore().projects[this.projectID]) {
-          return useGRPCStore().projects[this.projectID].splitterWidth;
-        }
+        return useGRPCStore().splitterWidth;
       },
       async set(splitterWidth) {
         await useGRPCStore().saveSplitterWidth(this.projectID, splitterWidth);
@@ -63,21 +39,15 @@ export default defineComponent({
     },
     selectedMethod: {
       get() {
-        if (useGRPCStore().projects[this.projectID]) {
-          const currentFormID = useGRPCStore().projects[this.projectID].currentFormID;
-          const currentForm = useGRPCStore().projects[this.projectID].forms[currentFormID];
+        const currentFormID = useGRPCStore().currentFormID;
+        const currentForm = useGRPCStore().forms[currentFormID];
 
-          if (currentForm) {
-            return currentForm.selectedMethodID;
-          }
+        if (currentForm) {
+          return currentForm.selectedMethodID;
         }
       },
       async set(selectedMethodID) {
-        await useGRPCStore().selectMethod(
-          this.projectID,
-          this.projects[this.projectID].currentFormID,
-          selectedMethodID
-        );
+        await useGRPCStore().selectMethod(this.projectID, this.currentFormID, selectedMethodID);
       },
     },
   },
@@ -88,7 +58,7 @@ export default defineComponent({
       }
 
       const formID = newCurrentFormID || oldCurrentFormID;
-      const form = useGRPCStore().projects[this.projectID].forms[formID];
+      const form = useGRPCStore().forms[formID];
 
       if (form.selectedMethodID && this.selectedMethod !== form.selectedMethodID) {
         this.selectedMethod = form.selectedMethodID;

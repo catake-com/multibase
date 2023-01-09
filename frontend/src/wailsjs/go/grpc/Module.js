@@ -34,6 +34,10 @@ export function OpenProtoFile(arg1) {
   return window['go']['grpc']['Module']['OpenProtoFile'](arg1);
 }
 
+export function Project(arg1) {
+  return window['go']['grpc']['Module']['Project'](arg1);
+}
+
 export function ReflectProto(arg1, arg2, arg3) {
   return window['go']['grpc']['Module']['ReflectProto'](arg1, arg2, arg3);
 }
@@ -72,10 +76,6 @@ export function SelectMethod(arg1, arg2, arg3) {
 
 export function SendRequest(arg1, arg2, arg3, arg4) {
   return window['go']['grpc']['Module']['SendRequest'](arg1, arg2, arg3, arg4);
-}
-
-export function State() {
-  return window['go']['grpc']['Module']['State']();
 }
 
 export function StopRequest(arg1, arg2) {
