@@ -68,7 +68,6 @@ export default defineComponent({
 </script>
 
 <template>
-  <!--  TODO: use keep-alive-->
   <q-tab-panels v-model="currentProjectID">
     <q-tab-panel :name="projectID" v-for="(project, projectID) in projects" :key="`project-panel-${projectID}`">
       <div v-if="project.type === 'new'">
@@ -185,7 +184,9 @@ export default defineComponent({
       </div>
 
       <div v-if="project.type === 'grpc'" class="full-height">
-        <GRPC :projectID="projectID" />
+        <Suspense>
+          <GRPC :projectID="projectID" :key="`grpc-${projectID}`" />
+        </Suspense>
       </div>
 
       <div v-if="project.type === 'thrift'" class="full-height">

@@ -1,110 +1,91 @@
-<script>
-import { defineComponent } from "vue";
-import { mapState } from "pinia";
-
+<script setup>
+import { computed, ref, watch } from "vue";
 import { useGRPCStore } from "../stores/grpc";
 import GRPCForm from "./GRPCForm.vue";
 
-export default defineComponent({
-  name: "GRPC",
-  props: {
-    projectID: String,
+const grpcStore = useGRPCStore();
+
+const props = defineProps({
+  projectID: String,
+});
+
+const tab = ref("protos");
+
+await grpcStore.loadProject(props.projectID);
+
+const { importPathList, nodes, forms, formIDs } = grpcStore;
+
+const currentFormID = computed({
+  get() {
+    return grpcStore.currentFormID;
   },
-  components: { GRPCForm },
-  data() {
-    return {
-      tab: "protos",
-    };
-  },
-  beforeCreate() {
-    useGRPCStore().loadProject(this.projectID);
-  },
-  computed: {
-    ...mapState(useGRPCStore, ["importPathList", "nodes", "forms", "formIDs"]),
-    currentFormID: {
-      get() {
-        return useGRPCStore().currentFormID;
-      },
-      async set(currentFormID) {
-        await useGRPCStore().saveCurrentFormID(this.projectID, currentFormID);
-      },
-    },
-    splitterWidth: {
-      get() {
-        return useGRPCStore().splitterWidth;
-      },
-      async set(splitterWidth) {
-        await useGRPCStore().saveSplitterWidth(this.projectID, splitterWidth);
-      },
-    },
-    selectedMethod: {
-      get() {
-        const currentFormID = useGRPCStore().currentFormID;
-        const currentForm = useGRPCStore().forms[currentFormID];
-
-        if (currentForm) {
-          return currentForm.selectedMethodID;
-        }
-      },
-      async set(selectedMethodID) {
-        await useGRPCStore().selectMethod(this.projectID, this.currentFormID, selectedMethodID);
-      },
-    },
-  },
-  watch: {
-    currentFormID(newCurrentFormID, oldCurrentFormID) {
-      if (newCurrentFormID === oldCurrentFormID) {
-        return;
-      }
-
-      const formID = newCurrentFormID || oldCurrentFormID;
-      const form = useGRPCStore().forms[formID];
-
-      if (form.selectedMethodID && this.selectedMethod !== form.selectedMethodID) {
-        this.selectedMethod = form.selectedMethodID;
-      }
-    },
-  },
-  methods: {
-    async openProtoFile() {
-      const store = useGRPCStore();
-
-      await store.openProtoFile(this.projectID);
-    },
-
-    async deleteAllProtoFiles() {
-      const store = useGRPCStore();
-
-      await store.deleteAllProtoFiles(this.projectID);
-    },
-
-    async openImportPath() {
-      const store = useGRPCStore();
-
-      await store.openImportPath(this.projectID);
-    },
-
-    async removeImportPath(importPath) {
-      const store = useGRPCStore();
-
-      await store.removeImportPath(this.projectID, importPath);
-    },
-
-    async createNewForm() {
-      const store = useGRPCStore();
-
-      await store.createNewForm(this.projectID);
-    },
-
-    async closeFormTab(event, formID) {
-      event.preventDefault();
-
-      const store = useGRPCStore();
-
-      await store.removeForm(this.projectID, formID);
-    },
+  async set(currentFormID) {
+    await grpcStore.saveCurrentFormID(props.projectID, currentFormID);
   },
 });
+
+const splitterWidth = computed({
+  get() {
+    return grpcStore.splitterWidth;
+  },
+  async set(splitterWidth) {
+    await grpcStore.saveSplitterWidth(props.projectID, splitterWidth);
+  },
+});
+
+const selectedMethod = computed({
+  get() {
+    const currentForm = grpcStore.forms[grpcStore.currentFormID];
+
+    if (currentForm) {
+      return currentForm.selectedMethodID;
+    }
+  },
+  async set(selectedMethodID) {
+    await grpcStore.selectMethod(props.projectID, grpcStore.currentFormID, selectedMethodID);
+  },
+});
+
+watch(
+  () => grpcStore.currentFormID,
+  async (newCurrentFormID, oldCurrentFormID) => {
+    if (newCurrentFormID === oldCurrentFormID) {
+      return;
+    }
+
+    const formID = newCurrentFormID || oldCurrentFormID;
+    const form = grpcStore.forms[formID];
+
+    if (form.selectedMethodID && selectedMethod.value !== form.selectedMethodID) {
+      selectedMethod.value = form.selectedMethodID;
+    }
+  }
+);
+
+async function openProtoFile() {
+  await grpcStore.openProtoFile(props.projectID);
+}
+
+async function deleteAllProtoFiles() {
+  await grpcStore.deleteAllProtoFiles(props.projectID);
+}
+
+async function openImportPath() {
+  await grpcStore.openImportPath(props.projectID);
+}
+
+async function removeImportPath(importPath) {
+  await grpcStore.removeImportPath(props.projectID, importPath);
+}
+
+async function createNewForm() {
+  await grpcStore.createNewForm(props.projectID);
+}
+
+async function closeFormTab(event, formID) {
+  event.preventDefault();
+  await grpcStore.removeForm(props.projectID, formID);
+}
 </script>
 
 <template>
@@ -188,7 +169,7 @@ export default defineComponent({
                   flat
                   rounded
                   dense
-                  :disable="Object.keys(this.forms).length === 1"
+                  :disable="Object.keys(forms).length === 1"
                   @click="closeFormTab($event, formID)"
                 />
               </div>
@@ -202,7 +183,7 @@ export default defineComponent({
 
         <q-tab-panels id="formContainer" v-model="currentFormID" animated>
           <q-tab-panel :name="formID" v-for="(form, formID) in forms" :key="`tab-panel-${formID}`">
-            <GRPCForm :formID="formID" :projectID="this.projectID" :selectedMethodID="this.selectedMethod" />
+            <GRPCForm :formID="formID" :projectID="props.projectID" :selectedMethodID="selectedMethod" />
           </q-tab-panel>
         </q-tab-panels>
       </template>
