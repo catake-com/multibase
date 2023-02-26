@@ -26,11 +26,18 @@ import { grpc } from "../wailsjs/go/models";
 
 export const useGRPCStore = defineStore({
   id: "grpc",
-  state: () => new grpc.Project(), // TODO: make object from class
+  state: () => ({
+    projects: {},
+  }),
+  getters: {
+    project: (state) => {
+      return (projectID) => state.projects[projectID];
+    },
+  },
   actions: {
     async createNewProject(projectID) {
       try {
-        this.$state = await CreateNewProject(projectID);
+        this.projects[projectID] = await CreateNewProject(projectID);
       } catch (error) {
         console.log(error);
       }
@@ -38,7 +45,7 @@ export const useGRPCStore = defineStore({
 
     async deleteProject(projectID) {
       try {
-        this.$state = await DeleteProject(projectID);
+        this.projects[projectID] = await DeleteProject(projectID);
       } catch (error) {
         console.log(error);
       }
@@ -46,7 +53,7 @@ export const useGRPCStore = defineStore({
 
     async createNewForm(projectID) {
       try {
-        this.$state = await CreateNewForm(projectID);
+        this.projects[projectID] = await CreateNewForm(projectID);
       } catch (error) {
         console.log(error);
       }
@@ -54,7 +61,7 @@ export const useGRPCStore = defineStore({
 
     async removeForm(projectID, formID) {
       try {
-        this.$state = await RemoveForm(projectID, formID);
+        this.projects[projectID] = await RemoveForm(projectID, formID);
       } catch (error) {
         console.log(error);
       }
@@ -62,141 +69,154 @@ export const useGRPCStore = defineStore({
 
     async selectMethod(projectID, formID, methodID) {
       try {
-        this.$state = await SelectMethod(projectID, formID, methodID);
+        this.projects[projectID] = await SelectMethod(projectID, formID, methodID);
       } catch (error) {
-        this.forms[formID].response = error;
+        this.projectID[projectID].forms[formID].response = error;
       }
     },
 
     async reflectProto(projectID, formID) {
       try {
-        this.$state = await ReflectProto(projectID, formID, this.forms[formID].address);
+        this.projects[projectID] = await ReflectProto(
+          projectID,
+          formID,
+          this.projectID[projectID].forms[formID].address
+        );
       } catch (error) {
-        this.forms[formID].response = error;
+        this.projectID[projectID].forms[formID].response = error;
       }
     },
 
     async sendRequest(projectID, formID) {
-      if (this.forms[formID].requestInProgress) {
+      if (this.projectID[projectID].forms[formID].requestInProgress) {
         return;
       }
 
-      this.forms[formID].requestInProgress = true;
+      this.projectID[projectID].forms[formID].requestInProgress = true;
 
       try {
-        this.$state = await SendRequest(projectID, formID, this.forms[formID].address, this.forms[formID].request);
-        this.forms[formID].requestInProgress = false;
+        this.projects[projectID] = await SendRequest(
+          projectID,
+          formID,
+          this.projectID[projectID].forms[formID].address,
+          this.projectID[projectID].forms[formID].request
+        );
+        this.projectID[projectID].forms[formID].requestInProgress = false;
       } catch (error) {
-        this.forms[formID].requestInProgress = false;
-        this.forms[formID].response = error;
+        this.projectID[projectID].forms[formID].requestInProgress = false;
+        this.projectID[projectID].forms[formID].response = error;
       }
     },
 
     async stopRequest(projectID, formID) {
-      if (!this.forms[formID].requestInProgress) {
+      if (!this.projectID[projectID].forms[formID].requestInProgress) {
         return;
       }
 
       try {
-        this.$state = await StopRequest(projectID, formID);
-        this.forms[formID].requestInProgress = false;
+        this.projects[projectID] = await StopRequest(projectID, formID);
+        this.projectID[projectID].forms[formID].requestInProgress = false;
       } catch (error) {
-        this.forms[formID].requestInProgress = false;
-        this.forms[formID].response = error;
+        this.projectID[projectID].forms[formID].requestInProgress = false;
+        this.projectID[projectID].forms[formID].response = error;
       }
     },
 
     async openImportPath(projectID) {
       try {
-        this.$state = await OpenImportPath(projectID);
+        this.projects[projectID] = await OpenImportPath(projectID);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async removeImportPath(projectID, importPath) {
       try {
-        this.$state = await RemoveImportPath(projectID, importPath);
+        this.projects[projectID] = await RemoveImportPath(projectID, importPath);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async openProtoFile(projectID) {
       try {
-        this.$state = await OpenProtoFile(projectID);
+        this.projects[projectID] = await OpenProtoFile(projectID);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async deleteAllProtoFiles(projectID) {
       try {
-        this.$state = await DeleteAllProtoFiles(projectID);
+        this.projects[projectID] = await DeleteAllProtoFiles(projectID);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async saveCurrentFormID(projectID, currentFormID) {
       try {
-        this.$state = await SaveCurrentFormID(projectID, currentFormID);
+        this.projects[projectID] = await SaveCurrentFormID(projectID, currentFormID);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async saveAddress(projectID, formID, address) {
       try {
-        this.$state = await SaveAddress(projectID, formID, address);
+        this.projects[projectID] = await SaveAddress(projectID, formID, address);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async addHeader(projectID, formID) {
       try {
-        this.$state = await AddHeader(projectID, formID);
+        this.projects[projectID] = await AddHeader(projectID, formID);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async saveHeaders(projectID, formID, headers) {
       try {
-        this.$state = await SaveHeaders(projectID, formID, headers);
+        this.projects[projectID] = await SaveHeaders(projectID, formID, headers);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async deleteHeader(projectID, formID, headerID) {
       try {
-        this.$state = await DeleteHeader(projectID, formID, headerID);
+        this.projects[projectID] = await DeleteHeader(projectID, formID, headerID);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async saveSplitterWidth(projectID, splitterWidth) {
       try {
-        this.$state = await SaveSplitterWidth(projectID, splitterWidth);
+        this.projects[projectID] = await SaveSplitterWidth(projectID, splitterWidth);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async saveRequestPayload(projectID, formID, requestPayload) {
       try {
-        this.$state = await SaveRequestPayload(projectID, formID, requestPayload);
+        this.projects[projectID] = await SaveRequestPayload(projectID, formID, requestPayload);
       } catch (error) {
-        this.forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.currentFormID].response = error;
       }
     },
 
     async loadProject(projectID) {
+      if (this.projects[projectID]) {
+        return this.projects[projectID];
+      }
+
       try {
-        this.$state = await Project(projectID);
+        this.projects[projectID] = await Project(projectID);
       } catch (error) {
         console.log(error);
       }

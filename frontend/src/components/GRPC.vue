@@ -13,11 +13,11 @@ const tab = ref("protos");
 
 await grpcStore.loadProject(props.projectID);
 
-const { importPathList, nodes, forms, formIDs } = grpcStore;
+const { importPathList, nodes, forms, formIDs } = grpcStore.project(props.projectID);
 
 const currentFormID = computed({
   get() {
-    return grpcStore.currentFormID;
+    return grpcStore.project(props.projectID).currentFormID;
   },
   async set(currentFormID) {
     await grpcStore.saveCurrentFormID(props.projectID, currentFormID);
@@ -26,7 +26,7 @@ const currentFormID = computed({
 
 const splitterWidth = computed({
   get() {
-    return grpcStore.splitterWidth;
+    return grpcStore.project(props.projectID).splitterWidth;
   },
   async set(splitterWidth) {
     await grpcStore.saveSplitterWidth(props.projectID, splitterWidth);
@@ -35,26 +35,26 @@ const splitterWidth = computed({
 
 const selectedMethod = computed({
   get() {
-    const currentForm = grpcStore.forms[grpcStore.currentFormID];
+    const currentForm = grpcStore.project(props.projectID).forms[grpcStore.project(props.projectID).currentFormID];
 
     if (currentForm) {
       return currentForm.selectedMethodID;
     }
   },
   async set(selectedMethodID) {
-    await grpcStore.selectMethod(props.projectID, grpcStore.currentFormID, selectedMethodID);
+    await grpcStore.selectMethod(props.projectID, grpcStore.project(props.projectID).currentFormID, selectedMethodID);
   },
 });
 
 watch(
-  () => grpcStore.currentFormID,
+  () => grpcStore.project(props.projectID).currentFormID,
   async (newCurrentFormID, oldCurrentFormID) => {
     if (newCurrentFormID === oldCurrentFormID) {
       return;
     }
 
     const formID = newCurrentFormID || oldCurrentFormID;
-    const form = grpcStore.forms[formID];
+    const form = grpcStore.project(props.projectID).forms[formID];
 
     if (form.selectedMethodID && selectedMethod.value !== form.selectedMethodID) {
       selectedMethod.value = form.selectedMethodID;

@@ -1,112 +1,111 @@
-<script>
-import { defineComponent } from "vue";
+<script setup>
+import { computed, onBeforeUpdate, ref, watch } from "vue";
+import { useGRPCStore } from "../stores/grpc";
 import { VAceEditor } from "vue3-ace-editor";
 import "ace-builds/src-noconflict/mode-json";
 import "../vendor/merbivore";
 import ace from "ace-builds";
 import workerJsonUrl from "ace-builds/src-noconflict/worker-json?url";
-import { useGRPCStore } from "../stores/grpc";
 
 ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
 
-export default defineComponent({
-  name: "GRPCForm",
-  components: { VAceEditor },
-  props: {
-    projectID: String,
-    formID: String,
-    selectedMethodID: String,
+const grpcStore = useGRPCStore();
+
+const props = defineProps({
+  projectID: String,
+  formID: String,
+  selectedMethodID: String,
+});
+
+const localRequest = ref("");
+const localHeaders = ref([]);
+
+onBeforeUpdate(() => {
+  localRequest.value = "";
+});
+
+watch(
+  () => props.selectedMethodID,
+  async (newValue, oldValue) => {
+    localRequest.value = "";
+  }
+);
+
+const forms = grpcStore.project(props.projectID).forms;
+const form = grpcStore.project(props.projectID).forms[props.formID];
+
+const headers = computed(() => {
+  if (localHeaders.value.length > 0) {
+    return localHeaders.value;
+  }
+
+  return grpcStore.project(props.projectID).forms[props.formID].headers;
+});
+
+const address = computed({
+  get() {
+    return grpcStore.project(props.projectID).forms[props.formID].address;
   },
-  data() {
-    return { localRequest: "", localHeaders: [] };
-  },
-  beforeUpdate() {
-    this.localRequest = "";
-  },
-  watch: {
-    selectedMethodID(newValue, oldValue) {
-      this.localRequest = "";
-    },
-  },
-  computed: {
-    forms() {
-      return useGRPCStore().forms;
-    },
-    form() {
-      return useGRPCStore().forms[this.formID];
-    },
-    headers() {
-      if (this.localHeaders.length > 0) {
-        return this.localHeaders;
-      }
-
-      return useGRPCStore().forms[this.formID].headers;
-    },
-    address: {
-      get() {
-        return useGRPCStore().forms[this.formID].address;
-      },
-      async set(address) {
-        await useGRPCStore().saveAddress(this.projectID, this.formID, address);
-      },
-    },
-    request: {
-      get() {
-        if (this.localRequest !== "") {
-          return this.localRequest;
-        }
-
-        return useGRPCStore().forms[this.formID].request;
-      },
-      async set(requestPayload) {
-        this.localRequest = requestPayload;
-        await useGRPCStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
-      },
-    },
-    response: {
-      get() {
-        let response = useGRPCStore().forms[this.formID].response;
-        try {
-          response = JSON.parse(response);
-          response = JSON.stringify(response, null, 4);
-        } catch {}
-
-        return response;
-      },
-      set(value) {
-        return (useGRPCStore().forms[this.formID].response = value);
-      },
-    },
-  },
-  methods: {
-    async sendRequest() {
-      await useGRPCStore().sendRequest(this.projectID, this.formID);
-    },
-
-    async stopRequest() {
-      await useGRPCStore().stopRequest(this.projectID, this.formID);
-    },
-
-    async reflectProto() {
-      await useGRPCStore().reflectProto(this.projectID, this.formID);
-    },
-
-    async addHeader() {
-      await useGRPCStore().addHeader(this.projectID, this.formID);
-      this.localHeaders = useGRPCStore().forms[this.formID].headers;
-    },
-
-    async deleteHeader(headerID) {
-      await useGRPCStore().deleteHeader(this.projectID, this.formID, headerID);
-      this.localHeaders = useGRPCStore().forms[this.formID].headers;
-    },
-
-    async saveHeaders(headers) {
-      this.localHeaders = headers;
-      await useGRPCStore().saveHeaders(this.projectID, this.formID, headers);
-    },
+  async set(address) {
+    await grpcStore.saveAddress(props.projectID, props.formID, address);
   },
 });
+
+const request = computed({
+  get() {
+    if (localRequest.value !== "") {
+      return localRequest.value;
+    }
+
+    return grpcStore.project(props.projectID).forms[props.formID].request;
+  },
+  async set(requestPayload) {
+    localRequest.value = requestPayload;
+    await grpcStore.saveRequestPayload(props.projectID, props.formID, requestPayload);
+  },
+});
+
+const response = computed({
+  get() {
+    let response = grpcStore.project(props.projectID).forms[props.formID].response;
+    try {
+      response = JSON.parse(response);
+      response = JSON.stringify(response, null, 4);
+    } catch {}
+
+    return response;
+  },
+  set(value) {
+    return (grpcStore.project(props.projectID).forms[props.formID].response = value);
+  },
+});
+
+async function sendRequest() {
+  await grpcStore.sendRequest(props.projectID, props.formID);
+}
+
+async function stopRequest() {
+  await grpcStore.stopRequest(props.projectID, props.formID);
+}
+
+async function reflectProto() {
+  await grpcStore.reflectProto(props.projectID, props.formID);
+}
+
+async function addHeader() {
+  await grpcStore.addHeader(props.projectID, props.formID);
+  localHeaders.value = grpcStore.project(props.projectID).forms[props.formID].headers;
+}
+
+async function deleteHeader(headerID) {
+  await grpcStore.deleteHeader(props.projectID, props.formID, headerID);
+  localHeaders.value = grpcStore.project(props.projectID).forms[props.formID].headers;
+}
+
+async function saveHeaders(headers) {
+  localHeaders.value = headers;
+  await grpcStore.saveHeaders(props.projectID, props.formID, headers);
+}
 </script>
 
 <template>
