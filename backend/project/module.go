@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/samber/lo"
 
 	"github.com/multibase-io/multibase/backend/pkg/state"

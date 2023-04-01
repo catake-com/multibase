@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/samber/lo"
 	"go.uber.org/thriftrw/compile"
 
@@ -82,11 +82,7 @@ func (p *Project) CreateNewForm() error {
 	p.FormIDs = append(p.FormIDs, formID)
 	p.CurrentFormID = formID
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) RemoveForm(formID string) error {
@@ -113,11 +109,7 @@ func (p *Project) RemoveForm(formID string) error {
 		return err
 	}
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SendRequest(
@@ -146,11 +138,7 @@ func (p *Project) SendRequest(
 
 	p.Forms[formID].Response = response
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) StopRequest(formID string) {
@@ -194,11 +182,7 @@ func (p *Project) OpenFilePath(filePath string) error {
 	p.Nodes = nodes
 	p.FilePath = filePath
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) GenerateServiceTreeNodes(filePath string) ([]*ServiceTreeNode, error) {
@@ -245,11 +229,7 @@ func (p *Project) SelectFunction(formID, functionID string) error {
 	p.Forms[formID].Response = "{}"
 	p.Forms[formID].SelectedFunctionID = functionID
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveCurrentFormID(currentFormID string) error {
@@ -258,11 +238,7 @@ func (p *Project) SaveCurrentFormID(currentFormID string) error {
 
 	p.CurrentFormID = currentFormID
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveAddress(formID, address string) error {
@@ -271,11 +247,7 @@ func (p *Project) SaveAddress(formID, address string) error {
 
 	p.Forms[formID].Address = address
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveIsMultiplexed(formID string, isMultiplexed bool) error {
@@ -284,11 +256,7 @@ func (p *Project) SaveIsMultiplexed(formID string, isMultiplexed bool) error {
 
 	p.Forms[formID].IsMultiplexed = isMultiplexed
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) AddHeader(formID string) error {
@@ -304,11 +272,7 @@ func (p *Project) AddHeader(formID string) error {
 		},
 	)
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveHeaders(formID string, headers []*Header) error {
@@ -317,11 +281,7 @@ func (p *Project) SaveHeaders(formID string, headers []*Header) error {
 
 	p.Forms[formID].Headers = headers
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) DeleteHeader(formID, headerID string) error {
@@ -335,11 +295,7 @@ func (p *Project) DeleteHeader(formID, headerID string) error {
 		},
 	)
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveSplitterWidth(splitterWidth float64) error {
@@ -348,11 +304,7 @@ func (p *Project) SaveSplitterWidth(splitterWidth float64) error {
 
 	p.SplitterWidth = splitterWidth
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveRequestPayload(formID, requestPayload string) error {
@@ -361,11 +313,7 @@ func (p *Project) SaveRequestPayload(formID, requestPayload string) error {
 
 	p.Forms[formID].Request = requestPayload
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) Close() error {

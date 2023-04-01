@@ -8,7 +8,7 @@ import (
 
 	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
 	"github.com/fullstorydev/grpcurl"
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/samber/lo"
@@ -99,11 +99,7 @@ func (p *Project) SendRequest(
 
 	p.Forms[formID].Response = response
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) StopRequest(id string) {
@@ -134,11 +130,7 @@ func (p *Project) ReflectProto(formID, address string) error {
 	p.ImportPathList = nil
 	p.ProtoFileList = nil
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) RemoveImportPath(importPath string) error {
@@ -152,11 +144,7 @@ func (p *Project) RemoveImportPath(importPath string) error {
 		},
 	)
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) OpenProtoFile(protoFilePath string) error {
@@ -187,11 +175,7 @@ func (p *Project) OpenProtoFile(protoFilePath string) error {
 	p.ImportPathList = importPathList
 	p.ProtoFileList = protoFileList
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) DeleteAllProtoFiles() error {
@@ -229,11 +213,7 @@ func (p *Project) DeleteAllProtoFiles() error {
 
 	p.Forms = map[string]*Form{form.ID: form}
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) OpenImportPath(importPath string) error {
@@ -246,11 +226,7 @@ func (p *Project) OpenImportPath(importPath string) error {
 
 	p.ImportPathList = append(p.ImportPathList, importPath)
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SelectMethod(methodID, formID string) error {
@@ -276,11 +252,7 @@ func (p *Project) SelectMethod(methodID, formID string) error {
 	p.Forms[formID].Response = "{}"
 	p.Forms[formID].SelectedMethodID = methodID
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveCurrentFormID(currentFormID string) error {
@@ -289,11 +261,7 @@ func (p *Project) SaveCurrentFormID(currentFormID string) error {
 
 	p.CurrentFormID = currentFormID
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveAddress(formID, address string) error {
@@ -302,11 +270,7 @@ func (p *Project) SaveAddress(formID, address string) error {
 
 	p.Forms[formID].Address = address
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) AddHeader(formID string) error {
@@ -322,11 +286,7 @@ func (p *Project) AddHeader(formID string) error {
 		},
 	)
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveHeaders(formID string, headers []*Header) error {
@@ -335,11 +295,7 @@ func (p *Project) SaveHeaders(formID string, headers []*Header) error {
 
 	p.Forms[formID].Headers = headers
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) DeleteHeader(formID, headerID string) error {
@@ -353,11 +309,7 @@ func (p *Project) DeleteHeader(formID, headerID string) error {
 		},
 	)
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveSplitterWidth(splitterWidth float64) error {
@@ -366,11 +318,7 @@ func (p *Project) SaveSplitterWidth(splitterWidth float64) error {
 
 	p.SplitterWidth = splitterWidth
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) SaveRequestPayload(formID, requestPayload string) error {
@@ -379,11 +327,7 @@ func (p *Project) SaveRequestPayload(formID, requestPayload string) error {
 
 	p.Forms[formID].Request = requestPayload
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) CreateNewForm() error {
@@ -410,11 +354,7 @@ func (p *Project) CreateNewForm() error {
 	p.FormIDs = append(p.FormIDs, formID)
 	p.CurrentFormID = formID
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) RemoveForm(formID string) error {
@@ -441,11 +381,7 @@ func (p *Project) RemoveForm(formID string) error {
 		return err
 	}
 
-	if err := p.saveState(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.saveState()
 }
 
 func (p *Project) RefreshProtoDescriptors(importPathList, protoFileList []string) ([]*ProtoTreeNode, error) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/adrg/xdg"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 )
 
 type Storage struct {

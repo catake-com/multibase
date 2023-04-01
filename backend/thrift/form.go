@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"github.com/yarpc/yab/thrift"
-	"go.uber.org/multierr"
 	"gopkg.in/yaml.v3"
 )
 
@@ -132,7 +132,7 @@ func (f *Form) executeRequest(request *http.Request) (_ []byte, rerr error) {
 
 		err := response.Body.Close()
 		if err != nil {
-			rerr = multierr.Combine(rerr, fmt.Errorf("failed to close a response body: %w", err))
+			rerr = errors.Join(rerr, fmt.Errorf("failed to close a response body: %w", err))
 		}
 	}()
 

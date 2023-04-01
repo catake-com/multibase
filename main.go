@@ -8,6 +8,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
@@ -26,28 +27,26 @@ func main() {
 	}
 
 	err = wails.Run(&options.App{
-		Title:     "Multibase",
-		Width:     1024,
-		Height:    800,
-		MinWidth:  1024,
-		MinHeight: 300,
-		// MaxWidth:          1280,
-		// MaxHeight:         800,
+		Title:             "Multibase",
+		Width:             1024,
+		Height:            800,
+		MinWidth:          1024,
+		MinHeight:         300,
 		DisableResize:     false,
 		Fullscreen:        false,
 		Frameless:         false,
 		StartHidden:       false,
 		HideWindowOnClose: false,
-		RGBA:              &options.RGBA{R: 255, G: 255, B: 255, A: 255},
-		Assets:            assets,
-		Menu:              nil,
-		Logger:            nil,
-		LogLevel:          logger.DEBUG,
-		OnStartup:         app.startup,
-		OnDomReady:        app.domReady,
-		OnBeforeClose:     app.beforeClose,
-		OnShutdown:        app.shutdown,
-		WindowStartState:  options.Normal,
+		AlwaysOnTop:       false,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		Logger:        nil,
+		LogLevel:      logger.DEBUG,
+		OnStartup:     app.startup,
+		OnDomReady:    app.domReady,
+		OnShutdown:    app.shutdown,
+		OnBeforeClose: app.beforeClose,
 		Bind: []interface{}{
 			app,
 			app.ProjectModule,
@@ -55,6 +54,8 @@ func main() {
 			app.ThriftModule,
 			app.KafkaModule,
 		},
+		WindowStartState:                 options.Normal,
+		EnableFraudulentWebsiteDetection: false,
 		// Windows platform specific options
 		Windows: &windows.Options{
 			// WebviewIsTransparent: false,

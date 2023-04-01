@@ -1,4 +1,5 @@
 {
+  "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "Multibase",
   "assetdir": "frontend/dist",
   "frontend:install": "npm install",
