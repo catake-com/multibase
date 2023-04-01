@@ -1,117 +1,85 @@
-<script>
-import { defineComponent } from "vue";
-import { mapState } from "pinia";
-
+<script setup>
+import { computed, watch } from "vue";
 import { useThriftStore } from "../stores/thrift";
 import ThriftForm from "./ThriftForm.vue";
 
-export default defineComponent({
-  name: "Thrift",
-  props: {
-    projectID: String,
+const thriftStore = useThriftStore();
+
+const props = defineProps({
+  projectID: String,
+});
+
+await thriftStore.loadProject(props.projectID);
+
+const nodes = computed(() => thriftStore.project(props.projectID).nodes);
+const forms = computed(() => thriftStore.project(props.projectID).forms);
+const formIDs = computed(() => thriftStore.project(props.projectID).formIDs);
+
+const currentFormID = computed({
+  get() {
+    return thriftStore.project(props.projectID).currentFormID;
   },
-  components: { ThriftForm },
-  beforeCreate() {
-    useThriftStore().loadState();
-  },
-  computed: {
-    ...mapState(useThriftStore, ["projects"]),
-    importPathList() {
-      if (useThriftStore().projects[this.projectID]) {
-        return useThriftStore().projects[this.projectID].importPathList;
-      }
-    },
-    nodes() {
-      if (useThriftStore().projects[this.projectID]) {
-        return useThriftStore().projects[this.projectID].nodes;
-      }
-    },
-    forms() {
-      if (useThriftStore().projects[this.projectID]) {
-        return useThriftStore().projects[this.projectID].forms;
-      }
-    },
-    formIDs() {
-      if (useThriftStore().projects[this.projectID]) {
-        return useThriftStore().projects[this.projectID].formIDs;
-      }
-    },
-    currentFormID: {
-      get() {
-        if (useThriftStore().projects[this.projectID]) {
-          return useThriftStore().projects[this.projectID].currentFormID;
-        }
-      },
-      async set(currentFormID) {
-        await useThriftStore().saveCurrentFormID(this.projectID, currentFormID);
-      },
-    },
-    splitterWidth: {
-      get() {
-        if (useThriftStore().projects[this.projectID]) {
-          return useThriftStore().projects[this.projectID].splitterWidth;
-        }
-      },
-      async set(splitterWidth) {
-        await useThriftStore().saveSplitterWidth(this.projectID, splitterWidth);
-      },
-    },
-    selectedFunction: {
-      get() {
-        if (useThriftStore().projects[this.projectID]) {
-          const currentFormID = useThriftStore().projects[this.projectID].currentFormID;
-          const currentForm = useThriftStore().projects[this.projectID].forms[currentFormID];
-
-          if (currentForm) {
-            return currentForm.selectedFunctionID;
-          }
-        }
-      },
-      async set(selectedFunctionID) {
-        await useThriftStore().selectFunction(
-          this.projectID,
-          this.projects[this.projectID].currentFormID,
-          selectedFunctionID
-        );
-      },
-    },
-  },
-  watch: {
-    currentFormID(newCurrentFormID, oldCurrentFormID) {
-      if (newCurrentFormID === oldCurrentFormID) {
-        return;
-      }
-
-      const formID = newCurrentFormID || oldCurrentFormID;
-      const form = useThriftStore().projects[this.projectID].forms[formID];
-
-      if (form.selectedFunctionID && this.selectedFunction !== form.selectedFunctionID) {
-        this.selectedFunction = form.selectedFunctionID;
-      }
-    },
-  },
-  methods: {
-    async openFilePath() {
-      const store = useThriftStore();
-
-      await store.openFilePath(this.projectID);
-    },
-
-    async createNewForm() {
-      const store = useThriftStore();
-
-      await store.createNewForm(this.projectID);
-    },
-
-    async closeFormTab(event, formID) {
-      event.preventDefault();
-
-      const store = useThriftStore();
-
-      await store.removeForm(this.projectID, formID);
-    },
+  async set(currentFormID) {
+    await thriftStore.saveCurrentFormID(props.projectID, currentFormID);
   },
 });
+
+const splitterWidth = computed({
+  get() {
+    return thriftStore.project(props.projectID).splitterWidth;
+  },
+  async set(splitterWidth) {
+    await thriftStore.saveSplitterWidth(props.projectID, splitterWidth);
+  },
+});
+
+const selectedFunction = computed({
+  get() {
+    const currentForm = thriftStore.project(props.projectID).forms[thriftStore.project(props.projectID).currentFormID];
+
+    if (currentForm) {
+      return currentForm.selectedFunctionID;
+    }
+  },
+  async set(selectedFunctionID) {
+    await thriftStore.selectFunction(
+      props.projectID,
+      thriftStore.project(props.projectID).currentFormID,
+      selectedFunctionID
+    );
+  },
+});
+
+watch(
+  () => thriftStore.project(props.projectID).currentFormID,
+  async (newCurrentFormID, oldCurrentFormID) => {
+    if (newCurrentFormID === oldCurrentFormID) {
+      return;
+    }
+
+    const formID = newCurrentFormID || oldCurrentFormID;
+    const form = thriftStore.project(props.projectID).forms[formID];
+
+    if (form.selectedFunctionID && selectedFunction.value !== form.selectedFunctionID) {
+      selectedFunction.value = form.selectedFunctionID;
+    }
+  }
+);
+
+async function openFilePath() {
+  await thriftStore.openFilePath(props.projectID);
+  console.log(thriftStore.project(props.projectID));
+  console.log(nodes);
+}
+
+async function createNewForm() {
+  await thriftStore.createNewForm(props.projectID);
+}
+
+async function closeFormTab(event, formID) {
+  event.preventDefault();
+  await thriftStore.removeForm(props.projectID, formID);
+}
 </script>
 
 <template>

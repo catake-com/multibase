@@ -31,8 +31,8 @@ watch(
   }
 );
 
-const forms = grpcStore.project(props.projectID).forms;
-const form = grpcStore.project(props.projectID).forms[props.formID];
+const forms = computed(() => grpcStore.project(props.projectID).forms);
+const form = computed(() => grpcStore.project(props.projectID).forms[props.formID]);
 
 const headers = computed(() => {
   if (localHeaders.value.length > 0) {

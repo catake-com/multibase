@@ -1,116 +1,116 @@
-<script>
-import { defineComponent } from "vue";
+<script setup>
+import { computed, onBeforeUpdate, ref, watch } from "vue";
+import { useThriftStore } from "../stores/thrift";
 import { VAceEditor } from "vue3-ace-editor";
 import "ace-builds/src-noconflict/mode-json";
 import "../vendor/merbivore";
 import ace from "ace-builds";
 import workerJsonUrl from "ace-builds/src-noconflict/worker-json?url";
-import { useThriftStore } from "../stores/thrift";
 
 ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
 
-export default defineComponent({
-  name: "ThriftForm",
-  components: { VAceEditor },
-  props: {
-    projectID: String,
-    formID: String,
-    selectedFunctionID: String,
+const thriftStore = useThriftStore();
+
+const props = defineProps({
+  projectID: String,
+  formID: String,
+  selectedFunctionID: String,
+});
+
+const localRequest = ref("");
+const localHeaders = ref([]);
+
+onBeforeUpdate(() => {
+  localRequest.value = "";
+});
+
+watch(
+  () => props.selectedFunctionID,
+  async (newValue, oldValue) => {
+    localRequest.value = "";
+  }
+);
+
+const forms = computed(() => thriftStore.project(props.projectID).forms);
+const form = computed(() => thriftStore.project(props.projectID).forms[props.formID]);
+
+const headers = computed(() => {
+  if (localHeaders.value.length > 0) {
+    return localHeaders.value;
+  }
+
+  return thriftStore.project(props.projectID).forms[props.formID].headers;
+});
+
+const address = computed({
+  get() {
+    return thriftStore.project(props.projectID).forms[props.formID].address;
   },
-  data() {
-    return { localRequest: "", localHeaders: [] };
-  },
-  beforeUpdate() {
-    this.localRequest = "";
-  },
-  watch: {
-    selectedFunctionID(newValue, oldValue) {
-      this.localRequest = "";
-    },
-  },
-  computed: {
-    forms() {
-      return useThriftStore().projects[this.projectID].forms;
-    },
-    form() {
-      return useThriftStore().projects[this.projectID].forms[this.formID];
-    },
-    headers() {
-      if (this.localHeaders.length > 0) {
-        return this.localHeaders;
-      }
-
-      return useThriftStore().projects[this.projectID].forms[this.formID].headers;
-    },
-    address: {
-      get() {
-        return useThriftStore().projects[this.projectID].forms[this.formID].address;
-      },
-      async set(address) {
-        await useThriftStore().saveAddress(this.projectID, this.formID, address);
-      },
-    },
-    isMultiplexed: {
-      get() {
-        return !!useThriftStore().projects[this.projectID].forms[this.formID].isMultiplexed;
-      },
-      async set(isMultiplexed) {
-        await useThriftStore().saveIsMultiplexed(this.projectID, this.formID, isMultiplexed);
-      },
-    },
-    request: {
-      get() {
-        if (this.localRequest !== "") {
-          return this.localRequest;
-        }
-
-        return useThriftStore().projects[this.projectID].forms[this.formID].request;
-      },
-      async set(requestPayload) {
-        this.localRequest = requestPayload;
-        await useThriftStore().saveRequestPayload(this.projectID, this.formID, requestPayload);
-      },
-    },
-    response: {
-      get() {
-        let response = useThriftStore().projects[this.projectID].forms[this.formID].response;
-        try {
-          response = JSON.parse(response);
-          response = JSON.stringify(response, null, 4);
-        } catch {}
-
-        return response;
-      },
-      set(value) {
-        return (useThriftStore().projects[this.projectID].forms[this.formID].response = value);
-      },
-    },
-  },
-  methods: {
-    async sendRequest() {
-      await useThriftStore().sendRequest(this.projectID, this.formID);
-    },
-
-    async stopRequest() {
-      await useThriftStore().stopRequest(this.projectID, this.formID);
-    },
-
-    async addHeader() {
-      await useThriftStore().addHeader(this.projectID, this.formID);
-      this.localHeaders = useThriftStore().projects[this.projectID].forms[this.formID].headers;
-    },
-
-    async deleteHeader(headerID) {
-      await useThriftStore().deleteHeader(this.projectID, this.formID, headerID);
-      this.localHeaders = useThriftStore().projects[this.projectID].forms[this.formID].headers;
-    },
-
-    async saveHeaders(headers) {
-      this.localHeaders = headers;
-      await useThriftStore().saveHeaders(this.projectID, this.formID, headers);
-    },
+  async set(address) {
+    await thriftStore.saveAddress(props.projectID, props.formID, address);
   },
 });
+
+const isMultiplexed = computed({
+  get() {
+    return thriftStore.project(props.projectID).forms[props.formID].isMultiplexed;
+  },
+  async set(isMultiplexed) {
+    await thriftStore.saveIsMultiplexed(props.projectID, props.formID, isMultiplexed);
+  },
+});
+
+const request = computed({
+  get() {
+    if (localRequest.value !== "") {
+      return localRequest.value;
+    }
+
+    return thriftStore.project(props.projectID).forms[props.formID].request;
+  },
+  async set(requestPayload) {
+    localRequest.value = requestPayload;
+    await thriftStore.saveRequestPayload(props.projectID, props.formID, requestPayload);
+  },
+});
+
+const response = computed({
+  get() {
+    let response = thriftStore.project(props.projectID).forms[props.formID].response;
+    try {
+      response = JSON.parse(response);
+      response = JSON.stringify(response, null, 4);
+    } catch {}
+
+    return response;
+  },
+  set(value) {
+    return (thriftStore.project(props.projectID).forms[props.formID].response = value);
+  },
+});
+
+async function sendRequest() {
+  await thriftStore.sendRequest(props.projectID, props.formID);
+}
+
+async function stopRequest() {
+  await thriftStore.stopRequest(props.projectID, props.formID);
+}
+
+async function addHeader() {
+  await thriftStore.addHeader(props.projectID, props.formID);
+  localHeaders.value = thriftStore.project(props.projectID).forms[props.formID].headers;
+}
+
+async function deleteHeader(headerID) {
+  await thriftStore.deleteHeader(props.projectID, props.formID, headerID);
+  localHeaders.value = thriftStore.project(props.projectID).forms[props.formID].headers;
+}
+
+async function saveHeaders(headers) {
+  localHeaders.value = headers;
+  await thriftStore.saveHeaders(props.projectID, props.formID, headers);
+}
 </script>
 
 <template>

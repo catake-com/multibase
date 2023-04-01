@@ -126,7 +126,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await OpenImportPath(projectID);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -134,7 +134,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await RemoveImportPath(projectID, importPath);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -142,7 +142,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await OpenProtoFile(projectID);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -150,7 +150,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await DeleteAllProtoFiles(projectID);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -158,7 +158,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveCurrentFormID(projectID, currentFormID);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -166,7 +166,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveAddress(projectID, formID, address);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -174,7 +174,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await AddHeader(projectID, formID);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -182,7 +182,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveHeaders(projectID, formID, headers);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -190,7 +190,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await DeleteHeader(projectID, formID, headerID);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -198,7 +198,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveSplitterWidth(projectID, splitterWidth);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -206,7 +206,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveRequestPayload(projectID, formID, requestPayload);
       } catch (error) {
-        this.projectID[projectID].forms[this.currentFormID].response = error;
+        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 

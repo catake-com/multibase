@@ -37,10 +37,8 @@ func (m *Module) SendRequest(projectID, formID string, address, payload string) 
 
 	err = project.SendRequest(
 		formID,
-		project.Forms[formID].SelectedMethodID,
 		address,
 		payload,
-		project.Forms[formID].Headers,
 	)
 	if err != nil {
 		return nil, err

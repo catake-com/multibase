@@ -66,10 +66,8 @@ func (p *Project) IsProtoDescriptorSourceInitialized() bool {
 
 func (p *Project) SendRequest(
 	formID,
-	methodID,
 	address,
 	payload string,
-	headers []*Header,
 ) error {
 	p.stateMutex.Lock()
 	defer p.stateMutex.Unlock()
@@ -86,7 +84,13 @@ func (p *Project) SendRequest(
 
 	form := p.Forms[formID]
 
-	response, err := form.SendRequest(methodID, address, payload, p.protoDescriptorSource, headers)
+	response, err := form.SendRequest(
+		p.Forms[formID].SelectedMethodID,
+		address,
+		payload,
+		p.protoDescriptorSource,
+		p.Forms[formID].Headers,
+	)
 	if err != nil {
 		p.Forms[formID].Response = "{}"
 
@@ -434,6 +438,10 @@ func (p *Project) RemoveForm(formID string) error {
 	}
 
 	if err := p.Forms[formID].Close(); err != nil {
+		return err
+	}
+
+	if err := p.saveState(); err != nil {
 		return err
 	}
 

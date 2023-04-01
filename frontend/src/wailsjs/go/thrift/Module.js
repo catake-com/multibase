@@ -26,6 +26,10 @@ export function OpenFilePath(arg1) {
   return window['go']['thrift']['Module']['OpenFilePath'](arg1);
 }
 
+export function Project(arg1) {
+  return window['go']['thrift']['Module']['Project'](arg1);
+}
+
 export function RemoveForm(arg1, arg2) {
   return window['go']['thrift']['Module']['RemoveForm'](arg1, arg2);
 }
@@ -60,10 +64,6 @@ export function SelectFunction(arg1, arg2, arg3) {
 
 export function SendRequest(arg1, arg2, arg3, arg4) {
   return window['go']['thrift']['Module']['SendRequest'](arg1, arg2, arg3, arg4);
-}
-
-export function State() {
-  return window['go']['thrift']['Module']['State']();
 }
 
 export function StopRequest(arg1, arg2) {

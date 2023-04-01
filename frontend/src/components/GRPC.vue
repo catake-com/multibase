@@ -13,7 +13,10 @@ const tab = ref("protos");
 
 await grpcStore.loadProject(props.projectID);
 
-const { importPathList, nodes, forms, formIDs } = grpcStore.project(props.projectID);
+const importPathList = computed(() => grpcStore.project(props.projectID).importPathList);
+const nodes = computed(() => grpcStore.project(props.projectID).nodes);
+const forms = computed(() => grpcStore.project(props.projectID).forms);
+const formIDs = computed(() => grpcStore.project(props.projectID).formIDs);
 
 const currentFormID = computed({
   get() {

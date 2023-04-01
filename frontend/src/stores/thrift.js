@@ -13,41 +13,27 @@ import {
   SaveIsMultiplexed,
   SaveSplitterWidth,
   SaveRequestPayload,
-  State,
   AddHeader,
   SaveHeaders,
   DeleteHeader,
   DeleteProject,
+  Project,
 } from "../wailsjs/go/thrift/Module";
 
 export const useThriftStore = defineStore({
   id: "thrift",
   state: () => ({
-    projects: {
-      "dfaf4dc4-5fd1-42bb-b1ed-79b1d653279e": {
-        splitterWidth: 30,
-        forms: {
-          "aba7bb0d-77f5-404c-a293-e133975ea67d": {
-            address: "0.0.0.0:9090",
-            selectedFunctionID: "",
-            isMultiplexed: false,
-            request: "",
-            response: "",
-            requestInProgress: false,
-            headers: [{ id: "dd11abd9-80f5-494a-b85e-358c3103704a", key: "", value: "" }],
-          },
-        },
-        formIDs: [],
-        currentFormID: "aba7bb0d-77f5-404c-a293-e133975ea67d",
-        filePath: [],
-        nodes: [],
-      },
-    },
+    projects: {},
   }),
+  getters: {
+    project: (state) => {
+      return (projectID) => state.projects[projectID];
+    },
+  },
   actions: {
     async createNewProject(projectID) {
       try {
-        this.$state = await CreateNewProject(projectID);
+        this.projects[projectID] = await CreateNewProject(projectID);
       } catch (error) {
         console.log(error);
       }
@@ -55,7 +41,7 @@ export const useThriftStore = defineStore({
 
     async deleteProject(projectID) {
       try {
-        this.$state = await DeleteProject(projectID);
+        this.projects[projectID] = await DeleteProject(projectID);
       } catch (error) {
         console.log(error);
       }
@@ -63,7 +49,7 @@ export const useThriftStore = defineStore({
 
     async createNewForm(projectID) {
       try {
-        this.$state = await CreateNewForm(projectID);
+        this.projects[projectID] = await CreateNewForm(projectID);
       } catch (error) {
         console.log(error);
       }
@@ -71,7 +57,7 @@ export const useThriftStore = defineStore({
 
     async removeForm(projectID, formID) {
       try {
-        this.$state = await RemoveForm(projectID, formID);
+        this.projects[projectID] = await RemoveForm(projectID, formID);
       } catch (error) {
         console.log(error);
       }
@@ -79,7 +65,7 @@ export const useThriftStore = defineStore({
 
     async selectFunction(projectID, formID, methodID) {
       try {
-        this.$state = await SelectFunction(projectID, formID, methodID);
+        this.projects[projectID] = await SelectFunction(projectID, formID, methodID);
       } catch (error) {
         this.projects[projectID].forms[formID].response = error;
       }
@@ -93,7 +79,7 @@ export const useThriftStore = defineStore({
       this.projects[projectID].forms[formID].requestInProgress = true;
 
       try {
-        this.$state = await SendRequest(
+        this.projects[projectID] = await SendRequest(
           projectID,
           formID,
           this.projects[projectID].forms[formID].address,
@@ -112,7 +98,7 @@ export const useThriftStore = defineStore({
       }
 
       try {
-        this.$state = await StopRequest(projectID, formID);
+        this.projects[projectID] = await StopRequest(projectID, formID);
         this.projects[projectID].forms[formID].requestInProgress = false;
       } catch (error) {
         this.projects[projectID].forms[formID].requestInProgress = false;
@@ -122,7 +108,7 @@ export const useThriftStore = defineStore({
 
     async openFilePath(projectID) {
       try {
-        this.$state = await OpenFilePath(projectID);
+        this.projects[projectID] = await OpenFilePath(projectID);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -130,7 +116,7 @@ export const useThriftStore = defineStore({
 
     async saveCurrentFormID(projectID, currentFormID) {
       try {
-        this.$state = await SaveCurrentFormID(projectID, currentFormID);
+        this.projects[projectID] = await SaveCurrentFormID(projectID, currentFormID);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -138,7 +124,7 @@ export const useThriftStore = defineStore({
 
     async saveAddress(projectID, formID, address) {
       try {
-        this.$state = await SaveAddress(projectID, formID, address);
+        this.projects[projectID] = await SaveAddress(projectID, formID, address);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -146,7 +132,7 @@ export const useThriftStore = defineStore({
 
     async saveIsMultiplexed(projectID, formID, isMultiplexed) {
       try {
-        this.$state = await SaveIsMultiplexed(projectID, formID, isMultiplexed);
+        this.projects[projectID] = await SaveIsMultiplexed(projectID, formID, isMultiplexed);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -154,7 +140,7 @@ export const useThriftStore = defineStore({
 
     async addHeader(projectID, formID) {
       try {
-        this.$state = await AddHeader(projectID, formID);
+        this.projects[projectID] = await AddHeader(projectID, formID);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -162,7 +148,7 @@ export const useThriftStore = defineStore({
 
     async saveHeaders(projectID, formID, headers) {
       try {
-        this.$state = await SaveHeaders(projectID, formID, headers);
+        this.projects[projectID] = await SaveHeaders(projectID, formID, headers);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -170,7 +156,7 @@ export const useThriftStore = defineStore({
 
     async deleteHeader(projectID, formID, headerID) {
       try {
-        this.$state = await DeleteHeader(projectID, formID, headerID);
+        this.projects[projectID] = await DeleteHeader(projectID, formID, headerID);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -178,7 +164,7 @@ export const useThriftStore = defineStore({
 
     async saveSplitterWidth(projectID, splitterWidth) {
       try {
-        this.$state = await SaveSplitterWidth(projectID, splitterWidth);
+        this.projects[projectID] = await SaveSplitterWidth(projectID, splitterWidth);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
@@ -186,15 +172,19 @@ export const useThriftStore = defineStore({
 
     async saveRequestPayload(projectID, formID, requestPayload) {
       try {
-        this.$state = await SaveRequestPayload(projectID, formID, requestPayload);
+        this.projects[projectID] = await SaveRequestPayload(projectID, formID, requestPayload);
       } catch (error) {
         this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
-    async loadState() {
+    async loadProject(projectID) {
+      if (this.projects[projectID]) {
+        return this.projects[projectID];
+      }
+
       try {
-        this.$state = await State();
+        this.projects[projectID] = await Project(projectID);
       } catch (error) {
         console.log(error);
       }

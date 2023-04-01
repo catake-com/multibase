@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
+	"github.com/gofrs/uuid"
+	"github.com/samber/lo"
 	"go.uber.org/thriftrw/compile"
+
+	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
 var errThriftUnknownType = errors.New("unknown type during thrift parsing")
@@ -20,29 +25,370 @@ type Project struct {
 	FilePath      string             `json:"filePath"`
 	Nodes         []*ServiceTreeNode `json:"nodes"`
 
-	serviceTree *ServiceTree
+	stateMutex   sync.RWMutex
+	stateStorage *state.Storage
+	serviceTree  *ServiceTree
+}
+
+func NewProject(projectID string, stateStorage *state.Storage) (*Project, error) {
+	formID := uuid.Must(uuid.NewV4()).String()
+	address := "0.0.0.0:9090"
+
+	project := &Project{
+		ID:            projectID,
+		SplitterWidth: defaultProjectSplitterWidth,
+		Forms: map[string]*Form{
+			formID: {
+				ID:            formID,
+				Address:       address,
+				IsMultiplexed: true,
+				Request:       "{}",
+				Response:      "{}",
+			},
+		},
+		CurrentFormID: formID,
+		stateStorage:  stateStorage,
+	}
+	project.FormIDs = append(project.FormIDs, formID)
+
+	if err := project.saveState(); err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+func (p *Project) CreateNewForm() error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	formID := uuid.Must(uuid.NewV4()).String()
+
+	var headers []*Header
+
+	address := "0.0.0.0:9090"
+	if p.CurrentFormID != "" {
+		address = p.Forms[p.CurrentFormID].Address
+		headers = p.Forms[p.CurrentFormID].Headers
+	}
+
+	p.Forms[formID] = &Form{
+		ID:       formID,
+		Address:  address,
+		Request:  "{}",
+		Response: "{}",
+		Headers:  headers,
+	}
+	p.FormIDs = append(p.FormIDs, formID)
+	p.CurrentFormID = formID
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) RemoveForm(formID string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	if len(p.Forms) <= 1 {
+		return nil
+	}
+
+	delete(p.Forms, formID)
+	p.FormIDs = lo.Reject(
+		p.FormIDs,
+		func(fID string, _ int) bool {
+			return formID == fID
+		},
+	)
+
+	if p.CurrentFormID == formID {
+		p.CurrentFormID = lo.Keys(p.Forms)[0]
+	}
+
+	if err := p.Forms[formID].Close(); err != nil {
+		return err
+	}
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Project) SendRequest(
 	formID,
 	address,
-	functionID,
 	payload string,
-	isMultiplexed bool,
-	headers []*Header,
-) (string, error) {
-	form := p.Forms[formID]
+) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
 
-	return form.SendRequest(functionID, address, payload, isMultiplexed, headers)
+	p.Forms[formID].Address = address
+	p.Forms[formID].Request = payload
+
+	response, err := p.Forms[formID].SendRequest(
+		p.Forms[formID].SelectedFunctionID,
+		address,
+		payload,
+		p.Forms[formID].IsMultiplexed,
+		p.Forms[formID].Headers,
+	)
+	if err != nil {
+		p.Forms[formID].Response = "{}"
+
+		return err
+	}
+
+	p.Forms[formID].Response = response
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Project) StopRequest(formID string) {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
 	form := p.Forms[formID]
 
 	form.StopCurrentRequest()
 }
 
+func (p *Project) OpenFilePath(filePath string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	nodes, err := p.generateNodes(filePath)
+	if err != nil {
+		return err
+	}
+
+	if p.FilePath != "" {
+		for _, form := range p.Forms {
+			if form.ID == p.CurrentFormID {
+				continue
+			}
+
+			err := form.Close()
+			if err != nil {
+				return err
+			}
+		}
+
+		form := p.Forms[p.CurrentFormID]
+		form.SelectedFunctionID = ""
+		form.Request = "{}"
+		form.Response = "{}"
+
+		p.Forms = map[string]*Form{form.ID: form}
+	}
+
+	p.Nodes = nodes
+	p.FilePath = filePath
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (p *Project) GenerateServiceTreeNodes(filePath string) ([]*ServiceTreeNode, error) {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	serviceTreeNodes, err := p.generateNodes(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return serviceTreeNodes, nil
+}
+
+func (p *Project) SelectFunction(formID, functionID string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	function := p.serviceTree.Function(functionID)
+	payload := make(map[string]interface{})
+
+	for _, argsSpec := range function.Spec().ArgsSpec {
+		v, err := parseThriftType(argsSpec.Type)
+		if err != nil {
+			return err
+		}
+
+		payload[argsSpec.Name] = v
+	}
+
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal a function payload: %w", err)
+	}
+
+	payloadJSONStr := string(payloadJSON)
+
+	formattedJSON, err := jsbeautifier.Beautify(&payloadJSONStr, jsbeautifier.DefaultOptions())
+	if err != nil {
+		return fmt.Errorf("failed to format a function payload: %w", err)
+	}
+
+	p.Forms[formID].Request = formattedJSON
+	p.Forms[formID].Response = "{}"
+	p.Forms[formID].SelectedFunctionID = functionID
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) SaveCurrentFormID(currentFormID string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.CurrentFormID = currentFormID
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) SaveAddress(formID, address string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.Forms[formID].Address = address
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) SaveIsMultiplexed(formID string, isMultiplexed bool) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.Forms[formID].IsMultiplexed = isMultiplexed
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) AddHeader(formID string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.Forms[formID].Headers = append(
+		p.Forms[formID].Headers,
+		&Header{
+			ID:    uuid.Must(uuid.NewV4()).String(),
+			Key:   "",
+			Value: "",
+		},
+	)
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) SaveHeaders(formID string, headers []*Header) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.Forms[formID].Headers = headers
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) DeleteHeader(formID, headerID string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.Forms[formID].Headers = lo.Reject(
+		p.Forms[formID].Headers,
+		func(header *Header, _ int) bool {
+			return header.ID == headerID
+		},
+	)
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) SaveSplitterWidth(splitterWidth float64) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.SplitterWidth = splitterWidth
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) SaveRequestPayload(formID, requestPayload string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	p.Forms[formID].Request = requestPayload
+
+	if err := p.saveState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) Close() error {
+	for _, client := range p.Forms {
+		err := client.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *Project) saveState() error {
+	err := p.stateStorage.Save(p.ID, p)
+	if err != nil {
+		return fmt.Errorf("failed to store a thrift project: %w", err)
+	}
+
+	return nil
+}
+
+func (p *Project) generateNodes(filePath string) ([]*ServiceTreeNode, error) {
 	module, err := compile.Compile(filePath, compile.NonStrict())
 	if err != nil {
 		return nil, fmt.Errorf("failed compile thrift: %w", err)
@@ -60,45 +406,6 @@ func (p *Project) GenerateServiceTreeNodes(filePath string) ([]*ServiceTreeNode,
 	}
 
 	return serviceTree.Nodes(), nil
-}
-
-func (p *Project) SelectFunction(functionID string) (string, error) {
-	function := p.serviceTree.Function(functionID)
-	payload := make(map[string]interface{})
-
-	for _, argsSpec := range function.Spec().ArgsSpec {
-		v, err := parseThriftType(argsSpec.Type)
-		if err != nil {
-			return "", err
-		}
-
-		payload[argsSpec.Name] = v
-	}
-
-	payloadJSON, err := json.Marshal(payload)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal a function payload: %w", err)
-	}
-
-	payloadJSONStr := string(payloadJSON)
-
-	formattedJSON, err := jsbeautifier.Beautify(&payloadJSONStr, jsbeautifier.DefaultOptions())
-	if err != nil {
-		return "", fmt.Errorf("failed to format a function payload: %w", err)
-	}
-
-	return formattedJSON, nil
-}
-
-func (p *Project) Close() error {
-	for _, client := range p.Forms {
-		err := client.Close()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // nolint: funlen, cyclop

@@ -190,11 +190,15 @@ export default defineComponent({
       </div>
 
       <div v-if="project.type === 'thrift'" class="full-height">
-        <Thrift :projectID="projectID" />
+        <Suspense>
+          <Thrift :projectID="projectID" :key="`thrift-${projectID}`" />
+        </Suspense>
       </div>
 
       <div v-if="project.type === 'kafka'" class="full-height">
-        <Kafka :projectID="projectID" />
+        <Suspense>
+          <Kafka :projectID="projectID" :key="`kafka-${projectID}`" />
+        </Suspense>
       </div>
     </q-tab-panel>
   </q-tab-panels>
