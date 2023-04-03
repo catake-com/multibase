@@ -93,6 +93,8 @@ func (p *Project) RemoveForm(formID string) error {
 		return nil
 	}
 
+	form := p.Forms[formID]
+
 	delete(p.Forms, formID)
 	p.FormIDs = lo.Reject(
 		p.FormIDs,
@@ -105,7 +107,7 @@ func (p *Project) RemoveForm(formID string) error {
 		p.CurrentFormID = lo.Keys(p.Forms)[0]
 	}
 
-	if err := p.Forms[formID].Close(); err != nil {
+	if err := form.Close(); err != nil {
 		return err
 	}
 

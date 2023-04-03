@@ -131,7 +131,7 @@ async function closeFormTab(event, formID) {
                   flat
                   rounded
                   dense
-                  :disable="Object.keys(this.forms).length === 1"
+                  :disable="forms && Object.keys(forms).length === 1"
                   @click="closeFormTab($event, formID)"
                 />
               </div>
