@@ -9,6 +9,7 @@ import (
 	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
 	"github.com/gofrs/uuid/v5"
 	"github.com/samber/lo"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.uber.org/thriftrw/compile"
 
 	"github.com/multibase-io/multibase/backend/pkg/state"
@@ -204,7 +205,7 @@ func (p *Project) SelectFunction(formID, functionID string) error {
 	defer p.stateMutex.Unlock()
 
 	function := p.serviceTree.Function(functionID)
-	payload := make(map[string]interface{})
+	payload := orderedmap.New[string, interface{}]()
 
 	for _, argsSpec := range function.Spec().ArgsSpec {
 		v, err := parseThriftType(argsSpec.Type)
@@ -212,7 +213,7 @@ func (p *Project) SelectFunction(formID, functionID string) error {
 			return err
 		}
 
-		payload[argsSpec.Name] = v
+		payload.Set(argsSpec.Name, v)
 	}
 
 	payloadJSON, err := json.Marshal(payload)
@@ -362,7 +363,7 @@ func (p *Project) generateNodes(filePath string) ([]*ServiceTreeNode, error) {
 func parseThriftType(typ compile.TypeSpec) (interface{}, error) {
 	switch spec := typ.(type) {
 	case *compile.StructSpec:
-		str := map[string]interface{}{}
+		str := orderedmap.New[string, interface{}]()
 
 		for _, field := range spec.Fields {
 			v, err := parseThriftType(field.Type)
@@ -370,7 +371,7 @@ func parseThriftType(typ compile.TypeSpec) (interface{}, error) {
 				return nil, err
 			}
 
-			str[field.Name] = v
+			str.Set(field.Name, v)
 		}
 
 		return str, nil

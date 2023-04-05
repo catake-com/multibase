@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path"
 	"sync"
@@ -9,9 +10,10 @@ import (
 	"github.com/ditashi/jsbeautifier-go/jsbeautifier"
 	"github.com/fullstorydev/grpcurl"
 	"github.com/gofrs/uuid/v5"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/jhump/protoreflect/dynamic"
+	"github.com/jhump/protoreflect/desc"
 	"github.com/samber/lo"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/multibase-io/multibase/backend/pkg/state"
 )
@@ -234,14 +236,20 @@ func (p *Project) SelectMethod(methodID, formID string) error {
 	defer p.stateMutex.Unlock()
 
 	method := p.protoTree.Method(methodID)
-	methodMessage := dynamic.NewMessageFactoryWithDefaults().NewDynamicMessage(method.Descriptor().GetInputType())
+	payload := orderedmap.New[string, interface{}]()
 
-	methodPayloadJSON, err := methodMessage.MarshalJSONPB(&jsonpb.Marshaler{EmitDefaults: true, OrigName: true})
-	if err != nil {
-		return fmt.Errorf("failed to prepare grpc request: %w", err)
+	for _, field := range method.Descriptor().GetInputType().GetFields() {
+		v := parseProtoField(field)
+
+		payload.Set(field.GetName(), v)
 	}
 
-	payloadJSONStr := string(methodPayloadJSON)
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal a method payload: %w", err)
+	}
+
+	payloadJSONStr := string(payloadJSON)
 
 	formattedJSON, err := jsbeautifier.Beautify(&payloadJSONStr, jsbeautifier.DefaultOptions())
 	if err != nil {
@@ -253,6 +261,63 @@ func (p *Project) SelectMethod(methodID, formID string) error {
 	p.Forms[formID].SelectedMethodID = methodID
 
 	return p.saveState()
+}
+
+func parseProtoField(field *desc.FieldDescriptor) interface{} {
+	if field.IsRepeated() {
+		v := parseProtoType(field)
+
+		return []interface{}{v}
+	}
+
+	if field.IsMap() {
+		key := parseProtoField(field.GetMapKeyType())
+
+		value := parseProtoField(field.GetMapValueType())
+
+		return map[interface{}]interface{}{key: value}
+	}
+
+	return parseProtoType(field)
+}
+
+// nolint: nosnakecase
+func parseProtoType(field *desc.FieldDescriptor) interface{} {
+	switch field.GetType() {
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+		msg := orderedmap.New[string, interface{}]()
+
+		for _, field := range field.GetMessageType().GetFields() {
+			v := parseProtoField(field)
+
+			msg.Set(field.GetName(), v)
+		}
+
+		return msg
+	case descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_INT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_ENUM:
+		return 0
+	case descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
+		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
+		return 0.0
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
+		return false
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
+		return []byte{}
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
+		return ""
+	default:
+		return field.GetDefaultValue()
+	}
 }
 
 func (p *Project) SaveCurrentFormID(currentFormID string) error {

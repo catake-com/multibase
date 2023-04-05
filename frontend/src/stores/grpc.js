@@ -71,7 +71,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SelectMethod(projectID, formID, methodID);
       } catch (error) {
-        this.projectID[projectID].forms[formID].response = error;
+        this.projects[projectID].forms[formID].response = error;
       }
     },
 
@@ -80,45 +80,45 @@ export const useGRPCStore = defineStore({
         this.projects[projectID] = await ReflectProto(
           projectID,
           formID,
-          this.projectID[projectID].forms[formID].address
+          this.projects[projectID].forms[formID].address
         );
       } catch (error) {
-        this.projectID[projectID].forms[formID].response = error;
+        this.projects[projectID].forms[formID].response = error;
       }
     },
 
     async sendRequest(projectID, formID) {
-      if (this.projectID[projectID].forms[formID].requestInProgress) {
+      if (this.projects[projectID].forms[formID].requestInProgress) {
         return;
       }
 
-      this.projectID[projectID].forms[formID].requestInProgress = true;
+      this.projects[projectID].forms[formID].requestInProgress = true;
 
       try {
         this.projects[projectID] = await SendRequest(
           projectID,
           formID,
-          this.projectID[projectID].forms[formID].address,
-          this.projectID[projectID].forms[formID].request
+          this.projects[projectID].forms[formID].address,
+          this.projects[projectID].forms[formID].request
         );
-        this.projectID[projectID].forms[formID].requestInProgress = false;
+        this.projects[projectID].forms[formID].requestInProgress = false;
       } catch (error) {
-        this.projectID[projectID].forms[formID].requestInProgress = false;
-        this.projectID[projectID].forms[formID].response = error;
+        this.projects[projectID].forms[formID].requestInProgress = false;
+        this.projects[projectID].forms[formID].response = error;
       }
     },
 
     async stopRequest(projectID, formID) {
-      if (!this.projectID[projectID].forms[formID].requestInProgress) {
+      if (!this.projects[projectID].forms[formID].requestInProgress) {
         return;
       }
 
       try {
         this.projects[projectID] = await StopRequest(projectID, formID);
-        this.projectID[projectID].forms[formID].requestInProgress = false;
+        this.projects[projectID].forms[formID].requestInProgress = false;
       } catch (error) {
-        this.projectID[projectID].forms[formID].requestInProgress = false;
-        this.projectID[projectID].forms[formID].response = error;
+        this.projects[projectID].forms[formID].requestInProgress = false;
+        this.projects[projectID].forms[formID].response = error;
       }
     },
 
@@ -126,7 +126,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await OpenImportPath(projectID);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -134,7 +134,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await RemoveImportPath(projectID, importPath);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -142,7 +142,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await OpenProtoFile(projectID);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -150,7 +150,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await DeleteAllProtoFiles(projectID);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -158,7 +158,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveCurrentFormID(projectID, currentFormID);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -166,7 +166,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveAddress(projectID, formID, address);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -174,7 +174,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await AddHeader(projectID, formID);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -182,7 +182,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveHeaders(projectID, formID, headers);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -190,7 +190,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await DeleteHeader(projectID, formID, headerID);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -198,7 +198,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveSplitterWidth(projectID, splitterWidth);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
@@ -206,7 +206,7 @@ export const useGRPCStore = defineStore({
       try {
         this.projects[projectID] = await SaveRequestPayload(projectID, formID, requestPayload);
       } catch (error) {
-        this.projectID[projectID].forms[this.projects[projectID].currentFormID].response = error;
+        this.projects[projectID].forms[this.projects[projectID].currentFormID].response = error;
       }
     },
 
