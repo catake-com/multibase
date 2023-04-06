@@ -68,8 +68,6 @@ watch(
 
 async function openFilePath() {
   await thriftStore.openFilePath(props.projectID);
-  console.log(thriftStore.project(props.projectID));
-  console.log(nodes);
 }
 
 async function createNewForm() {

@@ -10,7 +10,7 @@ import (
 	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
-const defaultProjectSplitterWidth = 30
+const defaultProjectSplitterWidth = 20
 
 type Module struct {
 	AppCtx context.Context

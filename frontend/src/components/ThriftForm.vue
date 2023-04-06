@@ -17,6 +17,8 @@ const props = defineProps({
   selectedFunctionID: String,
 });
 
+const splitterRequestResponse = ref(50);
+
 const localRequest = ref("");
 const localHeaders = ref([]);
 
@@ -120,7 +122,7 @@ async function saveHeaders(headers) {
 </script>
 
 <template>
-  <div class="full-height">
+  <div class="full-height" style="overflow: hidden !important">
     <q-form class="q-gutter-md full-height">
       <q-input dense v-model="address" label="Address" debounce="500" />
 
@@ -148,22 +150,28 @@ async function saveHeaders(headers) {
         </div>
       </div>
 
-      <v-ace-editor
-        v-model:value="request"
-        lang="json"
-        theme="merbivore_custom"
-        style="height: 30%"
-        :options="{ useWorker: true, showPrintMargin: false, behavioursEnabled: false }"
-      />
+      <q-splitter v-model="splitterRequestResponse" style="height: calc(100vh - 350px)">
+        <template v-slot:before>
+          <v-ace-editor
+            v-model:value="request"
+            lang="json"
+            theme="merbivore_custom"
+            style="height: 100%"
+            :options="{ useWorker: true, showPrintMargin: false, behavioursEnabled: false }"
+          />
+        </template>
 
-      <v-ace-editor
-        v-model:value="response"
-        lang="json"
-        theme="merbivore_custom"
-        style="height: 30%"
-        readonly
-        :options="{ showPrintMargin: false }"
-      />
+        <template v-slot:after>
+          <v-ace-editor
+            v-model:value="response"
+            lang="json"
+            theme="merbivore_custom"
+            style="height: 100%"
+            readonly
+            :options="{ showPrintMargin: false }"
+          />
+        </template>
+      </q-splitter>
 
       <div>
         <q-btn
