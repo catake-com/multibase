@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 
 import {
   CreateNewProject,
@@ -21,6 +21,7 @@ import {
   SaveHeaders,
   DeleteHeader,
   ReflectProto,
+  BeautifyRequest,
 } from "../wailsjs/go/grpc/Module";
 import { grpc } from "../wailsjs/go/models";
 
@@ -31,7 +32,7 @@ export const useGRPCStore = defineStore({
   }),
   getters: {
     project: (state) => {
-      return (projectID) => state.projects[projectID];
+      return (projectID) => state.projects[projectID] || {};
     },
   },
   actions: {
@@ -210,6 +211,14 @@ export const useGRPCStore = defineStore({
       }
     },
 
+    async beautifyRequest(projectID, formID) {
+      try {
+        this.projects[projectID] = await BeautifyRequest(projectID, formID);
+      } catch (error) {
+        this.projects[projectID].forms[formID].response = error;
+      }
+    },
+
     async loadProject(projectID) {
       if (this.projects[projectID]) {
         return this.projects[projectID];
@@ -223,3 +232,7 @@ export const useGRPCStore = defineStore({
     },
   },
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useGRPCStore, import.meta.hot));
+}

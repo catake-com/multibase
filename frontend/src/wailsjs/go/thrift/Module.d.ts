@@ -3,6 +3,8 @@
 
 export function AddHeader(arg1:string,arg2:string):Promise<any>;
 
+export function BeautifyRequest(arg1:string,arg2:string):Promise<any>;
+
 export function CreateNewForm(arg1:string):Promise<any>;
 
 export function CreateNewProject(arg1:string):Promise<any>;

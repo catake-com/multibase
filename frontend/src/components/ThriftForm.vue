@@ -102,6 +102,12 @@ async function addHeader() {
   localHeaders.value = thriftStore.project(props.projectID).forms[props.formID].headers;
 }
 
+async function beautifyRequest() {
+  await thriftStore.beautifyRequest(props.projectID, props.formID);
+
+  localRequest.value = thriftStore.project(props.projectID).forms[props.formID].request;
+}
+
 async function deleteHeader(headerID) {
   await thriftStore.deleteHeader(props.projectID, props.formID, headerID);
   localHeaders.value = thriftStore.project(props.projectID).forms[props.formID].headers;
@@ -116,25 +122,29 @@ async function saveHeaders(headers) {
 <template>
   <div class="full-height">
     <q-form class="q-gutter-md full-height">
-      <q-input v-model="address" label="Address" debounce="500" />
+      <q-input dense v-model="address" label="Address" debounce="500" />
 
       <div>
         <q-checkbox v-model="isMultiplexed" label="Enable multiplexed protocol" dense />
       </div>
 
-      <q-btn outline label="Add Header" size="xs" @click="addHeader" />
+      <q-btn-group>
+        <q-btn outline label="Beautify request JSON" size="xs" @click="beautifyRequest" />
+
+        <q-btn outline label="Add Header" size="xs" @click="addHeader" />
+      </q-btn-group>
 
       <div class="row" v-for="header in headers" :key="header.id">
         <div class="col">
-          <q-input v-model="header.key" label="Header" @keyup="saveHeaders(headers)" />
+          <q-input dense v-model="header.key" label="Header" @keyup="saveHeaders(headers)" />
         </div>
 
         <div class="col">
-          <q-input v-model="header.value" label="Value" @keyup="saveHeaders(headers)" />
+          <q-input dense v-model="header.value" label="Value" @keyup="saveHeaders(headers)" />
         </div>
 
         <div class="col">
-          <q-btn round icon="delete" size="xs" @click="deleteHeader(header.id)" style="margin: 30px 0 0 10px" />
+          <q-btn round icon="clear" size="xs" @click="deleteHeader(header.id)" style="margin: 15px 0 0 10px" />
         </div>
       </div>
 

@@ -263,6 +263,20 @@ func (p *Project) SelectMethod(methodID, formID string) error {
 	return p.saveState()
 }
 
+func (p *Project) BeautifyRequest(formID string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	formattedJSON, err := jsbeautifier.Beautify(&p.Forms[formID].Request, jsbeautifier.DefaultOptions())
+	if err != nil {
+		return nil // nolint: nilerr
+	}
+
+	p.Forms[formID].Request = formattedJSON
+
+	return p.saveState()
+}
+
 func parseProtoField(field *desc.FieldDescriptor) interface{} {
 	if field.IsRepeated() {
 		v := parseProtoType(field)

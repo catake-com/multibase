@@ -92,6 +92,12 @@ async function reflectProto() {
   await grpcStore.reflectProto(props.projectID, props.formID);
 }
 
+async function beautifyRequest() {
+  await grpcStore.beautifyRequest(props.projectID, props.formID);
+
+  localRequest.value = grpcStore.project(props.projectID).forms[props.formID].request;
+}
+
 async function addHeader() {
   await grpcStore.addHeader(props.projectID, props.formID);
   localHeaders.value = grpcStore.project(props.projectID).forms[props.formID].headers;
@@ -111,25 +117,27 @@ async function saveHeaders(headers) {
 <template>
   <div class="full-height">
     <q-form class="q-gutter-md full-height">
-      <q-input v-model="address" label="Address" debounce="500" />
+      <q-input dense v-model="address" label="Address" debounce="500" />
 
-      <div>
+      <q-btn-group>
         <q-btn outline label="Import proto from server reflection" size="xs" @click="reflectProto" />
-      </div>
 
-      <q-btn outline label="Add Header" size="xs" @click="addHeader" />
+        <q-btn outline label="Beautify request JSON" size="xs" @click="beautifyRequest" />
+
+        <q-btn outline label="Add Header" size="xs" @click="addHeader" />
+      </q-btn-group>
 
       <div class="row" v-for="header in headers" :key="header.id">
         <div class="col">
-          <q-input v-model="header.key" label="Header" @keyup="saveHeaders(headers)" />
+          <q-input dense v-model="header.key" label="Header" @keyup="saveHeaders(headers)" />
         </div>
 
         <div class="col">
-          <q-input v-model="header.value" label="Value" @keyup="saveHeaders(headers)" />
+          <q-input dense v-model="header.value" label="Value" @keyup="saveHeaders(headers)" />
         </div>
 
         <div class="col">
-          <q-btn round icon="delete" size="xs" @click="deleteHeader(header.id)" style="margin: 30px 0 0 10px" />
+          <q-btn round icon="clear" size="xs" @click="deleteHeader(header.id)" style="margin: 15px 0 0 10px" />
         </div>
       </div>
 

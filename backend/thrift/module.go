@@ -272,6 +272,20 @@ func (m *Module) RemoveForm(projectID, formID string) (*Project, error) {
 	return project, nil
 }
 
+func (m *Module) BeautifyRequest(projectID, formID string) (*Project, error) {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = project.BeautifyRequest(formID)
+	if err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
 func (m *Module) Project(projectID string) (*Project, error) {
 	project, err := m.fetchProject(projectID)
 	if err != nil {

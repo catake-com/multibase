@@ -57,9 +57,9 @@ watch(
     }
 
     const formID = newCurrentFormID || oldCurrentFormID;
-    const form = grpcStore.project(props.projectID).forms[formID];
+    const form = grpcStore.project(props.projectID).forms ? grpcStore.project(props.projectID).forms[formID] : null;
 
-    if (form.selectedMethodID && selectedMethod.value !== form.selectedMethodID) {
+    if (form && form.selectedMethodID && selectedMethod.value !== form.selectedMethodID) {
       selectedMethod.value = form.selectedMethodID;
     }
   }
@@ -95,7 +95,7 @@ async function closeFormTab(event, formID) {
   <div class="full-height">
     <q-splitter v-if="splitterWidth" v-model="splitterWidth" class="full-height" :limits="[20, 80]">
       <template v-slot:before>
-        <q-tabs v-model="tab" class="full-width">
+        <q-tabs dense v-model="tab" class="full-width">
           <q-tab name="protos" label="Protos" />
           <q-tab name="import_paths" label="Import Paths" />
         </q-tabs>

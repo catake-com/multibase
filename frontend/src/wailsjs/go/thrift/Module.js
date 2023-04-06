@@ -6,6 +6,10 @@ export function AddHeader(arg1, arg2) {
   return window['go']['thrift']['Module']['AddHeader'](arg1, arg2);
 }
 
+export function BeautifyRequest(arg1, arg2) {
+  return window['go']['thrift']['Module']['BeautifyRequest'](arg1, arg2);
+}
+
 export function CreateNewForm(arg1) {
   return window['go']['thrift']['Module']['CreateNewForm'](arg1);
 }

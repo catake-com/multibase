@@ -9,20 +9,19 @@ export default defineComponent({
   computed: {
     ...mapState(useProjectStore, ["openedProjectIDs", "projects"]),
     ...mapWritableState(useProjectStore, ["currentProjectID"]),
+    currentProjectID: {
+      get() {
+        if (useProjectStore().currentProjectID) {
+          return useProjectStore().currentProjectID;
+        }
+      },
+      async set(projectID) {
+        await useProjectStore().saveCurrentProjectID(projectID);
+      },
+    },
   },
   beforeCreate() {
     useProjectStore().loadState();
-  },
-  watch: {
-    async currentProjectID(newValue, oldValue) {
-      if (newValue === oldValue) {
-        return;
-      }
-
-      const projectID = newValue || oldValue;
-
-      await useProjectStore().saveCurrentProjectID(projectID);
-    },
   },
   methods: {
     async createNewProject() {
@@ -44,7 +43,7 @@ export default defineComponent({
 
 <template>
   <div class="bg-primary text-white shadow-2">
-    <q-tabs v-model="currentProjectID" align="left" outside-arrows mobile-arrows no-caps>
+    <q-tabs v-model="currentProjectID" align="left" outside-arrows mobile-arrows dense no-caps>
       <q-tab :name="projectID" v-for="projectID in openedProjectIDs" :key="`project-tab-${projectID}`">
         <div class="row justify-between">
           <div class="col q-tab__label" v-if="projects[projectID].type === 'new'">New Tab</div>

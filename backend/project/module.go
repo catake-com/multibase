@@ -206,6 +206,10 @@ func (m *Module) SaveCurrentProjectID(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
 
+	if !lo.Contains(m.OpenedProjectIDs, projectID) {
+		return nil, nil
+	}
+
 	m.CurrentProjectID = projectID
 
 	if err := m.saveState(); err != nil {

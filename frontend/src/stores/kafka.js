@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 
 import {
   CreateNewProject,
@@ -195,3 +195,7 @@ export const useKafkaStore = defineStore({
     },
   },
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useKafkaStore, import.meta.hot));
+}

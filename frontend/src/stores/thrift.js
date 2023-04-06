@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 
 import {
   CreateNewProject,
@@ -17,6 +17,7 @@ import {
   SaveHeaders,
   DeleteHeader,
   DeleteProject,
+  BeautifyRequest,
   Project,
 } from "../wailsjs/go/thrift/Module";
 
@@ -178,6 +179,14 @@ export const useThriftStore = defineStore({
       }
     },
 
+    async beautifyRequest(projectID, formID) {
+      try {
+        this.projects[projectID] = await BeautifyRequest(projectID, formID);
+      } catch (error) {
+        this.projects[projectID].forms[formID].response = error;
+      }
+    },
+
     async loadProject(projectID) {
       if (this.projects[projectID]) {
         return this.projects[projectID];
@@ -191,3 +200,7 @@ export const useThriftStore = defineStore({
     },
   },
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useThriftStore, import.meta.hot));
+}

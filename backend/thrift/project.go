@@ -319,6 +319,20 @@ func (p *Project) SaveRequestPayload(formID, requestPayload string) error {
 	return p.saveState()
 }
 
+func (p *Project) BeautifyRequest(formID string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	formattedJSON, err := jsbeautifier.Beautify(&p.Forms[formID].Request, jsbeautifier.DefaultOptions())
+	if err != nil {
+		return nil // nolint: nilerr
+	}
+
+	p.Forms[formID].Request = formattedJSON
+
+	return p.saveState()
+}
+
 func (p *Project) Close() error {
 	for _, client := range p.Forms {
 		err := client.Close()

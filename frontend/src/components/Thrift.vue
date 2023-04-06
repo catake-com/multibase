@@ -58,9 +58,9 @@ watch(
     }
 
     const formID = newCurrentFormID || oldCurrentFormID;
-    const form = thriftStore.project(props.projectID).forms[formID];
+    const form = thriftStore.project(props.projectID).forms ? thriftStore.project(props.projectID).forms[formID] : null;
 
-    if (form.selectedFunctionID && selectedFunction.value !== form.selectedFunctionID) {
+    if (form && form.selectedFunctionID && selectedFunction.value !== form.selectedFunctionID) {
       selectedFunction.value = form.selectedFunctionID;
     }
   }
