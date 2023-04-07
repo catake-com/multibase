@@ -122,7 +122,7 @@ async function saveHeaders(headers) {
 </script>
 
 <template>
-  <div class="full-height" style="overflow: hidden !important">
+  <div class="full-height">
     <q-form class="q-gutter-md full-height">
       <q-input dense v-model="address" label="Address" debounce="500" />
 
