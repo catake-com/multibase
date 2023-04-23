@@ -10,7 +10,6 @@ require (
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/golang/protobuf v1.5.3
 	github.com/jhump/protoreflect v1.15.1
-	github.com/jinzhu/copier v0.3.5
 	github.com/samber/lo v1.38.1
 	github.com/twmb/franz-go v1.13.2
 	github.com/twmb/franz-go/pkg/kadm v1.8.0

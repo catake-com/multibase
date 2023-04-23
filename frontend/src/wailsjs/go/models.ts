@@ -143,7 +143,7 @@ export namespace grpc {
 
 export namespace kafka {
 	
-	export class Project {
+	export class State {
 	    id: string;
 	    address: string;
 	    authMethod: string;
@@ -153,7 +153,7 @@ export namespace kafka {
 	    currentTab: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new Project(source);
+	        return new State(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -167,26 +167,14 @@ export namespace kafka {
 	        this.currentTab = source["currentTab"];
 	    }
 	}
-	export class State {
-	    projects: {[key: string]: Project};
-	
-	    static createFrom(source: any = {}) {
-	        return new State(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.projects = source["projects"];
-	    }
-	}
-	export class TabBrokersBroker {
+	export class TabBrokersDataBroker {
 	    id: number;
 	    rack: string;
 	    host: string;
 	    port: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new TabBrokersBroker(source);
+	        return new TabBrokersDataBroker(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -197,20 +185,20 @@ export namespace kafka {
 	        this.port = source["port"];
 	    }
 	}
-	export class TabBrokers {
+	export class TabBrokersData {
 	    isConnected: boolean;
 	    count: number;
-	    list: TabBrokersBroker[];
+	    list: TabBrokersDataBroker[];
 	
 	    static createFrom(source: any = {}) {
-	        return new TabBrokers(source);
+	        return new TabBrokersData(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.isConnected = source["isConnected"];
 	        this.count = source["count"];
-	        this.list = this.convertValues(source["list"], TabBrokersBroker);
+	        this.list = this.convertValues(source["list"], TabBrokersDataBroker);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -231,12 +219,12 @@ export namespace kafka {
 		    return a;
 		}
 	}
-	export class TabConsumersConsumer {
+	export class TabConsumersDataConsumer {
 	    name: string;
 	    state: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new TabConsumersConsumer(source);
+	        return new TabConsumersDataConsumer(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -245,20 +233,20 @@ export namespace kafka {
 	        this.state = source["state"];
 	    }
 	}
-	export class TabConsumers {
+	export class TabConsumersData {
 	    isConnected: boolean;
 	    count: number;
-	    list: TabConsumersConsumer[];
+	    list: TabConsumersDataConsumer[];
 	
 	    static createFrom(source: any = {}) {
-	        return new TabConsumers(source);
+	        return new TabConsumersData(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.isConnected = source["isConnected"];
 	        this.count = source["count"];
-	        this.list = this.convertValues(source["list"], TabConsumersConsumer);
+	        this.list = this.convertValues(source["list"], TabConsumersDataConsumer);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -279,13 +267,13 @@ export namespace kafka {
 		    return a;
 		}
 	}
-	export class TabTopicsTopic {
+	export class TabTopicsDataTopic {
 	    name: string;
 	    partitionCount: number;
 	    messageCount: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new TabTopicsTopic(source);
+	        return new TabTopicsDataTopic(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -295,20 +283,20 @@ export namespace kafka {
 	        this.messageCount = source["messageCount"];
 	    }
 	}
-	export class TabTopics {
+	export class TabTopicsData {
 	    isConnected: boolean;
 	    count: number;
-	    list: TabTopicsTopic[];
+	    list: TabTopicsDataTopic[];
 	
 	    static createFrom(source: any = {}) {
-	        return new TabTopics(source);
+	        return new TabTopicsData(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.isConnected = source["isConnected"];
 	        this.count = source["count"];
-	        this.list = this.convertValues(source["list"], TabTopicsTopic);
+	        this.list = this.convertValues(source["list"], TabTopicsDataTopic);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

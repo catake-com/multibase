@@ -46,7 +46,8 @@ export const useGRPCStore = defineStore({
 
     async deleteProject(projectID) {
       try {
-        this.projects[projectID] = await DeleteProject(projectID);
+        await DeleteProject(projectID);
+        delete this.projects[projectID];
       } catch (error) {
         console.log(error);
       }

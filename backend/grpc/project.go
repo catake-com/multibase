@@ -277,63 +277,6 @@ func (p *Project) BeautifyRequest(formID string) error {
 	return p.saveState()
 }
 
-func parseProtoField(field *desc.FieldDescriptor) interface{} {
-	if field.IsRepeated() {
-		v := parseProtoType(field)
-
-		return []interface{}{v}
-	}
-
-	if field.IsMap() {
-		key := parseProtoField(field.GetMapKeyType())
-
-		value := parseProtoField(field.GetMapValueType())
-
-		return map[interface{}]interface{}{key: value}
-	}
-
-	return parseProtoType(field)
-}
-
-// nolint: nosnakecase
-func parseProtoType(field *desc.FieldDescriptor) interface{} {
-	switch field.GetType() {
-	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
-		msg := orderedmap.New[string, interface{}]()
-
-		for _, field := range field.GetMessageType().GetFields() {
-			v := parseProtoField(field)
-
-			msg.Set(field.GetName(), v)
-		}
-
-		return msg
-	case descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT32,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
-		descriptorpb.FieldDescriptorProto_TYPE_INT32,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT32,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
-		descriptorpb.FieldDescriptorProto_TYPE_INT64,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT64,
-		descriptorpb.FieldDescriptorProto_TYPE_ENUM:
-		return 0
-	case descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
-		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
-		return 0.0
-	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
-		return false
-	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
-		return []byte{}
-	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
-		return ""
-	default:
-		return field.GetDefaultValue()
-	}
-}
-
 func (p *Project) SaveCurrentFormID(currentFormID string) error {
 	p.stateMutex.Lock()
 	defer p.stateMutex.Unlock()
@@ -523,4 +466,61 @@ func (p *Project) saveState() error {
 	}
 
 	return nil
+}
+
+func parseProtoField(field *desc.FieldDescriptor) interface{} {
+	if field.IsRepeated() {
+		v := parseProtoType(field)
+
+		return []interface{}{v}
+	}
+
+	if field.IsMap() {
+		key := parseProtoField(field.GetMapKeyType())
+
+		value := parseProtoField(field.GetMapValueType())
+
+		return map[interface{}]interface{}{key: value}
+	}
+
+	return parseProtoType(field)
+}
+
+// nolint: nosnakecase
+func parseProtoType(field *desc.FieldDescriptor) interface{} {
+	switch field.GetType() {
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+		msg := orderedmap.New[string, interface{}]()
+
+		for _, field := range field.GetMessageType().GetFields() {
+			v := parseProtoField(field)
+
+			msg.Set(field.GetName(), v)
+		}
+
+		return msg
+	case descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_INT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_ENUM:
+		return 0
+	case descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
+		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
+		return 0.0
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
+		return false
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
+		return []byte{}
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
+		return ""
+	default:
+		return field.GetDefaultValue()
+	}
 }

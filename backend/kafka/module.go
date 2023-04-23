@@ -2,537 +2,208 @@ package kafka
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"fmt"
-	"log"
-	"net"
 	"sync"
-	"time"
-
-	"github.com/jinzhu/copier"
-	"github.com/twmb/franz-go/pkg/kadm"
-	"github.com/twmb/franz-go/pkg/kgo"
-	"github.com/twmb/franz-go/pkg/sasl/plain"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
-const kafkaConnectionTimeout = 10 * time.Second
-
-var (
-	errNoStartOffsetFound = errors.New("no start offset found")
-	errNoEndOffsetFound   = errors.New("no end offset found")
-)
-
-type State struct {
-	Projects map[string]*Project `json:"projects"`
-}
-
 type Module struct {
 	AppCtx context.Context
 
-	state                 *State
-	stateStorage          *state.Storage
-	stateMutex            *sync.RWMutex
-	clients               map[string]*kadm.Client
-	topicConsumingClients map[string]*kgo.Client
-	topicConsumingCancels map[string]context.CancelFunc
+	projects      map[string]*Project
+	projectsMutex sync.RWMutex
+	stateStorage  *state.Storage
 }
 
 func NewModule(stateStorage *state.Storage) (*Module, error) {
 	module := &Module{
-		state: &State{
-			Projects: make(map[string]*Project),
-		},
-		stateStorage:          stateStorage,
-		clients:               make(map[string]*kadm.Client),
-		topicConsumingClients: make(map[string]*kgo.Client),
-		topicConsumingCancels: make(map[string]context.CancelFunc),
-		stateMutex:            &sync.RWMutex{},
-	}
-
-	err := module.readOrInitializeState()
-	if err != nil {
-		return nil, err
+		projects:     make(map[string]*Project),
+		stateStorage: stateStorage,
 	}
 
 	return module, nil
 }
 
 func (m *Module) CreateNewProject(projectID string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Projects[projectID] = &Project{
-		ID:         projectID,
-		CurrentTab: "overview",
-		Address:    "0.0.0.0:9092",
-		AuthMethod: "plaintext",
-	}
-
-	if err := m.saveState(); err != nil {
+	project, err := NewProject(projectID, m.stateStorage)
+	if err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	return project.state, nil
 }
 
-func (m *Module) DeleteProject(projectID string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	delete(m.state.Projects, projectID)
-
-	if err := m.saveState(); err != nil {
-		return nil, err
+func (m *Module) DeleteProject(projectID string) error {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
+		return err
 	}
 
-	return m.state, nil
+	m.projectsMutex.Lock()
+	defer m.projectsMutex.Unlock()
+
+	err = project.Close()
+	if err != nil {
+		return err
+	}
+
+	err = m.stateStorage.Delete(projectID)
+	if err != nil {
+		return fmt.Errorf("failed to delete a state: %w", err)
+	}
+
+	delete(m.projects, projectID)
+
+	return nil
 }
 
-func (m *Module) SaveCurrentTab(projectID, currentTab string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Projects[projectID].CurrentTab = currentTab
-
-	if err := m.saveState(); err != nil {
+func (m *Module) SaveState(projectID string, state *State) (*State, error) {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
-}
-
-func (m *Module) SaveAddress(projectID, address string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Projects[projectID].Address = address
-
-	if err := m.saveState(); err != nil {
+	err = project.SaveState(state)
+	if err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
-}
-
-func (m *Module) SaveAuthMethod(projectID, authMethod string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Projects[projectID].AuthMethod = authMethod
-
-	if authMethod == "plaintext" {
-		m.state.Projects[projectID].AuthUsername = ""
-		m.state.Projects[projectID].AuthPassword = ""
-	}
-
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
-
-	return m.state, nil
-}
-
-func (m *Module) SaveAuthUsername(projectID, authUsername string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Projects[projectID].AuthUsername = authUsername
-
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
-
-	return m.state, nil
-}
-
-func (m *Module) SaveAuthPassword(projectID, authPassword string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	m.state.Projects[projectID].AuthPassword = authPassword
-
-	if err := m.saveState(); err != nil {
-		return nil, err
-	}
-
-	return m.state, nil
+	return project.state, nil
 }
 
 func (m *Module) Connect(projectID string) (*State, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	tlsDialer := &tls.Dialer{NetDialer: &net.Dialer{Timeout: kafkaConnectionTimeout}}
-
-	options := []kgo.Opt{
-		kgo.SeedBrokers(m.state.Projects[projectID].Address),
-		kgo.Dialer(tlsDialer.DialContext),
-	}
-
-	if m.state.Projects[projectID].AuthMethod == "saslssl" {
-		options = append(
-			options,
-			kgo.SASL(plain.Auth{
-				User: m.state.Projects[projectID].AuthUsername,
-				Pass: m.state.Projects[projectID].AuthPassword,
-			}.AsMechanism()),
-		)
-	}
-
-	client, err := kgo.NewClient(options...)
+	project, err := m.fetchProject(projectID)
 	if err != nil {
-		return nil, fmt.Errorf("cannot establish kafka connection: %w", err)
-	}
-
-	ctx := context.Background()
-
-	err = client.Ping(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("cannot connect to kafka: %w", err)
-	}
-
-	m.state.Projects[projectID].IsConnected = true
-	m.clients[projectID] = kadm.NewClient(client)
-
-	if err := m.saveState(); err != nil {
 		return nil, err
 	}
 
-	return m.state, nil
+	err = project.Connect()
+	if err != nil {
+		return nil, err
+	}
+
+	return project.state, nil
 }
 
-// nolint: funlen
-func (m *Module) Topics(projectID string) (*TabTopics, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	tabTopics := &TabTopics{
-		IsConnected: m.state.Projects[projectID].IsConnected,
-	}
-
-	if !tabTopics.IsConnected {
-		return tabTopics, nil
-	}
-
-	client := m.clients[projectID]
-
-	ctx := context.Background()
-
-	kafkaTopics, err := client.ListTopics(ctx)
+func (m *Module) Topics(projectID string) (*TabTopicsData, error) {
+	project, err := m.fetchProject(projectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list topics: %w", err)
+		return nil, err
 	}
 
-	startOffsets, err := client.ListStartOffsets(ctx)
+	data, err := project.Topics()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list start offsets: %w", err)
+		return nil, err
 	}
 
-	endOffsets, err := client.ListEndOffsets(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list end offsets: %w", err)
-	}
-
-	tabTopics.Count = len(kafkaTopics)
-	tabTopics.List = make([]*TabTopicsTopic, 0, len(kafkaTopics))
-
-	for _, kafkaTopic := range kafkaTopics.Sorted() {
-		var messageCount int64
-
-		for _, partition := range kafkaTopic.Partitions {
-			startOffset, ok := startOffsets.Lookup(kafkaTopic.Topic, partition.Partition)
-			if !ok {
-				return nil, errNoStartOffsetFound
-			}
-
-			endOffset, ok := endOffsets.Lookup(kafkaTopic.Topic, partition.Partition)
-			if !ok {
-				return nil, errNoEndOffsetFound
-			}
-
-			messageCount += endOffset.Offset - startOffset.Offset
-		}
-
-		tabTopics.List = append(
-			tabTopics.List,
-			&TabTopicsTopic{
-				Name:           kafkaTopic.Topic,
-				PartitionCount: len(kafkaTopic.Partitions),
-				MessageCount:   messageCount,
-			},
-		)
-	}
-
-	return tabTopics, nil
+	return data, nil
 }
 
-func (m *Module) Brokers(projectID string) (*TabBrokers, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	tabBrokers := &TabBrokers{
-		IsConnected: m.state.Projects[projectID].IsConnected,
-	}
-
-	if !tabBrokers.IsConnected {
-		return tabBrokers, nil
-	}
-
-	client := m.clients[projectID]
-
-	ctx := context.Background()
-
-	kafkaBrokers, err := client.ListBrokers(ctx)
+func (m *Module) Brokers(projectID string) (*TabBrokersData, error) {
+	project, err := m.fetchProject(projectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list brokers: %w", err)
+		return nil, err
 	}
 
-	tabBrokers.Count = len(kafkaBrokers)
-	tabBrokers.List = make([]*TabBrokersBroker, 0, len(kafkaBrokers))
-
-	for _, kafkaBroker := range kafkaBrokers {
-		broker := &TabBrokersBroker{
-			ID:   int(kafkaBroker.NodeID),
-			Host: kafkaBroker.Host,
-			Port: int(kafkaBroker.Port),
-		}
-
-		if kafkaBroker.Rack != nil {
-			broker.Rack = *kafkaBroker.Rack
-		}
-
-		tabBrokers.List = append(tabBrokers.List, broker)
+	data, err := project.Brokers()
+	if err != nil {
+		return nil, err
 	}
 
-	return tabBrokers, nil
+	return data, nil
 }
 
-func (m *Module) Consumers(projectID string) (*TabConsumers, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	tabConsumers := &TabConsumers{
-		IsConnected: m.state.Projects[projectID].IsConnected,
-	}
-
-	if !tabConsumers.IsConnected {
-		return tabConsumers, nil
-	}
-
-	client := m.clients[projectID]
-
-	ctx := context.Background()
-
-	kafkaGroups, err := client.DescribeGroups(ctx)
+func (m *Module) Consumers(projectID string) (*TabConsumersData, error) {
+	project, err := m.fetchProject(projectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list consumers: %w", err)
+		return nil, err
 	}
 
-	tabConsumers.Count = len(kafkaGroups)
-	tabConsumers.List = make([]*TabConsumersConsumer, 0, len(kafkaGroups))
-
-	for _, kafkaGroup := range kafkaGroups {
-		consumer := &TabConsumersConsumer{
-			Name:  kafkaGroup.Group,
-			State: kafkaGroup.State,
-		}
-
-		tabConsumers.List = append(tabConsumers.List, consumer)
+	data, err := project.Consumers()
+	if err != nil {
+		return nil, err
 	}
 
-	return tabConsumers, nil
+	return data, nil
 }
 
-// nolint: funlen, cyclop
 func (m *Module) StartTopicConsuming(projectID, topic string, hoursAgo int) (*TopicOutput, error) {
-	m.stateMutex.Lock()
-	defer m.stateMutex.Unlock()
-
-	tlsDialer := &tls.Dialer{NetDialer: &net.Dialer{Timeout: kafkaConnectionTimeout}}
-	timeFrom := time.Now().UTC().Add(-time.Hour * time.Duration(hoursAgo)).UnixMilli()
-
-	options := []kgo.Opt{
-		kgo.SeedBrokers(m.state.Projects[projectID].Address),
-		kgo.Dialer(tlsDialer.DialContext),
-		kgo.ConsumeTopics(topic),
-		kgo.ConsumeResetOffset(kgo.NewOffset().AfterMilli(timeFrom)),
-	}
-
-	if m.state.Projects[projectID].AuthMethod == "saslssl" {
-		options = append(
-			options,
-			kgo.SASL(plain.Auth{
-				User: m.state.Projects[projectID].AuthUsername,
-				Pass: m.state.Projects[projectID].AuthPassword,
-			}.AsMechanism()),
-		)
-	}
-
-	client, err := kgo.NewClient(options...)
+	project, err := m.fetchProject(projectID)
 	if err != nil {
-		return nil, fmt.Errorf("cannot establish kafka connection: %w", err)
+		return nil, err
 	}
 
-	m.topicConsumingClients[projectID] = client
-
-	adminClient := kadm.NewClient(client)
-
-	ctx := context.Background()
-
-	kafkaTopics, err := adminClient.ListTopics(ctx, topic)
+	data, err := project.StartTopicConsuming(m.AppCtx, topic, hoursAgo)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list topics: %w", err)
+		return nil, err
 	}
 
-	kafkaTopic := kafkaTopics[topic]
-
-	startOffsets, err := adminClient.ListStartOffsets(ctx, topic)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list start offsets: %w", err)
-	}
-
-	endOffsets, err := adminClient.ListEndOffsets(ctx, topic)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list end offsets: %w", err)
-	}
-
-	output := &TopicOutput{
-		Partitions: make([]*TopicPartition, 0, len(kafkaTopic.Partitions)),
-	}
-
-	partitionMap := make(map[int]*TopicPartition, len(kafkaTopic.Partitions))
-
-	for _, partition := range kafkaTopic.Partitions {
-		startOffset, ok := startOffsets.Lookup(kafkaTopic.Topic, partition.Partition)
-		if !ok {
-			return nil, errNoStartOffsetFound
-		}
-
-		endOffset, ok := endOffsets.Lookup(kafkaTopic.Topic, partition.Partition)
-		if !ok {
-			return nil, errNoEndOffsetFound
-		}
-
-		outputPartition := &TopicPartition{
-			ID:               int(partition.Partition),
-			OffsetTotalStart: startOffset.Offset,
-			OffsetTotalEnd:   endOffset.Offset,
-			OffsetCurrentEnd: endOffset.Offset,
-		}
-
-		output.CountTotal += endOffset.Offset - startOffset.Offset
-		output.Partitions = append(output.Partitions, outputPartition)
-
-		partitionMap[int(partition.Partition)] = outputPartition
-	}
-
-	go func() {
-		for {
-			ctx, cancelFunc := context.WithCancel(context.Background())
-			m.topicConsumingCancels[projectID] = cancelFunc
-
-			fetches := client.PollFetches(ctx)
-
-			var isCanceled bool
-
-			for _, err := range fetches.Errors() {
-				if errors.Is(err.Err, context.Canceled) {
-					isCanceled = true
-
-					break
-				}
-
-				log.Fatal(err)
-			}
-
-			if isCanceled {
-				break
-			}
-
-			for _, message := range fetches.Records() {
-				outputMessage := &TopicMessage{
-					Timestamp:   message.Timestamp.UTC(),
-					PartitionID: int(message.Partition),
-					Offset:      message.Offset,
-					Key:         string(message.Key),
-					Data:        string(message.Value),
-				}
-
-				runtime.EventsEmit(
-					m.AppCtx,
-					fmt.Sprintf("kafka_message_%s", projectID),
-					outputMessage,
-				)
-			}
-		}
-	}()
-
-	return output, nil
+	return data, nil
 }
 
 func (m *Module) StopTopicConsuming(projectID string) error {
-	m.stateMutex.RLock()
-	defer m.stateMutex.RUnlock()
-
-	m.topicConsumingCancels[projectID]()
-	m.topicConsumingCancels[projectID] = nil
-
-	m.topicConsumingClients[projectID].Close()
-	m.topicConsumingClients[projectID] = nil
-
-	return nil
-}
-
-func (m *Module) State() (*State, error) {
-	m.stateMutex.RLock()
-	defer m.stateMutex.RUnlock()
-
-	return m.state, nil
-}
-
-func (m *Module) Close() {
-	m.stateMutex.RLock()
-	defer m.stateMutex.RUnlock()
-
-	for _, client := range m.clients {
-		client.Close()
-	}
-}
-
-func (m *Module) readOrInitializeState() error {
-	isLoaded, err := m.stateStorage.Load("kafka", m.state)
+	project, err := m.fetchProject(projectID)
 	if err != nil {
-		return fmt.Errorf("failed to load a state: %w", err)
+		return err
 	}
 
-	if isLoaded {
-		return nil
-	}
-
-	err = m.stateStorage.Save("kafka", m.state)
+	err = project.StopTopicConsuming()
 	if err != nil {
-		return fmt.Errorf("failed to store a state: %w", err)
+		return err
 	}
 
 	return nil
 }
 
-func (m *Module) saveState() error {
-	state := &State{}
-
-	err := copier.CopyWithOption(state, m.state, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+func (m *Module) ProjectState(projectID string) (*State, error) {
+	project, err := m.fetchProject(projectID)
 	if err != nil {
-		return fmt.Errorf("failed to copy a kafka state: %w", err)
+		return nil, err
 	}
 
-	err = m.stateStorage.Save("kafka", m.state)
-	if err != nil {
-		return fmt.Errorf("failed to store a state: %w", err)
+	return project.state, nil
+}
+
+func (m *Module) Close() error {
+	for _, project := range m.projects {
+		err := project.Close()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func (m *Module) fetchProject(projectID string) (*Project, error) {
+	m.projectsMutex.RLock()
+	project, ok := m.projects[projectID]
+	m.projectsMutex.RUnlock()
+
+	if ok {
+		return project, nil
+	}
+
+	project = &Project{}
+	projectState := &State{}
+
+	isLoaded, err := m.stateStorage.Load(projectID, projectState)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load a state: %w", err)
+	}
+
+	if !isLoaded {
+		return nil, nil
+	}
+
+	projectState.CurrentTab = TabOverview
+	project.state = projectState
+	project.stateStorage = m.stateStorage
+
+	m.projectsMutex.Lock()
+	m.projects[projectID] = project
+	m.projectsMutex.Unlock()
+
+	return project, nil
 }

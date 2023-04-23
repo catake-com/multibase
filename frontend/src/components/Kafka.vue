@@ -1,144 +1,138 @@
-<script>
-import { defineComponent } from "vue";
+<script setup>
+import { computed } from "vue";
+import { useQuasar } from "quasar";
 import { useKafkaStore } from "../stores/kafka";
 
-export default defineComponent({
-  name: "Kafka",
-  props: {
-    projectID: String,
-  },
-  data() {
-    return {
-      splitterWidth: 12,
-      splitterWidthConsuming: 12,
-    };
-  },
-  beforeCreate() {
-    useKafkaStore().loadState();
-  },
-  computed: {
-    currentTab: {
-      get() {
-        if (useKafkaStore().main.projects[this.projectID]) {
-          return useKafkaStore().main.projects[this.projectID].currentTab;
-        }
-      },
-      async set(currentTab) {
-        await useKafkaStore().saveCurrentTab(this.projectID, currentTab);
-      },
-    },
-    address: {
-      get() {
-        if (useKafkaStore().main.projects[this.projectID]) {
-          return useKafkaStore().main.projects[this.projectID].address;
-        }
-      },
-      async set(address) {
-        await useKafkaStore().saveAddress(this.projectID, address);
-      },
-    },
-    authMethod: {
-      get() {
-        if (useKafkaStore().main.projects[this.projectID]) {
-          return useKafkaStore().main.projects[this.projectID].authMethod;
-        }
-      },
-      async set(authMethod) {
-        await useKafkaStore().saveAuthMethod(this.projectID, authMethod);
-      },
-    },
-    authUsername: {
-      get() {
-        if (useKafkaStore().main.projects[this.projectID]) {
-          return useKafkaStore().main.projects[this.projectID].authUsername;
-        }
-      },
-      async set(authUsername) {
-        await useKafkaStore().saveAuthUsername(this.projectID, authUsername);
-      },
-    },
-    authPassword: {
-      get() {
-        if (useKafkaStore().main.projects[this.projectID]) {
-          return useKafkaStore().main.projects[this.projectID].authPassword;
-        }
-      },
-      async set(authPassword) {
-        await useKafkaStore().saveAuthPassword(this.projectID, authPassword);
-      },
-    },
-    hoursAgo: {
-      get() {
-        if (useKafkaStore().session[this.projectID]) {
-          return useKafkaStore().session[this.projectID].hoursAgo;
-        }
-      },
-      set(hoursAgo) {
-        useKafkaStore().session[this.projectID].hoursAgo = parseInt(hoursAgo);
-      },
-    },
-    currentTopic() {
-      if (useKafkaStore().session[this.projectID]) {
-        return useKafkaStore().session[this.projectID].currentTopic;
-      }
-    },
-    topics() {
-      return useKafkaStore().topics[this.projectID];
-    },
-    brokers() {
-      return useKafkaStore().brokers[this.projectID];
-    },
-    consumers() {
-      return useKafkaStore().consumers[this.projectID];
-    },
-    consumedTopic() {
-      return useKafkaStore().consumedTopic[this.projectID];
-    },
-    consumedTopicMessages() {
-      return useKafkaStore().consumedTopicMessages[this.projectID];
-    },
-  },
-  methods: {
-    async connect() {
-      try {
-        await useKafkaStore().connect(this.projectID);
-        await useKafkaStore().loadTopics(this.projectID);
-        await useKafkaStore().loadBrokers(this.projectID);
-        await useKafkaStore().loadConsumers(this.projectID);
-        this.$q.notify({ type: "positive", message: "Connected" });
-      } catch (error) {
-        this.$q.notify({ type: "negative", message: error });
-      }
-    },
+const quasar = useQuasar();
 
-    async startTopicConsuming(topic) {
-      try {
-        await useKafkaStore().startTopicConsuming(this.projectID, topic, 1);
-        this.$q.notify({ type: "positive", message: "Started consuming" });
-      } catch (error) {
-        this.$q.notify({ type: "negative", message: error });
-      }
-    },
+const kafkaStore = useKafkaStore();
 
-    async stopTopicConsuming() {
-      try {
-        await useKafkaStore().stopTopicConsuming(this.projectID);
-        this.$q.notify({ type: "positive", message: "Stopped consuming" });
-      } catch (error) {
-        this.$q.notify({ type: "negative", message: error });
-      }
-    },
+const props = defineProps({
+  projectID: String,
+});
 
-    async restartTopicConsuming() {
-      try {
-        await useKafkaStore().restartTopicConsuming(this.projectID);
-        this.$q.notify({ type: "positive", message: "Restarted consuming" });
-      } catch (error) {
-        this.$q.notify({ type: "negative", message: error });
-      }
-    },
+const splitterWidth = 12;
+const splitterWidthConsuming = 12;
+
+await kafkaStore.loadProject(props.projectID);
+
+const currentTab = computed({
+  get() {
+    return kafkaStore.projectState(props.projectID).currentTab;
+  },
+  async set(currentTab) {
+    const projectState = kafkaStore.projectState(props.projectID);
+    projectState.currentTab = currentTab;
+
+    await kafkaStore.saveState(props.projectID, projectState);
   },
 });
+
+const address = computed({
+  get() {
+    return kafkaStore.projectState(props.projectID).address;
+  },
+  async set(address) {
+    const projectState = kafkaStore.projectState(props.projectID);
+    projectState.address = address;
+
+    await kafkaStore.saveState(props.projectID, projectState);
+  },
+});
+
+const authMethod = computed({
+  get() {
+    return kafkaStore.projectState(props.projectID).authMethod;
+  },
+  async set(authMethod) {
+    const projectState = kafkaStore.projectState(props.projectID);
+    projectState.authMethod = authMethod;
+
+    await kafkaStore.saveState(props.projectID, projectState);
+  },
+});
+
+const authUsername = computed({
+  get() {
+    return kafkaStore.projectState(props.projectID).authUsername;
+  },
+  async set(authUsername) {
+    const projectState = kafkaStore.projectState(props.projectID);
+    projectState.authUsername = authUsername;
+
+    await kafkaStore.saveState(props.projectID, projectState);
+  },
+});
+
+const authPassword = computed({
+  get() {
+    return kafkaStore.projectState(props.projectID).authPassword;
+  },
+  async set(authPassword) {
+    const projectState = kafkaStore.projectState(props.projectID);
+    projectState.authPassword = authPassword;
+
+    await kafkaStore.saveState(props.projectID, projectState);
+  },
+});
+
+const hoursAgo = computed({
+  get() {
+    return kafkaStore.consumingSession(props.projectID).hoursAgo;
+  },
+  async set(hoursAgo) {
+    kafkaStore.consumingSession(props.projectID).hoursAgo = hoursAgo;
+  },
+});
+
+const currentTopic = computed(() => kafkaStore.consumingSession(props.projectID).currentTopic);
+const topics = computed(() => kafkaStore.topicsData(props.projectID));
+const brokers = computed(() => kafkaStore.brokersData(props.projectID));
+const consumers = computed(() => kafkaStore.consumersData(props.projectID));
+const consumedTopic = computed(() => kafkaStore.consumedTopic(props.projectID));
+const consumedTopicMessages = computed(() => kafkaStore.consumedTopicMessages(props.projectID));
+
+async function connect() {
+  try {
+    await kafkaStore.connect(props.projectID);
+    await Promise.all([
+      kafkaStore.loadTopics(props.projectID),
+      kafkaStore.loadBrokers(props.projectID),
+      kafkaStore.loadConsumers(props.projectID),
+    ]);
+
+    quasar.notify({ type: "positive", message: "Connected" });
+  } catch (error) {
+    quasar.notify({ type: "negative", message: error });
+  }
+}
+
+async function startTopicConsuming(topic) {
+  try {
+    await kafkaStore.startTopicConsuming(props.projectID, topic, 1);
+    quasar.notify({ type: "positive", message: "Started consuming" });
+  } catch (error) {
+    quasar.notify({ type: "negative", message: error });
+  }
+}
+
+async function stopTopicConsuming() {
+  try {
+    await kafkaStore.stopTopicConsuming(props.projectID);
+    quasar.notify({ type: "positive", message: "Stopped consuming" });
+  } catch (error) {
+    quasar.notify({ type: "negative", message: error });
+  }
+}
+
+async function restartTopicConsuming() {
+  try {
+    await kafkaStore.restartTopicConsuming(props.projectID);
+    quasar.notify({ type: "positive", message: "Restarted consuming" });
+  } catch (error) {
+    quasar.notify({ type: "negative", message: error });
+  }
+}
 </script>
 
 <template>
@@ -213,10 +207,10 @@ export default defineComponent({
 
                 <div>
                   <q-radio v-model="authMethod" val="plaintext" label="Plaintext" dense />
-                  <q-radio v-model="authMethod" val="saslssl" label="SASL SSL" dense />
+                  <q-radio v-model="authMethod" val="sasl_ssl" label="SASL SSL" dense />
                 </div>
 
-                <div v-if="authMethod === 'saslssl'">
+                <div v-if="authMethod === 'sasl_ssl'">
                   <q-input v-model="authUsername" label="Username" debounce="500" />
                   <q-input v-model="authPassword" label="Password" debounce="500" type="password" />
                 </div>

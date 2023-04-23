@@ -11,21 +11,13 @@ export function Consumers(arg1:string):Promise<any>;
 
 export function CreateNewProject(arg1:string):Promise<any>;
 
-export function DeleteProject(arg1:string):Promise<any>;
+export function DeleteProject(arg1:string):Promise<void>;
 
-export function SaveAddress(arg1:string,arg2:string):Promise<any>;
+export function ProjectState(arg1:string):Promise<any>;
 
-export function SaveAuthMethod(arg1:string,arg2:string):Promise<any>;
-
-export function SaveAuthPassword(arg1:string,arg2:string):Promise<any>;
-
-export function SaveAuthUsername(arg1:string,arg2:string):Promise<any>;
-
-export function SaveCurrentTab(arg1:string,arg2:string):Promise<any>;
+export function SaveState(arg1:string,arg2:any):Promise<any>;
 
 export function StartTopicConsuming(arg1:string,arg2:string,arg3:number):Promise<any>;
-
-export function State():Promise<any>;
 
 export function StopTopicConsuming(arg1:string):Promise<void>;
 
