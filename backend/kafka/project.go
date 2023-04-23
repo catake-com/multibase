@@ -315,7 +315,7 @@ func (p *Project) StartTopicConsuming(ctx context.Context, topic string, hoursAg
 
 	go func() {
 		for {
-			ctx, cancelFunc := context.WithCancel(context.Background())
+			ctx, cancelFunc := context.WithCancel(ctx)
 			p.topicConsumingCancel = cancelFunc
 
 			fetches := client.PollFetches(ctx)

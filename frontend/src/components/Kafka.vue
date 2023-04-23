@@ -133,6 +133,30 @@ async function restartTopicConsuming() {
     quasar.notify({ type: "negative", message: error });
   }
 }
+
+function consumedMessagesTableRowKey(row) {
+  return `${row.partitionID}_${row.offset}`;
+}
+
+const consumedMessagesTableColumns = [
+  {
+    name: "timestamp",
+    label: "Timestamp",
+    align: "left",
+    field: "timestamp",
+  },
+  { name: "partition", align: "left", label: "Partition", field: "partitionID" },
+  { name: "offset", align: "left", label: "Offset", field: "offset" },
+  { name: "key", align: "left", label: "Key", field: "key" },
+  { name: "data", align: "left", label: "Data", field: "data" },
+  { name: "headers", align: "left", label: "Headers", field: "" },
+];
+
+const consumedMessagesTablePagination = {
+  rowsPerPage: 20,
+};
+
+const consumedMessagesTableRowsPerPage = [5, 10, 20, 50, 100, 200, 500];
 </script>
 
 <template>
@@ -161,29 +185,13 @@ async function restartTopicConsuming() {
         </template>
 
         <template v-slot:after>
-          <q-markup-table>
-            <thead>
-              <tr>
-                <th class="text-left">Timestamp</th>
-                <th class="text-left">Partition</th>
-                <th class="text-left">Offset</th>
-                <th class="text-left">Key</th>
-                <th class="text-left">Data</th>
-                <th class="text-left">Headers</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr v-for="message in consumedTopicMessages" :key="`${message.partitionID}_${message.offset}`">
-                <td class="text-left">{{ message.timestamp }}</td>
-                <td class="text-left">{{ message.partitionID }}</td>
-                <td class="text-left">{{ message.offset }}</td>
-                <td class="text-left">{{ message.key }}</td>
-                <td class="text-left">{{ message.data }}</td>
-                <td class="text-left"></td>
-              </tr>
-            </tbody>
-          </q-markup-table>
+          <q-table
+            :rows="consumedTopicMessages"
+            :columns="consumedMessagesTableColumns"
+            :row-key="consumedMessagesTableRowKey"
+            :pagination="consumedMessagesTablePagination"
+            :rows-per-page-options="consumedMessagesTableRowsPerPage"
+          />
         </template>
       </q-splitter>
     </div>
