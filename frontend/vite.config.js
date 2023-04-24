@@ -22,8 +22,8 @@ export default defineConfig({
         chunkFileNames: `assets/[name].js`,
         assetFileNames: `assets/[name].[ext]`,
       },
-      external: ["/@id/__x00__virtual:terminal/console"],
     },
+    target: "es2015",
   },
   resolve: {
     alias: {
