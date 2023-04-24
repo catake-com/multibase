@@ -13,7 +13,7 @@ type Storage struct {
 	badgerDB *badger.DB
 }
 
-func NewStorage() (*Storage, error) {
+func NewStorage(appLogger badger.Logger) (*Storage, error) {
 	stateDirPath, err := xdg.ConfigFile("multibase/state")
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve config path: %w", err)
@@ -24,6 +24,7 @@ func NewStorage() (*Storage, error) {
 	badgerDB, err := badger.Open(
 		badger.
 			DefaultOptions(stateDirPath).
+			WithLogger(appLogger).
 			WithEncryptionKey([]byte("8c755319-fd2a-4a89-b0d9-ae7b8d26")).
 			WithIndexCacheSize(indexCacheSize100MB),
 	)

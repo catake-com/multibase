@@ -3,8 +3,9 @@ package main
 
 import (
 	"embed"
-	"log"
+	"os"
 
+	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -21,9 +22,16 @@ var icon []byte
 
 // nolint: funlen
 func main() {
-	app, err := NewApp()
+	appLogger := logrus.New()
+	appLogger.Out = os.Stdout
+	appLogger.SetLevel(logrus.DebugLevel)
+	appLogger.Formatter = &logrus.JSONFormatter{}
+
+	wailsLogger := &WailsLogger{impl: appLogger}
+
+	app, err := NewApp(appLogger)
 	if err != nil {
-		log.Fatal(err)
+		appLogger.Fatal(err)
 	}
 
 	err = wails.Run(&options.App{
@@ -41,12 +49,13 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		Logger:        nil,
-		LogLevel:      logger.DEBUG,
-		OnStartup:     app.startup,
-		OnDomReady:    app.domReady,
-		OnShutdown:    app.shutdown,
-		OnBeforeClose: app.beforeClose,
+		Logger:             wailsLogger,
+		LogLevel:           logger.DEBUG,
+		LogLevelProduction: logger.DEBUG,
+		OnStartup:          app.startup,
+		OnDomReady:         app.domReady,
+		OnShutdown:         app.shutdown,
+		OnBeforeClose:      app.beforeClose,
 		Bind: []interface{}{
 			app,
 			app.ProjectModule,
@@ -84,6 +93,38 @@ func main() {
 		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		appLogger.Fatal(err)
 	}
+}
+
+type WailsLogger struct {
+	impl *logrus.Logger
+}
+
+func (l *WailsLogger) Print(message string) {
+	l.impl.Print(message)
+}
+
+func (l *WailsLogger) Trace(message string) {
+	l.impl.Trace(message)
+}
+
+func (l *WailsLogger) Debug(message string) {
+	l.impl.Debug(message)
+}
+
+func (l *WailsLogger) Info(message string) {
+	l.impl.Info(message)
+}
+
+func (l *WailsLogger) Warning(message string) {
+	l.impl.Warning(message)
+}
+
+func (l *WailsLogger) Error(message string) {
+	l.impl.Error(message)
+}
+
+func (l *WailsLogger) Fatal(message string) {
+	l.impl.Fatal(message)
 }

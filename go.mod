@@ -11,6 +11,7 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/jhump/protoreflect v1.15.1
 	github.com/samber/lo v1.38.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/twmb/franz-go v1.13.2
 	github.com/twmb/franz-go/pkg/kadm v1.8.0
 	github.com/wailsapp/wails/v2 v2.4.1

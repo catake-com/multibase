@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/multibase-io/multibase/backend/grpc"
 	"github.com/multibase-io/multibase/backend/kafka"
@@ -14,6 +15,7 @@ import (
 
 type App struct {
 	ctx           context.Context
+	appLogger     *logrus.Logger
 	stateStorage  *state.Storage
 	ProjectModule *project.Module
 	GRPCModule    *grpc.Module
@@ -21,8 +23,8 @@ type App struct {
 	KafkaModule   *kafka.Module
 }
 
-func NewApp() (*App, error) {
-	stateStorage, err := state.NewStorage()
+func NewApp(appLogger *logrus.Logger) (*App, error) {
+	stateStorage, err := state.NewStorage(appLogger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init a storage: %w", err)
 	}
@@ -49,6 +51,7 @@ func NewApp() (*App, error) {
 
 	return &App{
 		stateStorage:  stateStorage,
+		appLogger:     appLogger,
 		ProjectModule: projectModule,
 		GRPCModule:    grpcModule,
 		ThriftModule:  thriftModule,
@@ -68,7 +71,7 @@ func (a *App) domReady(_ context.Context) {
 
 func (a *App) beforeClose(_ context.Context) bool {
 	if err := a.stateStorage.Close(); err != nil {
-		log.Println(err)
+		a.appLogger.Println(err)
 	}
 
 	a.KafkaModule.Close()
