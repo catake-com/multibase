@@ -24,7 +24,7 @@ type App struct {
 }
 
 func NewApp(appLogger *logrus.Logger) (*App, error) {
-	stateStorage, err := state.NewStorage(appLogger)
+	stateStorage, err := state.NewStorage(appLogger.WithField("component", "storage"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to init a storage: %w", err)
 	}

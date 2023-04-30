@@ -22,7 +22,7 @@ export const useKafkaStore = defineStore({
     consumersDataByProjectID: {},
     topicsDataByProjectID: {},
     brokersDataByProjectID: {},
-    consumingSessionsByProjectID: {},
+    initiatedTopicConsumingByProjectID: {},
     consumedTopicsByProjectID: {},
     consumedTopicsMessagesByProjectID: {},
   }),
@@ -39,8 +39,8 @@ export const useKafkaStore = defineStore({
     brokersData: (state) => {
       return (projectID) => state.brokersDataByProjectID[projectID] || {};
     },
-    consumingSession: (state) => {
-      return (projectID) => state.consumingSessionsByProjectID[projectID] || {};
+    initiatedTopicConsuming: (state) => {
+      return (projectID) => state.initiatedTopicConsumingByProjectID[projectID] || {};
     },
     consumedTopic: (state) => {
       return (projectID) => state.consumedTopicsByProjectID[projectID] || {};
@@ -91,47 +91,39 @@ export const useKafkaStore = defineStore({
       this.projectStates[projectID] = await Connect(projectID);
     },
 
-    async startTopicConsuming(projectID, topic, hours) {
-      if (!this.consumingSessionsByProjectID[projectID]) {
-        this.consumingSessionsByProjectID[projectID] = {};
-      }
-
+    initiateTopicConsuming(projectID, topic) {
       if (!this.consumedTopicsMessagesByProjectID[projectID]) {
         this.consumedTopicsMessagesByProjectID[projectID] = [];
       }
 
-      this.consumingSessionsByProjectID[projectID].currentTopic = topic;
-      this.consumingSessionsByProjectID[projectID].hoursAgo = hours;
+      this.initiatedTopicConsumingByProjectID[projectID] = { topicName: topic };
+    },
 
+    async startTopicConsuming(projectID, topic, startFromTime) {
       EventsOn(`kafka_message_${projectID}`, (data) => {
-        this.consumedTopicsMessagesByProjectID[projectID].push(data);
+        this.consumedTopicsMessagesByProjectID[projectID].unshift(data);
       });
 
-      this.consumedTopicsByProjectID[projectID] = await StartTopicConsuming(projectID, topic, hours);
+      this.consumedTopicsByProjectID[projectID] = await StartTopicConsuming(projectID, topic, startFromTime);
     },
 
     async stopTopicConsuming(projectID) {
       EventsOff(`kafka_message_${projectID}`);
+      this.initiatedTopicConsumingByProjectID[projectID] = {};
+      this.consumedTopicsByProjectID[projectID] = {};
       this.consumedTopicsMessagesByProjectID[projectID] = [];
-      this.consumingSessionsByProjectID[projectID] = {};
-
       await StopTopicConsuming(projectID);
     },
 
-    async restartTopicConsuming(projectID) {
+    async restartTopicConsuming(projectID, startFromTime) {
+      const currentTopic = this.initiatedTopicConsumingByProjectID[projectID].topicName;
+
       EventsOff(`kafka_message_${projectID}`);
+      this.consumedTopicsByProjectID[projectID] = {};
       this.consumedTopicsMessagesByProjectID[projectID] = [];
       await StopTopicConsuming(projectID);
 
-      EventsOn(`kafka_message_${projectID}`, (data) => {
-        this.consumedTopicsMessagesByProjectID[projectID].push(data);
-      });
-
-      this.consumedTopicsByProjectID[projectID] = await StartTopicConsuming(
-        projectID,
-        this.consumingSessionsByProjectID[projectID].currentTopic,
-        this.consumingSessionsByProjectID[projectID].hoursAgo
-      );
+      await this.startTopicConsuming(projectID, currentTopic, startFromTime);
     },
 
     async loadProject(projectID) {

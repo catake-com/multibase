@@ -17,7 +17,7 @@ export function ProjectState(arg1:string):Promise<any>;
 
 export function SaveState(arg1:string,arg2:any):Promise<any>;
 
-export function StartTopicConsuming(arg1:string,arg2:string,arg3:number):Promise<any>;
+export function StartTopicConsuming(arg1:string,arg2:string,arg3:string):Promise<any>;
 
 export function StopTopicConsuming(arg1:string):Promise<void>;
 

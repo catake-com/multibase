@@ -67,9 +67,11 @@ type TabConsumersDataConsumer struct {
 }
 
 type TopicOutput struct {
-	CountTotal   int64             `json:"countTotal"`
-	CountCurrent int64             `json:"countCurrent"`
-	Partitions   []*TopicPartition `json:"partitions"`
+	TopicName     string            `json:"topicName"`
+	StartFromTime string            `json:"startFromTime"`
+	CountTotal    int64             `json:"countTotal"`
+	CountCurrent  int64             `json:"countCurrent"`
+	Partitions    []*TopicPartition `json:"partitions"`
 }
 
 type TopicMessage struct {

@@ -338,6 +338,8 @@ export namespace kafka {
 	    }
 	}
 	export class TopicOutput {
+	    topicName: string;
+	    startFromTime: string;
 	    countTotal: number;
 	    countCurrent: number;
 	    partitions: TopicPartition[];
@@ -348,6 +350,8 @@ export namespace kafka {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.topicName = source["topicName"];
+	        this.startFromTime = source["startFromTime"];
 	        this.countTotal = source["countTotal"];
 	        this.countCurrent = source["countCurrent"];
 	        this.partitions = this.convertValues(source["partitions"], TopicPartition);

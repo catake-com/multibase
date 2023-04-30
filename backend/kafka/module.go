@@ -128,13 +128,13 @@ func (m *Module) Consumers(projectID string) (*TabConsumersData, error) {
 	return data, nil
 }
 
-func (m *Module) StartTopicConsuming(projectID, topic string, hoursAgo int) (*TopicOutput, error) {
+func (m *Module) StartTopicConsuming(projectID, topic, timeFrom string) (*TopicOutput, error) {
 	project, err := m.fetchProject(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := project.StartTopicConsuming(m.AppCtx, topic, hoursAgo)
+	data, err := project.StartTopicConsuming(m.AppCtx, topic, timeFrom)
 	if err != nil {
 		return nil, err
 	}

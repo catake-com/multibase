@@ -1,6 +1,6 @@
 <script setup>
-import { computed } from "vue";
-import { useQuasar } from "quasar";
+import { computed, ref } from "vue";
+import { date, useQuasar } from "quasar";
 import { useKafkaStore } from "../../stores/kafka";
 
 const quasar = useQuasar();
@@ -11,18 +11,9 @@ const props = defineProps({
   projectID: String,
 });
 
-const splitterWidthConsuming = 12;
+const splitterWidthConsuming = 20;
 
-const hoursAgo = computed({
-  get() {
-    return kafkaStore.consumingSession(props.projectID).hoursAgo;
-  },
-  async set(hoursAgo) {
-    kafkaStore.consumingSession(props.projectID).hoursAgo = hoursAgo;
-  },
-});
-
-const currentTopic = computed(() => kafkaStore.consumingSession(props.projectID).currentTopic);
+const currentConsumedTopic = computed(() => kafkaStore.initiatedTopicConsuming(props.projectID).topicName);
 const consumedTopic = computed(() => kafkaStore.consumedTopic(props.projectID));
 const consumedTopicMessages = computed(() => kafkaStore.consumedTopicMessages(props.projectID));
 
@@ -37,7 +28,7 @@ async function stopTopicConsuming() {
 
 async function restartTopicConsuming() {
   try {
-    await kafkaStore.restartTopicConsuming(props.projectID);
+    await kafkaStore.restartTopicConsuming(props.projectID, startFromTime.value);
     quasar.notify({ type: "positive", message: "Restarted consuming" });
   } catch (error) {
     quasar.notify({ type: "negative", message: error });
@@ -67,6 +58,22 @@ const consumedMessagesTablePagination = {
 };
 
 const consumedMessagesTableRowsPerPage = [5, 10, 20, 50, 100, 200, 500];
+
+const currentTimeTenMinutesAgo = date.subtractFromDate(Date.now(), { minutes: 10 });
+
+const startFrom = ref("date");
+const startFromTime = ref(date.formatDate(currentTimeTenMinutesAgo, "YYYY-MM-DD HH:mm:ss Z"));
+
+function setCurrentTimeMinutes(minutes) {
+  const currentTimeMinutesAgo = date.subtractFromDate(Date.now(), { minutes: minutes });
+  startFromTime.value = date.formatDate(currentTimeMinutesAgo, "YYYY-MM-DD HH:mm:ss Z");
+}
+
+try {
+  kafkaStore.startTopicConsuming(props.projectID, currentConsumedTopic.value, startFromTime.value);
+} catch (error) {
+  quasar.notify({ type: "negative", message: error });
+}
 </script>
 
 <template>
@@ -74,20 +81,77 @@ const consumedMessagesTableRowsPerPage = [5, 10, 20, 50, 100, 200, 500];
 
   <q-splitter v-model="splitterWidthConsuming" class="full-height" disable>
     <template v-slot:before>
-      {{ currentTopic }}
+      <div class="text-subtitle1">Start from:</div>
 
-      <q-input v-model="hoursAgo" label="Show messages for last X hours" />
+      <q-btn-toggle
+        v-model="startFrom"
+        size="sm"
+        toggle-color="primary"
+        :options="[
+          { label: 'Date', value: 'date' },
+          { label: 'Offset', value: 'offset' },
+        ]"
+      />
 
-      <!--          <div>Count total: {{ consumedTopic?.countTotal }}</div>-->
-      <!--          Partitions:-->
-      <!--          <q-list>-->
-      <!--            <q-item v-for="partition in consumedTopic?.partitions" :key="partition.id">-->
-      <!--              <q-item-section>-->
-      <!--                <q-item-label overline>{{ partition.id }}</q-item-label>-->
-      <!--                <q-item-label>{{ partition.offsetTotalStart }} - {{ partition.offsetTotalEnd }}</q-item-label>-->
-      <!--              </q-item-section>-->
-      <!--            </q-item>-->
-      <!--          </q-list>-->
+      <div v-if="startFrom === 'date'">
+        <div class="row no-wrap">
+          <q-btn-dropdown
+            outline
+            color="info"
+            :label="startFromTime"
+            dropdown-icon="none"
+            @hide="restartTopicConsuming()"
+          >
+            <div class="row items-start">
+              <q-date v-model="startFromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" first-day-of-week="1" />
+              <q-time v-model="startFromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" with-seconds format24h />
+            </div>
+          </q-btn-dropdown>
+
+          <q-btn-dropdown outline color="info" @hide="restartTopicConsuming()">
+            <q-list>
+              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(10)">
+                <q-item-section>
+                  <q-item-label>Last 10 minutes</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(30)">
+                <q-item-section>
+                  <q-item-label>Last 30 minutes</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(60)">
+                <q-item-section>
+                  <q-item-label>Last 1 hour</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(60 * 24)">
+                <q-item-section>
+                  <q-item-label>Last 24 hours</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+        </div>
+      </div>
+
+      <div v-if="startFrom === 'offset'">offset</div>
+
+      {{ currentConsumedTopic }}
+
+      <div>Count total: {{ consumedTopic?.countTotal }}</div>
+      Partitions:
+      <q-list>
+        <q-item v-for="partition in consumedTopic?.partitions" :key="partition.id">
+          <q-item-section>
+            <q-item-label overline>{{ partition.id }}</q-item-label>
+            <q-item-label>{{ partition.offsetTotalStart }} - {{ partition.offsetTotalEnd }}</q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
 
       <q-btn label="Refresh" color="secondary" @click="restartTopicConsuming()" />
     </template>

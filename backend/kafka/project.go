@@ -18,7 +18,11 @@ import (
 	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
-const kafkaConnectionTimeout = 10 * time.Second
+const (
+	kafkaConnectionTimeout = 10 * time.Second
+
+	consumingTimeFromLayout = "2006-01-02 15:04:05 Z07:00"
+)
 
 var (
 	errNoStartOffsetFound = errors.New("no start offset found")
@@ -233,18 +237,22 @@ func (p *Project) Consumers() (*TabConsumersData, error) {
 }
 
 // nolint: funlen, cyclop
-func (p *Project) StartTopicConsuming(ctx context.Context, topic string, hoursAgo int) (*TopicOutput, error) {
+func (p *Project) StartTopicConsuming(ctx context.Context, topic, timeFrom string) (*TopicOutput, error) {
 	p.stateMutex.Lock()
 	defer p.stateMutex.Unlock()
 
 	tlsDialer := &tls.Dialer{NetDialer: &net.Dialer{Timeout: kafkaConnectionTimeout}}
-	timeFrom := time.Now().UTC().Add(-time.Hour * time.Duration(hoursAgo)).UnixMilli()
+
+	timeFromParsed, err := time.Parse(consumingTimeFromLayout, timeFrom)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse kafka consuming time from: %w", err)
+	}
 
 	options := []kgo.Opt{
 		kgo.SeedBrokers(p.state.Address),
 		kgo.Dialer(tlsDialer.DialContext),
 		kgo.ConsumeTopics(topic),
-		kgo.ConsumeResetOffset(kgo.NewOffset().AfterMilli(timeFrom)),
+		kgo.ConsumeResetOffset(kgo.NewOffset().AfterMilli(timeFromParsed.UnixMilli())),
 	}
 
 	if p.state.AuthMethod == AuthMethodSASLSSL {
@@ -284,7 +292,9 @@ func (p *Project) StartTopicConsuming(ctx context.Context, topic string, hoursAg
 	}
 
 	output := &TopicOutput{
-		Partitions: make([]*TopicPartition, 0, len(kafkaTopic.Partitions)),
+		TopicName:     topic,
+		StartFromTime: timeFrom,
+		Partitions:    make([]*TopicPartition, 0, len(kafkaTopic.Partitions)),
 	}
 
 	partitionMap := make(map[int]*TopicPartition, len(kafkaTopic.Partitions))

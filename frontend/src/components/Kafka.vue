@@ -76,7 +76,7 @@ const authPassword = computed({
   },
 });
 
-const currentTopic = computed(() => kafkaStore.consumingSession(props.projectID).currentTopic);
+const currentConsumedTopic = computed(() => kafkaStore.initiatedTopicConsuming(props.projectID).topicName);
 const topics = computed(() => kafkaStore.topicsData(props.projectID));
 const brokers = computed(() => kafkaStore.brokersData(props.projectID));
 const consumers = computed(() => kafkaStore.consumersData(props.projectID));
@@ -96,19 +96,14 @@ async function connect() {
   }
 }
 
-async function startTopicConsuming(topic) {
-  try {
-    await kafkaStore.startTopicConsuming(props.projectID, topic, 1);
-    quasar.notify({ type: "positive", message: "Started consuming" });
-  } catch (error) {
-    quasar.notify({ type: "negative", message: error });
-  }
+function initiateTopicConsuming(topic) {
+  kafkaStore.initiateTopicConsuming(props.projectID, topic);
 }
 </script>
 
 <template>
   <div class="full-height">
-    <div v-if="currentTopic">
+    <div v-if="currentConsumedTopic">
       <Consume :projectID="projectID"></Consume>
     </div>
 
@@ -187,7 +182,7 @@ async function startTopicConsuming(topic) {
                       <td class="text-left">{{ topic.partitionCount }}</td>
                       <td class="text-left">{{ topic.messageCount }}</td>
                       <td class="text-left">
-                        <q-btn label="Consume" color="secondary" @click="startTopicConsuming(topic.name)" />
+                        <q-btn label="Consume" color="secondary" @click="initiateTopicConsuming(topic.name)" />
                       </td>
                     </tr>
                   </tbody>
