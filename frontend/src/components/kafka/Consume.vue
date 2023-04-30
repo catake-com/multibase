@@ -163,6 +163,7 @@ try {
         :row-key="consumedMessagesTableRowKey"
         :pagination="consumedMessagesTablePagination"
         :rows-per-page-options="consumedMessagesTableRowsPerPage"
+        :loading="!consumedTopic.topicName"
       />
     </template>
   </q-splitter>
