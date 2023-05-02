@@ -20,6 +20,15 @@ const (
 	TabConsumers = "consumers"
 )
 
+type TopicConsumingStrategy string
+
+const (
+	TopicConsumingStrategyTime           = "time"
+	TopicConsumingStrategyOffsetSpecific = "offset_specific"
+	TopicConsumingStrategyOffsetNewest   = "offset_newest"
+	TopicConsumingStrategyOffsetOldest   = "offset_oldest"
+)
+
 type State struct {
 	ID           string     `json:"id"`
 	Address      string     `json:"address"`

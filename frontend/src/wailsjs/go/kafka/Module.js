@@ -34,8 +34,8 @@ export function SaveState(arg1, arg2) {
   return window['go']['kafka']['Module']['SaveState'](arg1, arg2);
 }
 
-export function StartTopicConsuming(arg1, arg2, arg3) {
-  return window['go']['kafka']['Module']['StartTopicConsuming'](arg1, arg2, arg3);
+export function StartTopicConsuming(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['kafka']['Module']['StartTopicConsuming'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function StopTopicConsuming(arg1) {

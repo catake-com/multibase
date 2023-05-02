@@ -99,12 +99,18 @@ export const useKafkaStore = defineStore({
       this.initiatedTopicConsumingByProjectID[projectID] = { topicName: topic };
     },
 
-    async startTopicConsuming(projectID, topic, startFromTime) {
+    async startTopicConsuming(projectID, consumingStrategy, topic, timeFrom, offsetValue) {
       EventsOn(`kafka_message_${projectID}`, (data) => {
         this.consumedTopicsMessagesByProjectID[projectID].push(data);
       });
 
-      this.consumedTopicsByProjectID[projectID] = await StartTopicConsuming(projectID, topic, startFromTime);
+      this.consumedTopicsByProjectID[projectID] = await StartTopicConsuming(
+        projectID,
+        consumingStrategy,
+        topic,
+        timeFrom,
+        parseInt(offsetValue)
+      );
     },
 
     async stopTopicConsuming(projectID) {
@@ -115,7 +121,7 @@ export const useKafkaStore = defineStore({
       await StopTopicConsuming(projectID);
     },
 
-    async restartTopicConsuming(projectID, startFromTime) {
+    async restartTopicConsuming(projectID, consumingStrategy, timeFrom, offsetValue) {
       const currentTopic = this.initiatedTopicConsumingByProjectID[projectID].topicName;
 
       EventsOff(`kafka_message_${projectID}`);
@@ -123,7 +129,7 @@ export const useKafkaStore = defineStore({
       this.consumedTopicsMessagesByProjectID[projectID] = [];
       await StopTopicConsuming(projectID);
 
-      await this.startTopicConsuming(projectID, currentTopic, startFromTime);
+      await this.startTopicConsuming(projectID, consumingStrategy, currentTopic, timeFrom, parseInt(offsetValue));
     },
 
     async loadProject(projectID) {

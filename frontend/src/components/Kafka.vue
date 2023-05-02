@@ -112,9 +112,9 @@ function initiateTopicConsuming(topic) {
         <template v-slot:before>
           <q-tabs v-model="currentTab" vertical>
             <q-tab name="overview" icon="home" label="Overview" />
-            <q-tab name="brokers" icon="lan" label="Brokers" />
-            <q-tab name="topics" icon="storage" label="Topics" />
-            <q-tab name="consumers" icon="browser_updated" label="Consumers" />
+            <q-tab name="brokers" icon="lan" label="Brokers" :disable="!brokers.isConnected" />
+            <q-tab name="topics" icon="storage" label="Topics" :disable="!topics.isConnected" />
+            <q-tab name="consumers" icon="browser_updated" label="Consumers" :disable="!consumers.isConnected" />
           </q-tabs>
         </template>
 

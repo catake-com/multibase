@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { date, useQuasar } from "quasar";
 import { useKafkaStore } from "../../stores/kafka";
 
@@ -28,7 +28,7 @@ async function stopTopicConsuming() {
 
 async function restartTopicConsuming() {
   try {
-    await kafkaStore.restartTopicConsuming(props.projectID, startFromTime.value);
+    await kafkaStore.restartTopicConsuming(props.projectID, consumingStrategy.value, fromTime.value, offsetValue.value);
     quasar.notify({ type: "positive", message: "Restarted consuming" });
   } catch (error) {
     quasar.notify({ type: "negative", message: error });
@@ -61,16 +61,52 @@ const consumedMessagesTableRowsPerPage = [5, 10, 20, 50, 100, 200, 500];
 
 const currentTimeTenMinutesAgo = date.subtractFromDate(Date.now(), { minutes: 10 });
 
-const startFrom = ref("date");
-const startFromTime = ref(date.formatDate(currentTimeTenMinutesAgo, "YYYY-MM-DD HH:mm:ss Z"));
+const consumingStrategy = ref("time");
+const consumingStrategyGroup = ref("time");
+const consumingStrategyOffset = ref("");
+
+const fromTime = ref(date.formatDate(currentTimeTenMinutesAgo, "YYYY-MM-DD HH:mm:ss Z"));
+const offsetValue = ref(0);
 
 function setCurrentTimeMinutes(minutes) {
   const currentTimeMinutesAgo = date.subtractFromDate(Date.now(), { minutes: minutes });
-  startFromTime.value = date.formatDate(currentTimeMinutesAgo, "YYYY-MM-DD HH:mm:ss Z");
+  fromTime.value = date.formatDate(currentTimeMinutesAgo, "YYYY-MM-DD HH:mm:ss Z");
+}
+
+watch(
+  () => consumingStrategyGroup.value,
+  (group, _) => {
+    if (group === "time") {
+      consumingStrategy.value = "time";
+      consumingStrategyOffset.value = "";
+    }
+  }
+);
+
+function selectOffsetNewest() {
+  consumingStrategy.value = "offset_newest";
+
+  restartTopicConsuming();
+}
+
+function selectOffsetOldest() {
+  consumingStrategy.value = "offset_oldest";
+
+  restartTopicConsuming();
+}
+
+function selectOffsetSpecific() {
+  consumingStrategy.value = "offset_specific";
 }
 
 try {
-  kafkaStore.startTopicConsuming(props.projectID, currentConsumedTopic.value, startFromTime.value);
+  kafkaStore.startTopicConsuming(
+    props.projectID,
+    consumingStrategy.value,
+    currentConsumedTopic.value,
+    fromTime.value,
+    offsetValue.value
+  );
 } catch (error) {
   quasar.notify({ type: "negative", message: error });
 }
@@ -84,27 +120,21 @@ try {
       <div class="text-subtitle1">Start from:</div>
 
       <q-btn-toggle
-        v-model="startFrom"
+        v-model="consumingStrategyGroup"
         size="sm"
         toggle-color="primary"
         :options="[
-          { label: 'Date', value: 'date' },
+          { label: 'Time', value: 'time' },
           { label: 'Offset', value: 'offset' },
         ]"
       />
 
-      <div v-if="startFrom === 'date'">
+      <div v-if="consumingStrategyGroup === 'time'">
         <div class="row no-wrap">
-          <q-btn-dropdown
-            outline
-            color="info"
-            :label="startFromTime"
-            dropdown-icon="none"
-            @hide="restartTopicConsuming()"
-          >
+          <q-btn-dropdown outline color="info" :label="fromTime" dropdown-icon="none" @hide="restartTopicConsuming()">
             <div class="row items-start">
-              <q-date v-model="startFromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" first-day-of-week="1" />
-              <q-time v-model="startFromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" with-seconds format24h />
+              <q-date v-model="fromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" first-day-of-week="1" />
+              <q-time v-model="fromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" with-seconds format24h />
             </div>
           </q-btn-dropdown>
 
@@ -138,7 +168,65 @@ try {
         </div>
       </div>
 
-      <div v-if="startFrom === 'offset'">offset</div>
+      <div v-if="consumingStrategyGroup === 'offset'">
+        <q-list>
+          <q-item>
+            <q-item-section avatar>
+              <q-radio
+                v-model="consumingStrategyOffset"
+                val="newest"
+                label="Newest"
+                dense
+                @click="selectOffsetNewest()"
+              />
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section avatar>
+              <q-radio
+                v-model="consumingStrategyOffset"
+                val="oldest"
+                label="Oldest"
+                dense
+                @click="selectOffsetOldest()"
+              />
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section avatar>
+              <q-radio
+                v-model="consumingStrategyOffset"
+                val="specific"
+                label="From offset"
+                dense
+                @click="selectOffsetSpecific()"
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-input
+                v-model="offsetValue"
+                label=""
+                dense
+                input-style="padding-top: 0;"
+                :disable="consumingStrategyOffset !== 'specific'"
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-btn
+                label="Load"
+                color="secondary"
+                @click="restartTopicConsuming()"
+                :disable="consumingStrategyOffset !== 'specific'"
+                size="sm"
+              />
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </div>
 
       {{ currentConsumedTopic }}
 
@@ -152,8 +240,6 @@ try {
           </q-item-section>
         </q-item>
       </q-list>
-
-      <q-btn label="Refresh" color="secondary" @click="restartTopicConsuming()" />
     </template>
 
     <template v-slot:after>

@@ -25,8 +25,9 @@ const (
 )
 
 var (
-	errNoStartOffsetFound = errors.New("no start offset found")
-	errNoEndOffsetFound   = errors.New("no end offset found")
+	errNoStartOffsetFound            = errors.New("no start offset found")
+	errNoEndOffsetFound              = errors.New("no end offset found")
+	errUnknownKafkaConsumingStrategy = errors.New("unknown kafka consuming strategy")
 )
 
 type Project struct {
@@ -237,22 +238,43 @@ func (p *Project) Consumers() (*TabConsumersData, error) {
 }
 
 // nolint: funlen, cyclop
-func (p *Project) StartTopicConsuming(ctx context.Context, topic, timeFrom string) (*TopicOutput, error) {
+func (p *Project) StartTopicConsuming(
+	ctx context.Context,
+	consumingStrategy TopicConsumingStrategy,
+	topic,
+	timeFrom string,
+	offsetValue int64,
+) (*TopicOutput, error) {
 	p.stateMutex.Lock()
 	defer p.stateMutex.Unlock()
 
 	tlsDialer := &tls.Dialer{NetDialer: &net.Dialer{Timeout: kafkaConnectionTimeout}}
 
-	timeFromParsed, err := time.Parse(consumingTimeFromLayout, timeFrom)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse kafka consuming time from: %w", err)
+	var kafkaOffset kgo.Offset
+
+	switch consumingStrategy {
+	case TopicConsumingStrategyTime:
+		timeFromParsed, err := time.Parse(consumingTimeFromLayout, timeFrom)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse kafka consuming time from: %w", err)
+		}
+
+		kafkaOffset = kgo.NewOffset().AfterMilli(timeFromParsed.UnixMilli())
+	case TopicConsumingStrategyOffsetSpecific:
+		kafkaOffset = kgo.NewOffset().At(offsetValue)
+	case TopicConsumingStrategyOffsetNewest:
+		kafkaOffset = kgo.NewOffset().AtEnd()
+	case TopicConsumingStrategyOffsetOldest:
+		kafkaOffset = kgo.NewOffset().AtStart()
+	default:
+		return nil, fmt.Errorf("%w: %s", errUnknownKafkaConsumingStrategy, consumingStrategy)
 	}
 
 	options := []kgo.Opt{
 		kgo.SeedBrokers(p.state.Address),
 		kgo.Dialer(tlsDialer.DialContext),
 		kgo.ConsumeTopics(topic),
-		kgo.ConsumeResetOffset(kgo.NewOffset().AfterMilli(timeFromParsed.UnixMilli())),
+		kgo.ConsumeResetOffset(kafkaOffset),
 	}
 
 	if p.state.AuthMethod == AuthMethodSASLSSL {
