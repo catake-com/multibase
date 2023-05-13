@@ -111,7 +111,7 @@ function customMessagesSorting(rows, sortBy, descending) {
       const y = descending ? a : b;
 
       if (sortBy === "timestamp") {
-        return new Date(x[sortBy]) - new Date(y[sortBy]);
+        return x["timestampUnix"] - y["timestampUnix"];
       }
     });
   }

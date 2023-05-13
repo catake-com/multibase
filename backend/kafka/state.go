@@ -1,9 +1,5 @@
 package kafka
 
-import (
-	"time"
-)
-
 type AuthMethod string
 
 const (
@@ -83,8 +79,12 @@ type TopicOutput struct {
 	Partitions    []*TopicPartition `json:"partitions"`
 }
 
+type TopicConsumingOutput struct {
+	Messages []*TopicMessage `json:"messages"`
+}
+
 type TopicMessage struct {
-	Timestamp          time.Time         `json:"timestamp"`
+	TimestampUnix      int64             `json:"timestampUnix"`
 	TimestampFormatted string            `json:"timestampFormatted"`
 	PartitionID        int               `json:"partitionID"`
 	Offset             int64             `json:"offset"`

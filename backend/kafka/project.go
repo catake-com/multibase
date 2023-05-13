@@ -368,22 +368,28 @@ func (p *Project) StartTopicConsuming(
 				break
 			}
 
-			for _, message := range fetches.Records() {
-				outputMessage := &TopicMessage{
-					Timestamp:          message.Timestamp,
-					TimestampFormatted: message.Timestamp.Format(consumingTimeFromLayout),
-					PartitionID:        int(message.Partition),
-					Offset:             message.Offset,
-					Key:                string(message.Key),
-					Data:               string(message.Value),
-				}
+			outputMessages := make([]*TopicMessage, 0, len(fetches.Records()))
 
-				runtime.EventsEmit(
-					ctx,
-					fmt.Sprintf("kafka_message_%s", p.state.ID),
-					outputMessage,
-				)
+			for _, message := range fetches.Records() {
+				outputMessages = append(
+					outputMessages,
+					&TopicMessage{
+						TimestampUnix:      message.Timestamp.UnixNano(),
+						TimestampFormatted: message.Timestamp.Format(consumingTimeFromLayout),
+						PartitionID:        int(message.Partition),
+						Offset:             message.Offset,
+						Key:                string(message.Key),
+						Data:               string(message.Value),
+					})
 			}
+
+			runtime.EventsEmit(
+				ctx,
+				fmt.Sprintf("kafka_message_%s", p.state.ID),
+				&TopicConsumingOutput{
+					Messages: outputMessages,
+				},
+			)
 		}
 	}()
 

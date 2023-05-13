@@ -101,7 +101,7 @@ export const useKafkaStore = defineStore({
 
     async startTopicConsuming(projectID, consumingStrategy, topic, timeFrom, offsetValue) {
       EventsOn(`kafka_message_${projectID}`, (data) => {
-        this.consumedTopicsMessagesByProjectID[projectID].push(data);
+        this.consumedTopicsMessagesByProjectID[projectID].push(...data.messages);
       });
 
       this.consumedTopicsByProjectID[projectID] = await StartTopicConsuming(
