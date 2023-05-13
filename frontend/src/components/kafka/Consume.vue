@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { date, useQuasar } from "quasar";
+import { sort } from "fast-sort";
 import { useKafkaStore } from "../../stores/kafka";
 
 const quasar = useQuasar();
@@ -103,20 +104,17 @@ function selectOffsetSpecific() {
 }
 
 function customMessagesSorting(rows, sortBy, descending) {
-  const data = [...rows];
-
   if (sortBy) {
-    data.sort((a, b) => {
-      const x = descending ? b : a;
-      const y = descending ? a : b;
-
-      if (sortBy === "timestamp") {
-        return x["timestampUnix"] - y["timestampUnix"];
+    if (sortBy === "timestamp") {
+      if (descending) {
+        return sort(rows).desc((row) => row.timestampUnix);
+      } else {
+        return sort(rows).asc((row) => row.timestampUnix);
       }
-    });
+    }
   }
 
-  return data;
+  return rows;
 }
 
 try {

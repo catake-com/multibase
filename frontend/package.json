@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@quasar/extras": "1.16.2",
+    "fast-sort": "3.4.0",
     "pinia": "2.0.33",
     "quasar": "2.11.10",
     "vue": "3.2.47",
