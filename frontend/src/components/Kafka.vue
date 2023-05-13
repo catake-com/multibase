@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useQuasar } from "quasar";
 import { useKafkaStore } from "../stores/kafka";
 import Consume from "./kafka/Consume.vue";
+import { sort } from "fast-sort";
 
 const quasar = useQuasar();
 
@@ -80,6 +81,36 @@ const currentConsumedTopic = computed(() => kafkaStore.initiatedTopicConsuming(p
 const topics = computed(() => kafkaStore.topicsData(props.projectID));
 const brokers = computed(() => kafkaStore.brokersData(props.projectID));
 const consumers = computed(() => kafkaStore.consumersData(props.projectID));
+
+const topicTableColumns = [
+  {
+    name: "name",
+    label: "Topic Name",
+    align: "left",
+    field: "name",
+  },
+  { name: "partitionCount", align: "left", label: "Partitions", field: "partitionCount" },
+  { name: "messageCount", align: "left", label: "Count", field: "messageCount" },
+  { name: "actions", align: "left", label: "Actions", field: "name" },
+];
+
+const topicTableRowsPerPage = [5, 10, 20, 50, 100, 200, 500];
+
+const topicTablePagination = {
+  rowsPerPage: 100,
+};
+
+const topicTableFilter = ref("");
+
+function topicTableFilterMethod(rows, query, cols, getCellValue) {
+  if (query === "") {
+    return rows;
+  }
+
+  const queryLowerCase = query.toLowerCase();
+
+  return rows.filter((row) => row.name.toLowerCase().includes(queryLowerCase));
+}
 
 async function connect() {
   try {
@@ -166,27 +197,32 @@ function initiateTopicConsuming(topic) {
 
             <q-tab-panel name="topics">
               <div v-if="topics.isConnected">
-                <q-markup-table>
-                  <thead>
-                    <tr>
-                      <th class="text-left">Topic Name</th>
-                      <th class="text-left">Partitions</th>
-                      <th class="text-left">Count</th>
-                      <th class="text-left">Actions</th>
-                    </tr>
-                  </thead>
+                <q-table
+                  :filter="topicTableFilter"
+                  :filter-method="topicTableFilterMethod"
+                  :rows="topics.list"
+                  :columns="topicTableColumns"
+                  row-key="name"
+                  :pagination="topicTablePagination"
+                  :rows-per-page-options="topicTableRowsPerPage"
+                >
+                  <template v-slot:header-cell-name="props">
+                    <q-th :props="props">
+                      <div class="row items-center">
+                        <div style="margin-right: 10px">Topic Name</div>
 
-                  <tbody>
-                    <tr v-for="topic in topics.list" :key="topic.name">
-                      <td class="text-left">{{ topic.name }}</td>
-                      <td class="text-left">{{ topic.partitionCount }}</td>
-                      <td class="text-left">{{ topic.messageCount }}</td>
-                      <td class="text-left">
-                        <q-btn label="Consume" color="secondary" @click="initiateTopicConsuming(topic.name)" />
-                      </td>
-                    </tr>
-                  </tbody>
-                </q-markup-table>
+                        <q-input borderless dense v-model="topicTableFilter" placeholder="Filter" style="width: 50%">
+                        </q-input>
+                      </div>
+                    </q-th>
+                  </template>
+
+                  <template v-slot:body-cell-actions="props">
+                    <q-td :props="props">
+                      <q-btn label="Consume" color="secondary" @click="initiateTopicConsuming(props.value)" />
+                    </q-td>
+                  </template>
+                </q-table>
               </div>
 
               <div v-else>Not connected to Kafka</div>
