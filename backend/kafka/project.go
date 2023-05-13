@@ -370,11 +370,12 @@ func (p *Project) StartTopicConsuming(
 
 			for _, message := range fetches.Records() {
 				outputMessage := &TopicMessage{
-					Timestamp:   message.Timestamp.UTC(),
-					PartitionID: int(message.Partition),
-					Offset:      message.Offset,
-					Key:         string(message.Key),
-					Data:        string(message.Value),
+					Timestamp:          message.Timestamp,
+					TimestampFormatted: message.Timestamp.Format(consumingTimeFromLayout),
+					PartitionID:        int(message.Partition),
+					Offset:             message.Offset,
+					Key:                string(message.Key),
+					Data:               string(message.Value),
 				}
 
 				runtime.EventsEmit(

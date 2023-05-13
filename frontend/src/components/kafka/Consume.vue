@@ -44,7 +44,8 @@ const consumedMessagesTableColumns = [
     name: "timestamp",
     label: "Timestamp",
     align: "left",
-    field: "timestamp",
+    field: "timestampFormatted",
+    sortable: true,
   },
   { name: "partition", align: "left", label: "Partition", field: "partitionID" },
   { name: "offset", align: "left", label: "Offset", field: "offset" },
@@ -55,6 +56,8 @@ const consumedMessagesTableColumns = [
 
 const consumedMessagesTablePagination = {
   rowsPerPage: 20,
+  sortBy: "timestamp",
+  descending: true,
 };
 
 const consumedMessagesTableRowsPerPage = [5, 10, 20, 50, 100, 200, 500];
@@ -97,6 +100,23 @@ function selectOffsetOldest() {
 
 function selectOffsetSpecific() {
   consumingStrategy.value = "offset_specific";
+}
+
+function customMessagesSorting(rows, sortBy, descending) {
+  const data = [...rows];
+
+  if (sortBy) {
+    data.sort((a, b) => {
+      const x = descending ? b : a;
+      const y = descending ? a : b;
+
+      if (sortBy === "timestamp") {
+        return new Date(x[sortBy]) - new Date(y[sortBy]);
+      }
+    });
+  }
+
+  return data;
 }
 
 try {
@@ -250,6 +270,8 @@ try {
         :pagination="consumedMessagesTablePagination"
         :rows-per-page-options="consumedMessagesTableRowsPerPage"
         :loading="!consumedTopic.topicName"
+        :sort-method="customMessagesSorting"
+        binary-state-sort
       />
     </template>
   </q-splitter>
