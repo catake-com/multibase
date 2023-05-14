@@ -3,13 +3,14 @@ package kafka
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl/plain"
@@ -34,12 +35,13 @@ type Project struct {
 	state                *State
 	stateMutex           sync.RWMutex
 	stateStorage         *state.Storage
+	appLogger            *logrus.Logger
 	client               *kadm.Client
 	topicConsumingClient *kgo.Client
 	topicConsumingCancel context.CancelFunc
 }
 
-func NewProject(projectID string, stateStorage *state.Storage) (*Project, error) {
+func NewProject(projectID string, stateStorage *state.Storage, appLogger *logrus.Logger) (*Project, error) {
 	project := &Project{
 		state: &State{
 			ID:         projectID,
@@ -48,6 +50,7 @@ func NewProject(projectID string, stateStorage *state.Storage) (*Project, error)
 			AuthMethod: AuthMethodPlaintext,
 		},
 		stateStorage: stateStorage,
+		appLogger:    appLogger,
 	}
 
 	if err := project.saveState(); err != nil {
@@ -237,7 +240,7 @@ func (p *Project) Consumers() (*TabConsumersData, error) {
 	return tabConsumersData, nil
 }
 
-// nolint: funlen, cyclop
+// nolint: funlen, cyclop, gocognit
 func (p *Project) StartTopicConsuming(
 	ctx context.Context,
 	consumingStrategy TopicConsumingStrategy,
@@ -361,7 +364,14 @@ func (p *Project) StartTopicConsuming(
 					break
 				}
 
-				log.Fatal(err)
+				p.appLogger.Error(
+					fmt.Errorf(
+						"failed to fetch from topic %s partition %d: %w",
+						err.Topic,
+						err.Partition,
+						err.Err,
+					),
+				)
 			}
 
 			if isCanceled {
@@ -371,6 +381,19 @@ func (p *Project) StartTopicConsuming(
 			outputMessages := make([]*TopicMessage, 0, len(fetches.Records()))
 
 			for _, message := range fetches.Records() {
+				headers := make(map[string]string)
+
+				for _, header := range message.Headers {
+					headers[header.Key] = string(header.Value)
+				}
+
+				headersJSON, err := json.Marshal(headers)
+				if err != nil {
+					p.appLogger.Error(
+						fmt.Errorf("failed to marshal kafka message headers: %w", err),
+					)
+				}
+
 				outputMessages = append(
 					outputMessages,
 					&TopicMessage{
@@ -380,6 +403,7 @@ func (p *Project) StartTopicConsuming(
 						Offset:             message.Offset,
 						Key:                string(message.Key),
 						Data:               string(message.Value),
+						Headers:            string(headersJSON),
 					})
 			}
 

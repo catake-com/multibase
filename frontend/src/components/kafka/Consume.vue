@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { date, useQuasar } from "quasar";
-import { sort } from "fast-sort";
 import { useKafkaStore } from "../../stores/kafka";
 
 const quasar = useQuasar();
@@ -48,11 +47,11 @@ const consumedMessagesTableColumns = [
     field: "timestampFormatted",
     sortable: true,
   },
-  { name: "partition", align: "left", label: "Partition", field: "partitionID" },
-  { name: "offset", align: "left", label: "Offset", field: "offset" },
+  { name: "partition", align: "left", label: "Partition", field: "partitionID", sortable: true },
+  { name: "offset", align: "left", label: "Offset", field: "offset", sortable: true },
   { name: "key", align: "left", label: "Key", field: "key" },
   { name: "data", align: "left", label: "Data", field: "data" },
-  { name: "headers", align: "left", label: "Headers", field: "" },
+  { name: "headers", align: "left", label: "Headers", field: "headers" },
 ];
 
 const consumedMessagesTablePagination = {
@@ -104,17 +103,25 @@ function selectOffsetSpecific() {
 }
 
 function customMessagesSorting(rows, sortBy, descending) {
+  const data = [...rows];
+
   if (sortBy) {
-    if (sortBy === "timestamp") {
-      if (descending) {
-        return sort(rows).desc((row) => row.timestampUnix);
-      } else {
-        return sort(rows).asc((row) => row.timestampUnix);
+    data.sort((a, b) => {
+      const x = descending ? b : a;
+      const y = descending ? a : b;
+
+      switch (sortBy) {
+        case "timestamp":
+          return x["timestampUnix"] - y["timestampUnix"];
+        case "offset":
+          return x["offset"] - y["offset"];
+        case "partition":
+          return x["partitionID"] - y["partitionID"];
       }
-    }
+    });
   }
 
-  return rows;
+  return data;
 }
 
 try {

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
@@ -14,19 +16,21 @@ type Module struct {
 	projects      map[string]*Project
 	projectsMutex sync.RWMutex
 	stateStorage  *state.Storage
+	appLogger     *logrus.Logger
 }
 
-func NewModule(stateStorage *state.Storage) (*Module, error) {
+func NewModule(stateStorage *state.Storage, appLogger *logrus.Logger) (*Module, error) {
 	module := &Module{
 		projects:     make(map[string]*Project),
 		stateStorage: stateStorage,
+		appLogger:    appLogger,
 	}
 
 	return module, nil
 }
 
 func (m *Module) CreateNewProject(projectID string) (*State, error) {
-	project, err := NewProject(projectID, m.stateStorage)
+	project, err := NewProject(projectID, m.stateStorage, m.appLogger)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +210,7 @@ func (m *Module) fetchProject(projectID string) (*Project, error) {
 	projectState.CurrentTab = TabOverview
 	project.state = projectState
 	project.stateStorage = m.stateStorage
+	project.appLogger = m.appLogger
 
 	m.projectsMutex.Lock()
 	m.projects[projectID] = project

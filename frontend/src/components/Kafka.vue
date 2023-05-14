@@ -3,7 +3,6 @@ import { computed, ref } from "vue";
 import { useQuasar } from "quasar";
 import { useKafkaStore } from "../stores/kafka";
 import Consume from "./kafka/Consume.vue";
-import { sort } from "fast-sort";
 
 const quasar = useQuasar();
 

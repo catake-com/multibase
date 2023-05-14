@@ -44,7 +44,7 @@ func NewApp(appLogger *logrus.Logger) (*App, error) {
 		return nil, fmt.Errorf("failed to init a thrift module: %w", err)
 	}
 
-	kafkaModule, err := kafka.NewModule(stateStorage)
+	kafkaModule, err := kafka.NewModule(stateStorage, appLogger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init a kafka module: %w", err)
 	}

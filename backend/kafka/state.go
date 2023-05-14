@@ -84,13 +84,13 @@ type TopicConsumingOutput struct {
 }
 
 type TopicMessage struct {
-	TimestampUnix      int64             `json:"timestampUnix"`
-	TimestampFormatted string            `json:"timestampFormatted"`
-	PartitionID        int               `json:"partitionID"`
-	Offset             int64             `json:"offset"`
-	Key                string            `json:"key"`
-	Data               string            `json:"data"`
-	Headers            map[string]string `json:"headers"`
+	TimestampUnix      int64  `json:"timestampUnix"`
+	TimestampFormatted string `json:"timestampFormatted"`
+	PartitionID        int    `json:"partitionID"`
+	Offset             int64  `json:"offset"`
+	Key                string `json:"key"`
+	Data               string `json:"data"`
+	Headers            string `json:"headers"`
 }
 
 type TopicPartition struct {
