@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sort"
 	"sync"
 	"time"
 
@@ -345,6 +346,10 @@ func (p *Project) StartTopicConsuming(
 		output.CountTotal += endOffset.Offset - startOffset.Offset
 		output.Partitions = append(output.Partitions, outputPartition)
 
+		sort.Slice(output.Partitions, func(i, j int) bool {
+			return output.Partitions[i].ID < output.Partitions[j].ID
+		})
+
 		partitionMap[int(partition.Partition)] = outputPartition
 	}
 
@@ -358,20 +363,18 @@ func (p *Project) StartTopicConsuming(
 			var isCanceled bool
 
 			for _, err := range fetches.Errors() {
-				if errors.Is(err.Err, context.Canceled) {
-					isCanceled = true
+				isCanceled = true
 
-					break
+				if !errors.Is(err.Err, context.Canceled) {
+					p.appLogger.Error(
+						fmt.Errorf(
+							"failed to fetch from topic %s partition %d: %w",
+							err.Topic,
+							err.Partition,
+							err.Err,
+						),
+					)
 				}
-
-				p.appLogger.Error(
-					fmt.Errorf(
-						"failed to fetch from topic %s partition %d: %w",
-						err.Topic,
-						err.Partition,
-						err.Err,
-					),
-				)
 			}
 
 			if isCanceled {

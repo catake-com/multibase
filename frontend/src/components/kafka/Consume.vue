@@ -11,7 +11,7 @@ const props = defineProps({
   projectID: String,
 });
 
-const splitterWidthConsuming = 20;
+const splitterWidthConsuming = 25;
 
 const currentConsumedTopic = computed(() => kafkaStore.initiatedTopicConsuming(props.projectID).topicName);
 const consumedTopic = computed(() => kafkaStore.consumedTopic(props.projectID));
@@ -140,128 +140,178 @@ try {
 <template>
   <q-btn label="Stop" color="secondary" @click="stopTopicConsuming()" />
 
-  <q-splitter v-model="splitterWidthConsuming" class="full-height" disable>
+  <q-splitter v-model="splitterWidthConsuming" class="full-height">
     <template v-slot:before>
-      <div class="text-subtitle1">Start from:</div>
-
-      <q-btn-toggle
-        v-model="consumingStrategyGroup"
-        size="sm"
-        toggle-color="primary"
-        :options="[
-          { label: 'Time', value: 'time' },
-          { label: 'Offset', value: 'offset' },
-        ]"
-      />
-
-      <div v-if="consumingStrategyGroup === 'time'">
-        <div class="row no-wrap">
-          <q-btn-dropdown outline color="info" :label="fromTime" dropdown-icon="none" @hide="restartTopicConsuming()">
-            <div class="row items-start">
-              <q-date v-model="fromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" first-day-of-week="1" />
-              <q-time v-model="fromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" with-seconds format24h />
-            </div>
-          </q-btn-dropdown>
-
-          <q-btn-dropdown outline color="info" @hide="restartTopicConsuming()">
-            <q-list>
-              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(10)">
-                <q-item-section>
-                  <q-item-label>Last 10 minutes</q-item-label>
-                </q-item-section>
-              </q-item>
-
-              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(30)">
-                <q-item-section>
-                  <q-item-label>Last 30 minutes</q-item-label>
-                </q-item-section>
-              </q-item>
-
-              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(60)">
-                <q-item-section>
-                  <q-item-label>Last 1 hour</q-item-label>
-                </q-item-section>
-              </q-item>
-
-              <q-item clickable v-close-popup @click="setCurrentTimeMinutes(60 * 24)">
-                <q-item-section>
-                  <q-item-label>Last 24 hours</q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-btn-dropdown>
-        </div>
-      </div>
-
-      <div v-if="consumingStrategyGroup === 'offset'">
-        <q-list>
-          <q-item>
-            <q-item-section avatar>
-              <q-radio
-                v-model="consumingStrategyOffset"
-                val="newest"
-                label="Newest"
-                dense
-                @click="selectOffsetNewest()"
-              />
-            </q-item-section>
-          </q-item>
-
-          <q-item>
-            <q-item-section avatar>
-              <q-radio
-                v-model="consumingStrategyOffset"
-                val="oldest"
-                label="Oldest"
-                dense
-                @click="selectOffsetOldest()"
-              />
-            </q-item-section>
-          </q-item>
-
-          <q-item>
-            <q-item-section avatar>
-              <q-radio
-                v-model="consumingStrategyOffset"
-                val="specific"
-                label="From offset"
-                dense
-                @click="selectOffsetSpecific()"
-              />
-            </q-item-section>
-
-            <q-item-section>
-              <q-input
-                v-model="offsetValue"
-                label=""
-                dense
-                input-style="padding-top: 0;"
-                :disable="consumingStrategyOffset !== 'specific'"
-              />
-            </q-item-section>
-
-            <q-item-section>
-              <q-btn
-                label="Load"
-                color="secondary"
-                @click="restartTopicConsuming()"
-                :disable="consumingStrategyOffset !== 'specific'"
-                size="sm"
-              />
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </div>
-
-      {{ currentConsumedTopic }}
-
-      <div>Count total: {{ consumedTopic?.countTotal }}</div>
-      Partitions:
-      <q-list>
-        <q-item v-for="partition in consumedTopic?.partitions" :key="partition.id">
+      <q-list separator>
+        <q-item>
           <q-item-section>
-            <q-item-label overline>{{ partition.id }}</q-item-label>
-            <q-item-label>{{ partition.offsetTotalStart }} - {{ partition.offsetTotalEnd }}</q-item-label>
+            <q-item-label overline style="margin-bottom: 6px">TOPIC</q-item-label>
+
+            <q-item-label>
+              {{ currentConsumedTopic }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label overline style="margin-bottom: 6px">START FROM</q-item-label>
+
+            <q-item-label>
+              <q-btn-toggle
+                v-model="consumingStrategyGroup"
+                size="sm"
+                toggle-color="primary"
+                :options="[
+                  { label: 'Time', value: 'time' },
+                  { label: 'Offset', value: 'offset' },
+                ]"
+              />
+
+              <div v-if="consumingStrategyGroup === 'time'">
+                <div class="row no-wrap">
+                  <q-btn-dropdown
+                    outline
+                    color="info"
+                    :label="fromTime"
+                    dropdown-icon="none"
+                    @hide="restartTopicConsuming()"
+                  >
+                    <div class="row items-start">
+                      <q-date v-model="fromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" first-day-of-week="1" />
+                      <q-time v-model="fromTime" mask="YYYY-MM-DD HH:mm:ss Z" color="primary" with-seconds format24h />
+                    </div>
+                  </q-btn-dropdown>
+
+                  <q-btn-dropdown outline color="info" @hide="restartTopicConsuming()">
+                    <q-list>
+                      <q-item clickable v-close-popup @click="setCurrentTimeMinutes(10)">
+                        <q-item-section>
+                          <q-item-label>Last 10 minutes</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item clickable v-close-popup @click="setCurrentTimeMinutes(30)">
+                        <q-item-section>
+                          <q-item-label>Last 30 minutes</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item clickable v-close-popup @click="setCurrentTimeMinutes(60)">
+                        <q-item-section>
+                          <q-item-label>Last 1 hour</q-item-label>
+                        </q-item-section>
+                      </q-item>
+
+                      <q-item clickable v-close-popup @click="setCurrentTimeMinutes(60 * 24)">
+                        <q-item-section>
+                          <q-item-label>Last 24 hours</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-btn-dropdown>
+                </div>
+              </div>
+
+              <div v-if="consumingStrategyGroup === 'offset'">
+                <q-list>
+                  <q-item>
+                    <q-item-section avatar>
+                      <q-radio
+                        v-model="consumingStrategyOffset"
+                        val="newest"
+                        label="Newest"
+                        dense
+                        @click="selectOffsetNewest()"
+                      />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item>
+                    <q-item-section avatar>
+                      <q-radio
+                        v-model="consumingStrategyOffset"
+                        val="oldest"
+                        label="Oldest"
+                        dense
+                        @click="selectOffsetOldest()"
+                      />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item>
+                    <q-item-section avatar>
+                      <q-radio
+                        v-model="consumingStrategyOffset"
+                        val="specific"
+                        label="From offset"
+                        dense
+                        @click="selectOffsetSpecific()"
+                      />
+                    </q-item-section>
+
+                    <q-item-section>
+                      <q-input
+                        v-model="offsetValue"
+                        label=""
+                        dense
+                        input-style="padding-top: 0;"
+                        :disable="consumingStrategyOffset !== 'specific'"
+                      />
+                    </q-item-section>
+
+                    <q-item-section>
+                      <q-btn
+                        label="Load"
+                        color="secondary"
+                        @click="restartTopicConsuming()"
+                        :disable="consumingStrategyOffset !== 'specific'"
+                        size="sm"
+                      />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </div>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label overline style="margin-bottom: 6px">MESSAGES IN TOPIC</q-item-label>
+
+            <q-item-label>
+              {{ consumedTopic?.countTotal }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-item-label overline style="margin-bottom: 6px">PARTITIONS</q-item-label>
+
+            <q-item-label>
+              <q-list>
+                <q-item v-for="partition in consumedTopic?.partitions" :key="partition.id">
+                  <q-item-section>
+                    <q-item-label overline>{{ partition.id }}</q-item-label>
+
+                    <q-item-label>
+                      <q-linear-progress size="20px" :value="1">
+                        <div class="absolute-full flex flex-center">
+                          <q-badge
+                            color="white"
+                            transparent
+                            outline
+                            :label="`${partition.offsetTotalStart} - ${partition.offsetTotalEnd}`"
+                          />
+                        </div>
+                      </q-linear-progress>
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -275,6 +325,7 @@ try {
         :pagination="consumedMessagesTablePagination"
         :rows-per-page-options="consumedMessagesTableRowsPerPage"
         :loading="!consumedTopic.topicName"
+        no-data-label="Waiting for messages..."
         :sort-method="customMessagesSorting"
         binary-state-sort
       />
