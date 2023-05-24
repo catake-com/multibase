@@ -62,6 +62,7 @@ func main() {
 			app.GRPCModule,
 			app.ThriftModule,
 			app.KafkaModule,
+			app.KubernetesModule,
 		},
 		WindowStartState:                 options.Normal,
 		EnableFraudulentWebsiteDetection: false,

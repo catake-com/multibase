@@ -6,13 +6,15 @@ import { useProjectStore } from "../stores/project";
 import { useGRPCStore } from "../stores/grpc";
 import { useThriftStore } from "../stores/thrift";
 import { useKafkaStore } from "../stores/kafka";
+import { useKubernetesStore } from "../stores/kubernetes";
 import GRPC from "./GRPC.vue";
 import Thrift from "./Thrift.vue";
 import Kafka from "./Kafka.vue";
+import Kubernetes from "./Kubernetes.vue";
 
 export default defineComponent({
   name: "Project",
-  components: { GRPC, Thrift, Kafka },
+  components: { Kubernetes, GRPC, Thrift, Kafka },
   computed: {
     ...mapState(useProjectStore, ["projects", "currentProjectID"]),
     nonNewProjects() {
@@ -63,6 +65,16 @@ export default defineComponent({
       await useKafkaStore().deleteProject(projectID);
       await useProjectStore().deleteProject(projectID);
     },
+
+    async newKubernetesProject() {
+      await useKubernetesStore().createNewProject(this.currentProjectID);
+      await useProjectStore().createNewKubernetesProject(this.currentProjectID);
+    },
+
+    async deleteKubernetesProject(projectID) {
+      await useKubernetesStore().deleteProject(projectID);
+      await useProjectStore().deleteProject(projectID);
+    },
   },
 });
 </script>
@@ -96,6 +108,7 @@ export default defineComponent({
                     <q-icon v-if="props.row.type === 'grpc'" name="img:grpc.jpg" size="36px" />
                     <q-icon v-if="props.row.type === 'thrift'" name="img:thrift.jpg" size="36px" />
                     <q-icon v-if="props.row.type === 'kafka'" name="img:kafka.png" size="36px" />
+                    <q-icon v-if="props.row.type === 'kubernetes'" name="img:kubernetes.png" size="36px" />
                   </q-td>
 
                   <q-td key="name" :props="props" style="cursor: pointer" @click="openProject(projectID, props.row.id)">
@@ -138,6 +151,18 @@ export default defineComponent({
                       dense
                       @click="deleteKafkaProject(props.row.id)"
                     />
+
+                    <q-btn
+                      v-if="props.row.type === 'kubernetes'"
+                      class="inline"
+                      icon="delete"
+                      size="10px"
+                      style="width: 20px"
+                      flat
+                      rounded
+                      dense
+                      @click="deleteKubernetesProject(props.row.id)"
+                    />
                   </q-td>
                 </q-tr>
               </template>
@@ -150,7 +175,7 @@ export default defineComponent({
             </q-table>
           </div>
 
-          <div class="col-2">
+          <div class="col-3">
             <q-btn
               padding="sm"
               no-caps
@@ -177,6 +202,15 @@ export default defineComponent({
               class="block"
               @click="newKafkaProject()"
             />
+
+            <q-btn
+              padding="sm"
+              no-caps
+              color="primary"
+              label="New Kubernetes project"
+              class="block"
+              @click="newKubernetesProject()"
+            />
           </div>
 
           <div class="col"></div>
@@ -198,6 +232,12 @@ export default defineComponent({
       <div v-if="project.type === 'kafka'" class="full-height">
         <Suspense>
           <Kafka :projectID="projectID" :key="`kafka-${projectID}`" />
+        </Suspense>
+      </div>
+
+      <div v-if="project.type === 'kubernetes'" class="full-height">
+        <Suspense>
+          <Kubernetes :projectID="projectID" :key="`kubernetes-${projectID}`" />
         </Suspense>
       </div>
     </q-tab-panel>

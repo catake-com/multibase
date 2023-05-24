@@ -10,6 +10,7 @@ import {
   SaveCurrentProjectID,
   DeleteProject,
   CreateKafkaProject,
+  CreateKubernetesProject,
 } from "../wailsjs/go/project/Module";
 
 export const useProjectStore = defineStore({
@@ -48,9 +49,17 @@ export const useProjectStore = defineStore({
       }
     },
 
-    async createNewKafkaProject(thriftProjectID) {
+    async createNewKafkaProject(kafkaProjectID) {
       try {
-        this.$state = await CreateKafkaProject(thriftProjectID);
+        this.$state = await CreateKafkaProject(kafkaProjectID);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async createNewKubernetesProject(kubernetesProjectID) {
+      try {
+        this.$state = await CreateKubernetesProject(kubernetesProjectID);
       } catch (error) {
         console.log(error);
       }

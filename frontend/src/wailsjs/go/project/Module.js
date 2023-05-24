@@ -14,6 +14,10 @@ export function CreateKafkaProject(arg1) {
   return window['go']['project']['Module']['CreateKafkaProject'](arg1);
 }
 
+export function CreateKubernetesProject(arg1) {
+  return window['go']['project']['Module']['CreateKubernetesProject'](arg1);
+}
+
 export function CreateNewProject() {
   return window['go']['project']['Module']['CreateNewProject']();
 }

@@ -7,6 +7,8 @@ export function CreateGRPCProject(arg1:string):Promise<any>;
 
 export function CreateKafkaProject(arg1:string):Promise<any>;
 
+export function CreateKubernetesProject(arg1:string):Promise<any>;
+
 export function CreateNewProject():Promise<any>;
 
 export function CreateThriftProject(arg1:string):Promise<any>;

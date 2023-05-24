@@ -120,6 +120,27 @@ func (m *Module) CreateKafkaProject(projectID string) (*Module, error) {
 	return m, nil
 }
 
+func (m *Module) CreateKubernetesProject(projectID string) (*Module, error) {
+	m.stateMutex.Lock()
+	defer m.stateMutex.Unlock()
+
+	m.Stats.KubernetesProjectCount++
+
+	projectName := fmt.Sprintf("Kubernetes Project %d", m.Stats.KubernetesProjectCount)
+
+	m.Projects[projectID] = &Project{
+		ID:   projectID,
+		Type: "kubernetes",
+		Name: projectName,
+	}
+
+	if err := m.saveState(); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
 func (m *Module) DeleteProject(projectID string) (*Module, error) {
 	m.stateMutex.Lock()
 	defer m.stateMutex.Unlock()
@@ -237,9 +258,10 @@ func (m *Module) readOrInitializeState() error {
 	}
 
 	m.Stats = &Stats{
-		GRPCProjectCount:   0,
-		ThriftProjectCount: 0,
-		KafkaProjectCount:  0,
+		GRPCProjectCount:       0,
+		ThriftProjectCount:     0,
+		KafkaProjectCount:      0,
+		KubernetesProjectCount: 0,
 	}
 	m.Projects["404f5702-6179-4861-9533-b5ee16161c78"] = &Project{
 		ID:   "404f5702-6179-4861-9533-b5ee16161c78",
