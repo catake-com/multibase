@@ -1,13 +1,17 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
 	"sort"
 	"sync"
 
+	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -109,6 +113,27 @@ func (p *Project) Connect(selectedContext string) error {
 	return p.saveState()
 }
 
+func (p *Project) Namespaces() ([]string, error) {
+	ctx := context.Background()
+
+	namespaces, err := p.kubernetesClientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch namespaces: %w", err)
+		}
+	}
+
+	namespaceNames := lo.Map(namespaces.Items, func(namespace v1.Namespace, _ int) string {
+		return namespace.GetName()
+	})
+
+	sort.Slice(namespaceNames, func(i, j int) bool {
+		return namespaceNames[i] < namespaceNames[j]
+	})
+
+	return namespaceNames, nil
+}
+
 func (p *Project) OverviewData() (*TabOverviewData, error) {
 	overviewData := &TabOverviewData{
 		Contexts: make([]*TabOverviewDataContext, 0, len(p.apiConfig.Contexts)),
@@ -130,6 +155,56 @@ func (p *Project) OverviewData() (*TabOverviewData, error) {
 	})
 
 	return overviewData, nil
+}
+
+func (p *Project) WorkloadsPodsData() (*TabWorkloadsPodsData, error) {
+	ctx := context.Background()
+
+	pods, err := p.kubernetesClientset.CoreV1().Pods(p.state.SelectedNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch pods: %w", err)
+		}
+	}
+
+	podsData := &TabWorkloadsPodsData{
+		Pods: make([]*TabWorkloadsPodsDataPod, 0, len(pods.Items)),
+	}
+
+	for _, pod := range pods.Items {
+		ports := make([]*TabWorkloadsPodsDataPodPort, 0, len(pod.Spec.Containers))
+
+		for _, container := range pod.Spec.Containers {
+			for _, port := range container.Ports {
+				ports = append(
+					ports,
+					&TabWorkloadsPodsDataPodPort{
+						Name:          port.Name,
+						ContainerPort: int(port.ContainerPort),
+					},
+				)
+			}
+		}
+
+		sort.Slice(ports, func(i, j int) bool {
+			return ports[i].Name < ports[j].Name
+		})
+
+		podsData.Pods = append(
+			podsData.Pods,
+			&TabWorkloadsPodsDataPod{
+				Name:      pod.GetName(),
+				Namespace: pod.GetNamespace(),
+				Ports:     ports,
+			},
+		)
+	}
+
+	sort.Slice(podsData.Pods, func(i, j int) bool {
+		return podsData.Pods[i].Name < podsData.Pods[j].Name
+	})
+
+	return podsData, nil
 }
 
 func (p *Project) Close() error {

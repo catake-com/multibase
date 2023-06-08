@@ -3,9 +3,8 @@ package kubernetes
 type Tab string
 
 const (
-	TabOverview      = "overview"
-	TabWorkloads     = "workloads"
-	TabWorkloadsPods = "workloads_pods"
+	TabOverview  = "overview"
+	TabWorkloads = "workloads"
 )
 
 type State struct {
@@ -28,10 +27,16 @@ type TabOverviewDataContext struct {
 }
 
 type TabWorkloadsPodsData struct {
-	IsConnected bool                       `json:"isConnected"`
-	Pods        []*TabWorkloadsPodsDataPod `json:"pods"`
+	Pods []*TabWorkloadsPodsDataPod `json:"pods"`
 }
 
 type TabWorkloadsPodsDataPod struct {
-	Name string `json:"name"`
+	Name      string                         `json:"name"`
+	Namespace string                         `json:"namespace"`
+	Ports     []*TabWorkloadsPodsDataPodPort `json:"ports"`
+}
+
+type TabWorkloadsPodsDataPodPort struct {
+	Name          string `json:"name"`
+	ContainerPort int    `json:"containerPort"`
 }

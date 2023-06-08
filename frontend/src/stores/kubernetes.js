@@ -8,6 +8,8 @@ import {
   OverviewData,
   SelectNamespace,
   SaveCurrentTab,
+  Namespaces,
+  WorkloadsPodsData,
 } from "../wailsjs/go/kubernetes/Module";
 
 export const useKubernetesStore = defineStore({
@@ -15,6 +17,8 @@ export const useKubernetesStore = defineStore({
   state: () => ({
     projectStates: {},
     overviewDataByProjectID: {},
+    namespacesByProjectID: {},
+    workloadsPodsDataByProjectID: {},
   }),
   getters: {
     projectState: (state) => {
@@ -22,6 +26,12 @@ export const useKubernetesStore = defineStore({
     },
     overviewData: (state) => {
       return (projectID) => state.overviewDataByProjectID[projectID] || {};
+    },
+    namespaces: (state) => {
+      return (projectID) => state.namespacesByProjectID[projectID] || {};
+    },
+    workloadsPodsData: (state) => {
+      return (projectID) => state.workloadsPodsDataByProjectID[projectID] || {};
     },
   },
   actions: {
@@ -60,6 +70,14 @@ export const useKubernetesStore = defineStore({
 
     async loadOverviewData(projectID) {
       this.overviewDataByProjectID[projectID] = await OverviewData(projectID);
+    },
+
+    async loadNamespaces(projectID) {
+      this.namespacesByProjectID[projectID] = await Namespaces(projectID);
+    },
+
+    async loadWorkloadsPodsData(projectID) {
+      this.workloadsPodsDataByProjectID[projectID] = await WorkloadsPodsData(projectID);
     },
 
     async connect(projectID, selectedCluster) {

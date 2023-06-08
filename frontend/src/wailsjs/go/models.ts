@@ -448,6 +448,84 @@ export namespace kubernetes {
 		    return a;
 		}
 	}
+	export class TabWorkloadsPodsDataPodPort {
+	    name: string;
+	    containerPort: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TabWorkloadsPodsDataPodPort(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.containerPort = source["containerPort"];
+	    }
+	}
+	export class TabWorkloadsPodsDataPod {
+	    name: string;
+	    namespace: string;
+	    ports: TabWorkloadsPodsDataPodPort[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TabWorkloadsPodsDataPod(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.namespace = source["namespace"];
+	        this.ports = this.convertValues(source["ports"], TabWorkloadsPodsDataPodPort);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TabWorkloadsPodsData {
+	    pods: TabWorkloadsPodsDataPod[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TabWorkloadsPodsData(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.pods = this.convertValues(source["pods"], TabWorkloadsPodsDataPod);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 
 }
 

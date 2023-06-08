@@ -104,6 +104,15 @@ func (m *Module) Connect(projectID, selectedContext string) (*State, error) {
 	return project.state, nil
 }
 
+func (m *Module) Namespaces(projectID string) ([]string, error) {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return project.Namespaces()
+}
+
 func (m *Module) OverviewData(projectID string) (*TabOverviewData, error) {
 	project, err := m.fetchProject(projectID)
 	if err != nil {
@@ -116,6 +125,15 @@ func (m *Module) OverviewData(projectID string) (*TabOverviewData, error) {
 	}
 
 	return data, nil
+}
+
+func (m *Module) WorkloadsPodsData(projectID string) (*TabWorkloadsPodsData, error) {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return project.WorkloadsPodsData()
 }
 
 func (m *Module) ProjectState(projectID string) (*State, error) {

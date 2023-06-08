@@ -10,6 +10,8 @@ export function CreateNewProject(arg1:string):Promise<any>;
 
 export function DeleteProject(arg1:string):Promise<void>;
 
+export function Namespaces(arg1:string):Promise<Array<string>>;
+
 export function OverviewData(arg1:string):Promise<any>;
 
 export function ProjectState(arg1:string):Promise<any>;
@@ -17,3 +19,5 @@ export function ProjectState(arg1:string):Promise<any>;
 export function SaveCurrentTab(arg1:string,arg2:kubernetes.Tab):Promise<any>;
 
 export function SelectNamespace(arg1:string,arg2:string):Promise<any>;
+
+export function WorkloadsPodsData(arg1:string):Promise<any>;

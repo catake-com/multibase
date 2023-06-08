@@ -149,7 +149,7 @@ function initiateTopicConsuming(topic) {
         </template>
 
         <template v-slot:after>
-          <q-tab-panels v-model="currentTab" animated vertical>
+          <q-tab-panels v-model="currentTab" vertical>
             <q-tab-panel name="overview">
               <q-form class="q-gutter-md full-height">
                 <q-input v-model="address" label="Address" debounce="500" />

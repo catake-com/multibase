@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useQuasar } from "quasar";
 import { useKubernetesStore } from "../stores/kubernetes";
+import Workloads from "./kubernetes/Workloads.vue";
 
 const quasar = useQuasar();
 
@@ -52,7 +53,7 @@ async function connect(selectedCluster) {
       </template>
 
       <template v-slot:after>
-        <q-tab-panels v-model="currentTab" animated vertical>
+        <q-tab-panels v-model="currentTab" vertical>
           <q-tab-panel name="overview">
             <q-markup-table style="margin-bottom: 25px">
               <tbody>
@@ -95,6 +96,7 @@ async function connect(selectedCluster) {
                   <td class="text-left">{{ context.cluster }}</td>
                   <td class="text-left">
                     <q-btn v-if="!isConnected" label="Connect" color="secondary" @click="connect(context.name)" />
+                    <q-badge v-if="context.isSelected && isConnected"> Connected </q-badge>
                   </td>
                 </tr>
               </tbody>
@@ -102,9 +104,7 @@ async function connect(selectedCluster) {
           </q-tab-panel>
 
           <q-tab-panel name="workloads">
-            <div v-if="isConnected"></div>
-
-            <div v-else>Not connected to Kubernetes</div>
+            <Workloads :projectID="props.projectID"></Workloads>
           </q-tab-panel>
         </q-tab-panels>
       </template>

@@ -18,6 +18,10 @@ export function DeleteProject(arg1) {
   return window['go']['kubernetes']['Module']['DeleteProject'](arg1);
 }
 
+export function Namespaces(arg1) {
+  return window['go']['kubernetes']['Module']['Namespaces'](arg1);
+}
+
 export function OverviewData(arg1) {
   return window['go']['kubernetes']['Module']['OverviewData'](arg1);
 }
@@ -32,4 +36,8 @@ export function SaveCurrentTab(arg1, arg2) {
 
 export function SelectNamespace(arg1, arg2) {
   return window['go']['kubernetes']['Module']['SelectNamespace'](arg1, arg2);
+}
+
+export function WorkloadsPodsData(arg1) {
+  return window['go']['kubernetes']['Module']['WorkloadsPodsData'](arg1);
 }
