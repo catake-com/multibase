@@ -20,4 +20,8 @@ export function SaveCurrentTab(arg1:string,arg2:kubernetes.Tab):Promise<any>;
 
 export function SelectNamespace(arg1:string,arg2:string):Promise<any>;
 
+export function StartPortForwarding(arg1:string,arg2:string,arg3:string,arg4:string):Promise<any>;
+
+export function StopPortForwarding(arg1:string):Promise<any>;
+
 export function WorkloadsPodsData(arg1:string):Promise<any>;

@@ -27,8 +27,6 @@ const currentTab = computed({
 });
 
 const isConnected = computed(() => kubernetesStore.projectState(props.projectID).isConnected);
-const selectedContext = computed(() => kubernetesStore.projectState(props.projectID).selectedContext);
-const selectedNamespace = computed(() => kubernetesStore.projectState(props.projectID).selectedNamespace);
 const overviewData = computed(() => kubernetesStore.overviewData(props.projectID));
 
 async function connect(selectedCluster) {
@@ -55,32 +53,6 @@ async function connect(selectedCluster) {
       <template v-slot:after>
         <q-tab-panels v-model="currentTab" vertical>
           <q-tab-panel name="overview">
-            <q-markup-table style="margin-bottom: 25px">
-              <tbody>
-                <tr>
-                  <td class="text-left">Context</td>
-                  <td class="text-left">
-                    <div v-if="isConnected">
-                      {{ selectedContext }}
-                    </div>
-
-                    <div v-else>...</div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="text-left">Namespace</td>
-                  <td class="text-left">
-                    <div v-if="isConnected">
-                      {{ selectedNamespace }}
-                    </div>
-
-                    <div v-else>...</div>
-                  </td>
-                </tr>
-              </tbody>
-            </q-markup-table>
-
             <q-markup-table>
               <thead>
                 <tr>

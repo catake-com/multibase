@@ -385,6 +385,7 @@ export namespace kubernetes {
 	    selectedContext: string;
 	    selectedNamespace: string;
 	    isConnected: boolean;
+	    isPortForwarded: boolean;
 	    currentTab: string;
 	
 	    static createFrom(source: any = {}) {
@@ -397,6 +398,7 @@ export namespace kubernetes {
 	        this.selectedContext = source["selectedContext"];
 	        this.selectedNamespace = source["selectedNamespace"];
 	        this.isConnected = source["isConnected"];
+	        this.isPortForwarded = source["isPortForwarded"];
 	        this.currentTab = source["currentTab"];
 	    }
 	}

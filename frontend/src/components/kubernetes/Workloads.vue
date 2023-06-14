@@ -11,6 +11,7 @@ const tablePodsLoading = ref(true);
 const kubernetesStore = useKubernetesStore();
 const currentWorkloadTab = ref("overview");
 
+const isPortForwarded = computed(() => kubernetesStore.projectState(props.projectID).isPortForwarded);
 const namespaces = computed(() => kubernetesStore.namespaces(props.projectID));
 const workloadsPodsData = computed(() => kubernetesStore.workloadsPodsData(props.projectID));
 
@@ -82,6 +83,14 @@ function tablePodsFilterMethod(rows, query, cols, getCellValue) {
 
   return rows.filter((row) => row.name.toLowerCase().includes(queryLowerCase));
 }
+
+async function startPortForwarding(namespace, pod, ports) {
+  await kubernetesStore.startPortForwarding(props.projectID, namespace, pod, ports);
+}
+
+async function stopPortForwarding() {
+  await kubernetesStore.stopPortForwarding(props.projectID);
+}
 </script>
 
 <template>
@@ -96,6 +105,14 @@ function tablePodsFilterMethod(rows, query, cols, getCellValue) {
       <q-tab-panel name="overview"> Overview </q-tab-panel>
 
       <q-tab-panel name="pods">
+        <q-btn
+          v-if="isPortForwarded"
+          size="sm"
+          label="Stop Port Forwarding"
+          color="secondary"
+          @click="stopPortForwarding()"
+        />
+
         <q-table
           :filter="tablePodsFilter"
           :filter-method="tablePodsFilterMethod"
@@ -125,8 +142,24 @@ function tablePodsFilterMethod(rows, query, cols, getCellValue) {
 
           <template v-slot:body-cell-ports="props">
             <q-td :props="props">
-              {{ props.row.ports }}
-              <q-btn label="Port Forward" color="secondary" />
+              <div v-for="port in props.row.ports" :key="`${port.name}-${port.containerPort}`">
+                <span>{{ port.name }}</span>
+                <span>:</span>
+                <span>{{ `${port.containerPort}:${port.containerPort}` }}</span>
+                <q-btn
+                  v-if="!isPortForwarded"
+                  size="sm"
+                  label="Forward"
+                  color="secondary"
+                  @click="
+                    startPortForwarding(
+                      props.row.namespace,
+                      props.row.name,
+                      `${port.containerPort}:${port.containerPort}`
+                    )
+                  "
+                />
+              </div>
             </q-td>
           </template>
         </q-table>

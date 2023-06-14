@@ -10,6 +10,8 @@ import {
   SaveCurrentTab,
   Namespaces,
   WorkloadsPodsData,
+  StartPortForwarding,
+  StopPortForwarding,
 } from "../wailsjs/go/kubernetes/Module";
 
 export const useKubernetesStore = defineStore({
@@ -63,6 +65,22 @@ export const useKubernetesStore = defineStore({
     async selectNamespace(projectID, selectedNamespace) {
       try {
         this.projectStates[projectID] = await SelectNamespace(projectID, selectedNamespace);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async startPortForwarding(projectID, namespace, pod, ports) {
+      try {
+        this.projectStates[projectID] = await StartPortForwarding(projectID, namespace, pod, ports);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async stopPortForwarding(projectID) {
+      try {
+        this.projectStates[projectID] = await StopPortForwarding(projectID);
       } catch (error) {
         console.log(error);
       }

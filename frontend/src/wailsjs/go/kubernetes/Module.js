@@ -38,6 +38,14 @@ export function SelectNamespace(arg1, arg2) {
   return window['go']['kubernetes']['Module']['SelectNamespace'](arg1, arg2);
 }
 
+export function StartPortForwarding(arg1, arg2, arg3, arg4) {
+  return window['go']['kubernetes']['Module']['StartPortForwarding'](arg1, arg2, arg3, arg4);
+}
+
+export function StopPortForwarding(arg1) {
+  return window['go']['kubernetes']['Module']['StopPortForwarding'](arg1);
+}
+
 export function WorkloadsPodsData(arg1) {
   return window['go']['kubernetes']['Module']['WorkloadsPodsData'](arg1);
 }

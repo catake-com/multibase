@@ -12,6 +12,7 @@ type State struct {
 	SelectedContext   string `json:"selectedContext"`
 	SelectedNamespace string `json:"selectedNamespace"`
 	IsConnected       bool   `json:"isConnected"`
+	IsPortForwarded   bool   `json:"isPortForwarded"`
 	CurrentTab        Tab    `json:"currentTab"`
 }
 

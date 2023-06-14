@@ -104,6 +104,34 @@ func (m *Module) Connect(projectID, selectedContext string) (*State, error) {
 	return project.state, nil
 }
 
+func (m *Module) StartPortForwarding(projectID, namespace, pod, ports string) (*State, error) {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = project.StartPortForwarding(namespace, pod, ports)
+	if err != nil {
+		return nil, err
+	}
+
+	return project.state, nil
+}
+
+func (m *Module) StopPortForwarding(projectID string) (*State, error) {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = project.StopPortForwarding()
+	if err != nil {
+		return nil, err
+	}
+
+	return project.state, nil
+}
+
 func (m *Module) Namespaces(projectID string) ([]string, error) {
 	project, err := m.fetchProject(projectID)
 	if err != nil {

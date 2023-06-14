@@ -2,7 +2,9 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"sort"
@@ -16,18 +18,26 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 
 	"github.com/multibase-io/multibase/backend/pkg/state"
 )
 
+var (
+	errPortsAlreadyForwarded = errors.New("ports already forwarded")
+	errPortsAreNotForwarded  = errors.New("ports are not forwarded")
+)
+
 type Project struct {
-	state               *State
-	stateMutex          sync.RWMutex
-	stateStorage        *state.Storage
-	appLogger           *logrus.Logger
-	apiConfig           api.Config
-	restConfig          *rest.Config
-	kubernetesClientset *kubernetes.Clientset
+	state                  *State
+	stateMutex             sync.RWMutex
+	stateStorage           *state.Storage
+	appLogger              *logrus.Logger
+	apiConfig              api.Config
+	restConfig             *rest.Config
+	kubernetesClientset    *kubernetes.Clientset
+	portForwardingStopChan chan struct{}
 }
 
 func NewProject(projectID string, stateStorage *state.Storage, appLogger *logrus.Logger) (*Project, error) {
@@ -109,6 +119,72 @@ func (p *Project) Connect(selectedContext string) error {
 	p.state.IsConnected = true
 	p.state.SelectedContext = selectedContext
 	p.kubernetesClientset = clientset
+
+	return p.saveState()
+}
+
+func (p *Project) StartPortForwarding(namespace, pod, ports string) error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	if p.portForwardingStopChan != nil {
+		return errPortsAlreadyForwarded
+	}
+
+	requestURL := p.kubernetesClientset.
+		CoreV1().
+		RESTClient().
+		Post().
+		Resource("pods").
+		Namespace(namespace).
+		Name(pod).
+		SubResource("portforward").
+		URL()
+
+	transport, upgrader, err := spdy.RoundTripperFor(p.restConfig)
+	if err != nil {
+		return fmt.Errorf("failed to init round tripper: %w", err)
+	}
+
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, requestURL)
+
+	p.portForwardingStopChan = make(chan struct{})
+	p.state.IsPortForwarded = true
+
+	portForwarder, err := portforward.New(
+		dialer,
+		[]string{ports},
+		p.portForwardingStopChan,
+		nil,
+		os.Stdout,
+		os.Stdout,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to init port forwarder: %w", err)
+	}
+
+	go func() {
+		err := portForwarder.ForwardPorts()
+		if err != nil {
+			p.appLogger.Error(fmt.Errorf("failed to forward ports: %w", err))
+		}
+	}()
+
+	return p.saveState()
+}
+
+func (p *Project) StopPortForwarding() error {
+	p.stateMutex.Lock()
+	defer p.stateMutex.Unlock()
+
+	if p.portForwardingStopChan == nil {
+		return errPortsAreNotForwarded
+	}
+
+	close(p.portForwardingStopChan)
+
+	p.portForwardingStopChan = nil
+	p.state.IsPortForwarded = false
 
 	return p.saveState()
 }
@@ -208,12 +284,17 @@ func (p *Project) WorkloadsPodsData() (*TabWorkloadsPodsData, error) {
 }
 
 func (p *Project) Close() error {
+	if p.portForwardingStopChan != nil {
+		close(p.portForwardingStopChan)
+	}
+
 	return nil
 }
 
 func (p *Project) saveState() error {
 	copiedState := *p.state
 	copiedState.IsConnected = false
+	copiedState.IsPortForwarded = false
 	copiedState.CurrentTab = ""
 
 	err := p.stateStorage.Save(p.state.ID, &copiedState)
