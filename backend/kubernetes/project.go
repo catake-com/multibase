@@ -9,6 +9,7 @@ import (
 	"path"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
@@ -22,6 +23,10 @@ import (
 	"k8s.io/client-go/transport/spdy"
 
 	"github.com/multibase-io/multibase/backend/pkg/state"
+)
+
+const (
+	requestTimeout = 5 * time.Second
 )
 
 var (
@@ -83,6 +88,8 @@ func (p *Project) Initialize() error {
 		return fmt.Errorf("failed to build rest config: %w", err)
 	}
 
+	restConfig.Timeout = requestTimeout
+
 	p.apiConfig = apiConfig
 	p.restConfig = restConfig
 
@@ -119,6 +126,11 @@ func (p *Project) Connect(selectedContext string) error {
 	p.state.IsConnected = true
 	p.state.SelectedContext = selectedContext
 	p.kubernetesClientset = clientset
+
+	_, err = p.kubernetesClientset.ServerVersion()
+	if err != nil {
+		return fmt.Errorf("failed to connect to kubernetes: %w", err)
+	}
 
 	return p.saveState()
 }

@@ -67,8 +67,14 @@ async function connect(selectedCluster) {
                   <td class="text-left">{{ context.name }}</td>
                   <td class="text-left">{{ context.cluster }}</td>
                   <td class="text-left">
-                    <q-btn v-if="!isConnected" label="Connect" color="secondary" @click="connect(context.name)" />
-                    <q-badge v-if="context.isSelected && isConnected"> Connected </q-badge>
+                    <q-btn
+                      v-if="!isConnected"
+                      size="sm"
+                      label="Connect"
+                      color="secondary"
+                      @click="connect(context.name)"
+                    />
+                    <q-badge v-if="context.isSelected && isConnected" color="secondary"> Connected </q-badge>
                   </td>
                 </tr>
               </tbody>

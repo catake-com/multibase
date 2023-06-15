@@ -71,19 +71,11 @@ export const useKubernetesStore = defineStore({
     },
 
     async startPortForwarding(projectID, namespace, pod, ports) {
-      try {
-        this.projectStates[projectID] = await StartPortForwarding(projectID, namespace, pod, ports);
-      } catch (error) {
-        console.log(error);
-      }
+      this.projectStates[projectID] = await StartPortForwarding(projectID, namespace, pod, ports);
     },
 
     async stopPortForwarding(projectID) {
-      try {
-        this.projectStates[projectID] = await StopPortForwarding(projectID);
-      } catch (error) {
-        console.log(error);
-      }
+      this.projectStates[projectID] = await StopPortForwarding(projectID);
     },
 
     async loadOverviewData(projectID) {

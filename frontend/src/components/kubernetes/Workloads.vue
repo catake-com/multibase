@@ -1,6 +1,9 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { useKubernetesStore } from "../../stores/kubernetes";
+import { useQuasar } from "quasar";
+
+const quasar = useQuasar();
 
 const props = defineProps({
   projectID: String,
@@ -85,11 +88,23 @@ function tablePodsFilterMethod(rows, query, cols, getCellValue) {
 }
 
 async function startPortForwarding(namespace, pod, ports) {
-  await kubernetesStore.startPortForwarding(props.projectID, namespace, pod, ports);
+  try {
+    await kubernetesStore.startPortForwarding(props.projectID, namespace, pod, ports);
+
+    quasar.notify({ type: "positive", message: "Port Forwarding started" });
+  } catch (error) {
+    quasar.notify({ type: "negative", message: error });
+  }
 }
 
 async function stopPortForwarding() {
-  await kubernetesStore.stopPortForwarding(props.projectID);
+  try {
+    await kubernetesStore.stopPortForwarding(props.projectID);
+
+    quasar.notify({ type: "positive", message: "Port Forwarding stopped" });
+  } catch (error) {
+    quasar.notify({ type: "negative", message: error });
+  }
 }
 </script>
 
