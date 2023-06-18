@@ -18,9 +18,9 @@ linters:
 
 linters-settings:
     gci:
-        local-prefixes: github.com/multibase-io/multibase
+        local-prefixes: github.com/catake-com/multibase
     goimports:
-        local-prefixes: github.com/multibase-io/multibase
+        local-prefixes: github.com/catake-com/multibase
     exhaustive:
         default-signifies-exhaustive: true
     lll:

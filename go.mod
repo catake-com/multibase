@@ -1,4 +1,4 @@
-module github.com/multibase-io/multibase
+module github.com/catake-com/multibase
 
 go 1.20
 
