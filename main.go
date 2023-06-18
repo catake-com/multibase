@@ -29,12 +29,9 @@ func main() {
 
 	wailsLogger := &WailsLogger{impl: appLogger}
 
-	app, err := NewApp(appLogger)
-	if err != nil {
-		appLogger.Fatal(err)
-	}
+	app := NewApp(appLogger)
 
-	err = wails.Run(&options.App{
+	err := wails.Run(&options.App{
 		Title:             "Multibase",
 		Width:             1024,
 		Height:            800,

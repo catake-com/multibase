@@ -4,7 +4,7 @@ lint:
 
 .PHONY: dev
 dev:
-	@wails dev
+	@wails dev -skipbindings -noreload
 
 .PHONY: generate
 generate:
