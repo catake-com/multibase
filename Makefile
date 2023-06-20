@@ -10,6 +10,10 @@ dev:
 generate:
 	@wails generate module
 
+.PHONY: build
+build:
+	@wails build -skipbindings -clean -o Multibase
+
 .PHONY: update-wails
 update-wails:
 	@go install github.com/wailsapp/wails/v2/cmd/wails@latest

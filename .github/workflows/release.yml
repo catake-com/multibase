@@ -32,6 +32,13 @@ jobs:
                 run: brew install mitchellh/gon/gon
             -   name: Build for Mac OS
                 run: wails build -platform darwin/universal -o Multibase
+            -   name: Prepare entitlements
+                env:
+                    APPLICATION_IDENTITY: ${{ secrets.APPLICATION_IDENTITY }}
+                    TEAM_IDENTITY: ${{ secrets.TEAM_IDENTITY }}
+                run: |
+                    export SECRETVARS='$APPLICATION_IDENTITY:$TEAM_IDENTITY' && \
+                    envsubst "$SECRETVARS" < ./build/darwin/entitlements.template.plist > ./build/darwin/entitlements.plist
             -   name: Sign for Mac OS
                 env:
                     APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
