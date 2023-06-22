@@ -38,7 +38,7 @@ jobs:
                     MACOS_APPLICATION_PASSWORD: ${{ secrets.MACOS_APPLICATION_PASSWORD }}
                     MACOS_CERTIFICATE_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_IDENTITY }}
                 run: |
-                    export SECRETVARS='$MACOS_CERTIFICATE_IDENTITY:$MACOS_APPLE_ID_USERNAME' && \
+                    export SECRETVARS='$MACOS_CERTIFICATE_IDENTITY:$MACOS_APPLE_ID_USERNAME:$MACOS_APPLICATION_PASSWORD' && \
                     envsubst "$SECRETVARS" < ./build/darwin/gon-sign.template.json > ./build/darwin/gon-sign.json && \
                     gon -log-level=info ./build/darwin/gon-sign.json
             -   name: Package for Mac OS
@@ -50,7 +50,7 @@ jobs:
                     MACOS_APPLE_ID_USERNAME: ${{ secrets.MACOS_APPLE_ID_USERNAME }}
                     MACOS_APPLICATION_PASSWORD: ${{ secrets.MACOS_APPLICATION_PASSWORD }}
                 run: |
-                    export SECRETVARS='$MACOS_APPLE_ID_USERNAME' && \
+                    export SECRETVARS='$MACOS_APPLE_ID_USERNAME:$MACOS_APPLICATION_PASSWORD' && \
                     envsubst "$SECRETVARS" < ./build/darwin/gon-notarize.template.json > ./build/darwin/gon-notarize.json && \
                     gon -log-level=info ./build/darwin/gon-notarize.json
             -   name: Build for Windows x86
