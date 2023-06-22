@@ -3,6 +3,9 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -20,6 +23,8 @@ type Module struct {
 }
 
 func NewModule(stateStorage *state.Storage, appLogger *logrus.Logger) (*Module, error) {
+	extendPathWithGcloud()
+
 	module := &Module{
 		projects:     make(map[string]*Project),
 		stateStorage: stateStorage,
@@ -220,4 +225,31 @@ func (m *Module) fetchProject(projectID string) (*Project, error) {
 	m.projectsMutex.Unlock()
 
 	return project, nil
+}
+
+func extendPathWithGcloud() {
+	paths := findGcloudBinPaths()
+
+	for _, path := range paths {
+		_ = os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), path))
+	}
+}
+
+func findGcloudBinPaths() []string {
+	output, err := exec.Command("which", "gcloud").Output()
+	if err == nil {
+		return []string{
+			strings.TrimSuffix(string(output), "/gcloud\n"),
+		}
+	}
+
+	homePath, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	return []string{
+		fmt.Sprintf("%s/google-cloud-sdk/bin", homePath),
+		fmt.Sprintf("%s/Documents/google-cloud-sdk/bin", homePath),
+	}
 }

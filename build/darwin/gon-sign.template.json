@@ -1,11 +1,11 @@
 {
   "source" : ["./build/bin/Multibase.app"],
-  "bundle_id" : "io.Multibase",
+  "bundle_id" : "com.catake.multibase",
   "apple_id": {
-    "username": "$APPLE_USERNAME",
-    "password": "@env:APPLE_PASSWORD"
+    "username": "$MACOS_APPLE_ID_USERNAME",
+    "password": "$MACOS_APPLICATION_PASSWORD"
   },
   "sign" :{
-    "application_identity" : "$APPLICATION_IDENTITY"
+    "application_identity" : $MACOS_CERTIFICATE_IDENTITY
   }
 }

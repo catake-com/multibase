@@ -1,5 +1,8 @@
 .idea
 scratch
 .DS_Store
-
+.env
 build/bin
+build/darwin/entitlements.plist
+build/darwin/gon-notarize.json
+build/darwin/gon-sign.json

@@ -23,29 +23,22 @@ jobs:
             -   name: Install Wails
                 run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
             -   name: Import Code-Signing Certificates
-                uses: Apple-Actions/import-codesign-certs@v1
+                uses: Apple-Actions/import-codesign-certs@v2
                 with:
-                    keychain-password: ${{ secrets.APPLE_PASSWORD }}
+                    keychain-password: ${{ secrets.MACOS_APPLICATION_PASSWORD }}
                     p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
-                    p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+                    p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
             -   name: Install macOS Wails deps
                 run: brew install mitchellh/gon/gon
             -   name: Build for Mac OS
                 run: wails build -platform darwin/universal -o Multibase
-            -   name: Prepare entitlements
-                env:
-                    APPLICATION_IDENTITY: ${{ secrets.APPLICATION_IDENTITY }}
-                    TEAM_IDENTITY: ${{ secrets.TEAM_IDENTITY }}
-                run: |
-                    export SECRETVARS='$APPLICATION_IDENTITY:$TEAM_IDENTITY' && \
-                    envsubst "$SECRETVARS" < ./build/darwin/entitlements.template.plist > ./build/darwin/entitlements.plist
             -   name: Sign for Mac OS
                 env:
-                    APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
-                    APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-                    APPLICATION_IDENTITY: ${{ secrets.APPLICATION_IDENTITY }}
+                    MACOS_APPLE_ID_USERNAME: ${{ secrets.MACOS_APPLE_ID_USERNAME }}
+                    MACOS_APPLICATION_PASSWORD: ${{ secrets.MACOS_APPLICATION_PASSWORD }}
+                    MACOS_CERTIFICATE_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_IDENTITY }}
                 run: |
-                    export SECRETVARS='$APPLICATION_IDENTITY:$APPLE_USERNAME' && \
+                    export SECRETVARS='$MACOS_CERTIFICATE_IDENTITY:$MACOS_APPLE_ID_USERNAME' && \
                     envsubst "$SECRETVARS" < ./build/darwin/gon-sign.template.json > ./build/darwin/gon-sign.json && \
                     gon -log-level=info ./build/darwin/gon-sign.json
             -   name: Package for Mac OS
@@ -54,10 +47,10 @@ jobs:
                     mv ./build/bin/Multibase*.dmg ./build/bin/multibase.dmg
             -   name: Notarize for Mac OS
                 env:
-                    APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
-                    APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+                    MACOS_APPLE_ID_USERNAME: ${{ secrets.MACOS_APPLE_ID_USERNAME }}
+                    MACOS_APPLICATION_PASSWORD: ${{ secrets.MACOS_APPLICATION_PASSWORD }}
                 run: |
-                    export SECRETVARS='$APPLE_USERNAME' && \
+                    export SECRETVARS='$MACOS_APPLE_ID_USERNAME' && \
                     envsubst "$SECRETVARS" < ./build/darwin/gon-notarize.template.json > ./build/darwin/gon-notarize.json && \
                     gon -log-level=info ./build/darwin/gon-notarize.json
             -   name: Build for Windows x86

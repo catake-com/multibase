@@ -1,11 +1,11 @@
 {
   "notarize": [{
     "path": "./build/bin/multibase.dmg",
-    "bundle_id": "io.Multibase",
+    "bundle_id": "com.catake.multibase",
     "staple": true
   }],
   "apple_id": {
-    "username": "$APPLE_USERNAME",
-    "password": "@env:APPLE_PASSWORD"
+    "username": "$MACOS_APPLE_ID_USERNAME",
+    "password": "$MACOS_APPLICATION_PASSWORD"
   }
 }
