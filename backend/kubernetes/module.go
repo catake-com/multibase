@@ -228,9 +228,10 @@ func (m *Module) fetchProject(projectID string) (*Project, error) {
 }
 
 func extendPathWithGcloud() {
-	paths := findGcloudBinPaths()
+	gcloudPaths := findGcloudBinPaths()
+	gkeAuthPaths := findGKEAuthPluginBinPaths()
 
-	for _, path := range paths {
+	for _, path := range append(gcloudPaths, gkeAuthPaths...) {
 		_ = os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), path))
 	}
 }
@@ -251,5 +252,16 @@ func findGcloudBinPaths() []string {
 	return []string{
 		fmt.Sprintf("%s/google-cloud-sdk/bin", homePath),
 		fmt.Sprintf("%s/Documents/google-cloud-sdk/bin", homePath),
+	}
+}
+
+func findGKEAuthPluginBinPaths() []string {
+	output, err := exec.Command("which", "gke-gcloud-auth-plugin").Output()
+	if err != nil {
+		return nil
+	}
+
+	return []string{
+		strings.TrimSuffix(string(output), "/gke-gcloud-auth-plugin\n"),
 	}
 }
