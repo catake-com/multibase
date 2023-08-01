@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -23,13 +24,13 @@ type Module struct {
 }
 
 func NewModule(stateStorage *state.Storage, appLogger *logrus.Logger) (*Module, error) {
-	extendPathWithGcloud()
-
 	module := &Module{
 		projects:     make(map[string]*Project),
 		stateStorage: stateStorage,
 		appLogger:    appLogger,
 	}
+
+	module.extendEnvPath()
 
 	return module, nil
 }
@@ -227,41 +228,88 @@ func (m *Module) fetchProject(projectID string) (*Project, error) {
 	return project, nil
 }
 
-func extendPathWithGcloud() {
-	gcloudPaths := findGcloudBinPaths()
-	gkeAuthPaths := findGKEAuthPluginBinPaths()
+func (m *Module) extendEnvPath() {
+	shellName := getShellName()
+	configFilePath := getShellConfigFilePath(shellName)
 
-	for _, path := range append(gcloudPaths, gkeAuthPaths...) {
-		_ = os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), path))
+	if shellName == "" || configFilePath == "" {
+		m.appLogger.Info("no shell or shell config file detected")
+
+		return
+	}
+
+	cmd := exec.Command(shellName, "-c", fmt.Sprintf("source %s && env", configFilePath))
+
+	output, err := cmd.Output()
+	if err != nil {
+		m.appLogger.Error(fmt.Errorf("failed to exec env: %w", err))
+
+		return
+	}
+
+	envVars := parseEnvOutput(string(output))
+
+	if envVars["PATH"] != "" {
+		err := os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), envVars["PATH"]))
+		if err != nil {
+			m.appLogger.Error(fmt.Errorf("failed to set env: %w", err))
+
+			return
+		}
 	}
 }
 
-func findGcloudBinPaths() []string {
-	output, err := exec.Command("which", "gcloud").Output()
-	if err == nil {
-		return []string{
-			strings.TrimSuffix(string(output), "/gcloud\n"),
+func getShellName() string {
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		return ""
+	}
+
+	return filepath.Base(shell)
+}
+
+func getShellConfigFilePath(shell string) string {
+	switch shell {
+	case "bash":
+		for _, cfgName := range []string{".bashrc", ".bash_profile"} {
+			path := filepath.Join(os.Getenv("HOME"), cfgName)
+
+			_, err := os.Stat(path)
+			if err != nil {
+				continue
+			}
+
+			return path
+		}
+	case "zsh":
+		for _, cfgName := range []string{".zshrc", ".zprofile"} {
+			path := filepath.Join(os.Getenv("HOME"), cfgName)
+
+			_, err := os.Stat(path)
+			if err != nil {
+				continue
+			}
+
+			return path
 		}
 	}
 
-	homePath, err := os.UserHomeDir()
-	if err != nil {
-		return nil
-	}
-
-	return []string{
-		fmt.Sprintf("%s/google-cloud-sdk/bin", homePath),
-		fmt.Sprintf("%s/Documents/google-cloud-sdk/bin", homePath),
-	}
+	return ""
 }
 
-func findGKEAuthPluginBinPaths() []string {
-	output, err := exec.Command("which", "gke-gcloud-auth-plugin").Output()
-	if err != nil {
-		return nil
+// nolint: gomnd
+func parseEnvOutput(output string) map[string]string {
+	envVars := make(map[string]string)
+
+	lines := strings.Split(output, "\n")
+
+	for _, line := range lines {
+		parts := strings.SplitN(line, "=", 2)
+
+		if len(parts) == 2 {
+			envVars[parts[0]] = parts[1]
+		}
 	}
 
-	return []string{
-		strings.TrimSuffix(string(output), "/gke-gcloud-auth-plugin\n"),
-	}
+	return envVars
 }
