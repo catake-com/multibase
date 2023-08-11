@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/catake-com/multibase/backend/pkg/state"
+	"github.com/catake-com/multibase/backend/state"
 )
 
 type Module struct {

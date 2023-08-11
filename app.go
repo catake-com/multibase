@@ -9,12 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"github.com/catake-com/multibase/backend/grpc"
-	"github.com/catake-com/multibase/backend/kafka"
-	"github.com/catake-com/multibase/backend/kubernetes"
-	"github.com/catake-com/multibase/backend/pkg/state"
-	"github.com/catake-com/multibase/backend/project"
-	"github.com/catake-com/multibase/backend/thrift"
+	"github.com/catake-com/multibase/backend/module/grpc"
+	"github.com/catake-com/multibase/backend/module/kafka"
+	"github.com/catake-com/multibase/backend/module/kubernetes"
+	"github.com/catake-com/multibase/backend/module/project"
+	"github.com/catake-com/multibase/backend/module/thrift"
+	"github.com/catake-com/multibase/backend/state"
 )
 
 type App struct {

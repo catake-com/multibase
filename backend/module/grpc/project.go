@@ -15,7 +15,7 @@ import (
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"github.com/catake-com/multibase/backend/pkg/state"
+	"github.com/catake-com/multibase/backend/state"
 )
 
 type Project struct {

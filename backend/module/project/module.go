@@ -7,7 +7,7 @@ import (
 	"github.com/gofrs/uuid/v5"
 	"github.com/samber/lo"
 
-	"github.com/catake-com/multibase/backend/pkg/state"
+	"github.com/catake-com/multibase/backend/state"
 )
 
 type Module struct {

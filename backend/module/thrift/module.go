@@ -1,4 +1,4 @@
-package grpc
+package thrift
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"github.com/catake-com/multibase/backend/pkg/state"
+	"github.com/catake-com/multibase/backend/state"
 )
 
 const defaultProjectSplitterWidth = 20
@@ -58,42 +58,14 @@ func (m *Module) StopRequest(projectID, formID string) (*Project, error) {
 	return project, nil
 }
 
-func (m *Module) ReflectProto(projectID, formID, address string) (*Project, error) {
-	project, err := m.fetchProject(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = project.ReflectProto(formID, address)
-	if err != nil {
-		return nil, err
-	}
-
-	return project, nil
-}
-
-func (m *Module) RemoveImportPath(projectID, importPath string) (*Project, error) {
-	project, err := m.fetchProject(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = project.RemoveImportPath(importPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return project, nil
-}
-
-func (m *Module) OpenProtoFile(projectID string) (*Project, error) {
-	protoFilePath, err := runtime.OpenFileDialog(m.AppCtx, runtime.OpenDialogOptions{
+func (m *Module) OpenFilePath(projectID string) (*Project, error) {
+	filePath, err := runtime.OpenFileDialog(m.AppCtx, runtime.OpenDialogOptions{
 		Filters: []runtime.FileFilter{
-			{DisplayName: "Proto Files (*.proto)", Pattern: "*.proto;"},
+			{DisplayName: "Thrift Files (*.thrift)", Pattern: "*.thrift;"},
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open proto file: %w", err)
+		return nil, fmt.Errorf("failed to open thrift file: %w", err)
 	}
 
 	project, err := m.fetchProject(projectID)
@@ -101,11 +73,11 @@ func (m *Module) OpenProtoFile(projectID string) (*Project, error) {
 		return nil, err
 	}
 
-	if protoFilePath == "" {
+	if filePath == "" {
 		return project, nil
 	}
 
-	err = project.OpenProtoFile(protoFilePath)
+	err = project.OpenFilePath(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -113,50 +85,13 @@ func (m *Module) OpenProtoFile(projectID string) (*Project, error) {
 	return project, nil
 }
 
-func (m *Module) DeleteAllProtoFiles(projectID string) (*Project, error) {
+func (m *Module) SelectFunction(projectID, formID, functionID string) (*Project, error) {
 	project, err := m.fetchProject(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = project.DeleteAllProtoFiles()
-	if err != nil {
-		return nil, err
-	}
-
-	return project, nil
-}
-
-func (m *Module) OpenImportPath(projectID string) (*Project, error) {
-	importPath, err := runtime.OpenDirectoryDialog(m.AppCtx, runtime.OpenDialogOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to open import path: %w", err)
-	}
-
-	project, err := m.fetchProject(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	if importPath == "" {
-		return project, nil
-	}
-
-	err = project.OpenImportPath(importPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return project, nil
-}
-
-func (m *Module) SelectMethod(projectID, formID, methodID string) (*Project, error) {
-	project, err := m.fetchProject(projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = project.SelectMethod(methodID, formID)
+	err = project.SelectFunction(formID, functionID)
 	if err != nil {
 		return nil, err
 	}
@@ -185,6 +120,20 @@ func (m *Module) SaveAddress(projectID, formID, address string) (*Project, error
 	}
 
 	err = project.SaveAddress(formID, address)
+	if err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+func (m *Module) SaveIsMultiplexed(projectID, formID string, isMultiplexed bool) (*Project, error) {
+	project, err := m.fetchProject(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = project.SaveIsMultiplexed(formID, isMultiplexed)
 	if err != nil {
 		return nil, err
 	}
@@ -368,11 +317,8 @@ func (m *Module) fetchProject(projectID string) (*Project, error) {
 
 	project.stateStorage = m.stateStorage
 
-	if len(project.ProtoFileList) > 0 {
-		_, err := project.RefreshProtoDescriptors(
-			project.ImportPathList,
-			project.ProtoFileList,
-		)
+	if project.FilePath != "" {
+		_, err := project.GenerateServiceTreeNodes(project.FilePath)
 		if err != nil {
 			return nil, err
 		}
