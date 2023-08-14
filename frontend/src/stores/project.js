@@ -11,7 +11,7 @@ import {
   DeleteProject,
   CreateKafkaProject,
   CreateKubernetesProject,
-} from "../wailsjs/go/project/Module";
+} from "../wailsjs/go/handler/ProjectHandler";
 
 export const useProjectStore = defineStore({
   id: "project",

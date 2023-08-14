@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"github.com/catake-com/multibase/backend/handler"
 	"github.com/catake-com/multibase/backend/module/grpc"
 	"github.com/catake-com/multibase/backend/module/kafka"
 	"github.com/catake-com/multibase/backend/module/kubernetes"
@@ -18,26 +19,29 @@ import (
 )
 
 type App struct {
-	initialErr       error
-	ctx              context.Context
-	appLogger        *logrus.Logger
-	stateStorage     *state.Storage
+	initialErr   error
+	ctx          context.Context
+	appLogger    *logrus.Logger
+	stateStorage *state.Storage
+
 	ProjectModule    *project.Module
 	GRPCModule       *grpc.Module
 	ThriftModule     *thrift.Module
 	KafkaModule      *kafka.Module
 	KubernetesModule *kubernetes.Module
+
+	ProjectHandler *handler.ProjectHandler
 }
 
-// nolint: nonamedreturns
+// nolint: nonamedreturns, funlen
 func NewApp(appLogger *logrus.Logger) (app *App) {
 	// initialize empty structs so that the corresponding methods are still correctly bound in JS in case of error
 	app = &App{
-		ProjectModule:    &project.Module{},
 		GRPCModule:       &grpc.Module{},
 		ThriftModule:     &thrift.Module{},
 		KafkaModule:      &kafka.Module{},
 		KubernetesModule: &kubernetes.Module{},
+		ProjectHandler:   &handler.ProjectHandler{},
 	}
 
 	defer func() {
@@ -80,6 +84,14 @@ func NewApp(appLogger *logrus.Logger) (app *App) {
 		app.initialErr = errors.Join(app.initialErr, fmt.Errorf("failed to init a kubernetes module: %w", err))
 	}
 
+	projectHandler := handler.NewProjectHandler(
+		projectModule,
+		grpcModule,
+		thriftModule,
+		kubernetesModule,
+		kafkaModule,
+	)
+
 	app.appLogger = appLogger
 	app.stateStorage = stateStorage
 	app.ProjectModule = projectModule
@@ -87,6 +99,7 @@ func NewApp(appLogger *logrus.Logger) (app *App) {
 	app.ThriftModule = thriftModule
 	app.KafkaModule = kafkaModule
 	app.KubernetesModule = kubernetesModule
+	app.ProjectHandler = projectHandler
 
 	return app
 }

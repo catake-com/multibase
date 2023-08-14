@@ -37,7 +37,6 @@ export default defineComponent({
     },
 
     async newGRPCProject() {
-      await useGRPCStore().createNewProject(this.currentProjectID);
       await useProjectStore().createNewGRPCProject(this.currentProjectID);
     },
 
@@ -47,7 +46,6 @@ export default defineComponent({
     },
 
     async newThriftProject() {
-      await useThriftStore().createNewProject(this.currentProjectID);
       await useProjectStore().createNewThriftProject(this.currentProjectID);
     },
 
@@ -57,7 +55,6 @@ export default defineComponent({
     },
 
     async newKafkaProject() {
-      await useKafkaStore().createNewProject(this.currentProjectID);
       await useProjectStore().createNewKafkaProject(this.currentProjectID);
     },
 
@@ -67,7 +64,6 @@ export default defineComponent({
     },
 
     async newKubernetesProject() {
-      await useKubernetesStore().createNewProject(this.currentProjectID);
       await useProjectStore().createNewKubernetesProject(this.currentProjectID);
     },
 

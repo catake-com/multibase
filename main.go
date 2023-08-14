@@ -55,7 +55,7 @@ func main() {
 		OnBeforeClose:      app.beforeClose,
 		Bind: []interface{}{
 			app,
-			app.ProjectModule,
+			app.ProjectHandler,
 			app.GRPCModule,
 			app.ThriftModule,
 			app.KafkaModule,
